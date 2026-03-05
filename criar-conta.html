@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Credenciamento - PRF Jaguar&eacute;</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins&display=swap">
+</head>
+<body class="auth-page">
+<section class="auth-siga">
+        <div class="wrapper auth-siga-wrapper">
+            <div class="auth-siga-head">
+                <img src="assets/img/siga_prf.png" alt="SIGA PRF" class="auth-logo-siga">
+                <h2>Sistema Integrado de Gestão Administrativa</h2>
+            </div>
+            <div class="login_box login_box--wide">
+                <div class="auth-siga-title">Criar conta</div>
+                <form class="auth-form-siga" id="auth-register-form">
+                    <div class="auth-photo">
+                        <button class="auth-photo-btn" type="button" id="register-photo-btn">
+                            <img id="register-photo-preview" class="auth-photo-preview is-hidden" alt="Prévia da foto do perfil">
+                            <i class="fas fa-camera"></i>
+                            <span>Foto</span>
+                        </button>
+                        <input id="register-photo-file" type="file" accept="image/*" class="auth-photo-file-input">
+                    </div>
+
+                    <div class="input_box">
+                        <input type="text" id="register-name" name="name" class="input-field" autocomplete="name" placeholder=" " required>
+                        <label for="register-name" class="label">Nome oficial</label>
+                        <i class="fas fa-user icon"></i>
+                    </div>
+
+                    <div class="input_box input_box--suffix">
+                        <input type="text" id="register-email" name="email" class="input-field" autocomplete="email" placeholder=" " required>
+                        <label for="register-email" class="label">Email institucional</label>
+                        <span class="input-suffix">@prf.gov</span>
+                        <i class="fas fa-envelope icon"></i>
+                    </div>
+
+                    <div class="input_box input_box--password">
+                        <input type="password" id="register-password" name="password" class="input-field" autocomplete="new-password" placeholder=" " required>
+                        <label for="register-password" class="label">Senha</label>
+                        <button class="input-toggle" type="button" data-target="register-password" aria-label="Mostrar senha" aria-pressed="false">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                        <i class="fas fa-lock icon"></i>
+                    </div>
+
+                    <div class="input_box">
+                        <input type="text" id="register-rg" name="rg" class="input-field" autocomplete="off" placeholder=" " required>
+                        <label for="register-rg" class="label">RG</label>
+                        <i class="fas fa-id-card icon"></i>
+                    </div>
+
+                    <div class="input_box">
+                        <button type="submit" class="input-submit input-submit--gold" id="auth-register-submit">Solicitar acesso</button>
+                    </div>
+                    <p id="auth-register-feedback" class="auth-feedback" aria-live="polite"></p>
+
+                    <div class="register">
+                        <span>Já tem conta? <a href="login.html">Entrar</a></span>
+                    </div>
+                </form>
+            </div>
+            <a href="index.html" class="auth-back-link">Voltar ao site</a>
+        </div>
+    </section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = window.SUPABASE_URL || 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+    </script>
+    <script src="app.js" defer></script>
+</body>
+</html>
+
+
+
+
