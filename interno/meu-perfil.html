@@ -1,0 +1,1062 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Meu Perfil - PRF Jaguar&eacute;</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+
+        (async function enforceAuth() {
+            try {
+                if (!window.supabase || !window.supabase.createClient) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const result = await client.auth.getSession();
+                const session = result && result.data ? result.data.session : null;
+                const user = session ? session.user : null;
+                if (!user) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                const profileQuery = await client
+                    .from('profiles')
+                    .select('aprovado')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                const profile = profileQuery ? profileQuery.data : null;
+                const profileError = profileQuery ? profileQuery.error : null;
+
+                if (profileError || !profile || profile.aprovado !== true) {
+                    await client.auth.signOut();
+                    window.location.replace('../login.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('../login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="inicio-page perfil-page">
+<div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
+    <div class="inicio-loader"></div>
+    <div class="inicio-loader-section section-left"></div>
+    <div class="inicio-loader-section section-right"></div>
+    <img class="inicio-loader-logo" src="assets/img/prf.png" alt="PRF">
+</div>
+    <div class="inicio-shell">
+        <header class="inicio-topbar" aria-label="Cabecalho">
+            <div class="inicio-topbar-controls" aria-label="Controles da janela">
+                <a class="mac-dot is-red" href="../index.html" title="Voltar ao site"></a>
+                <a class="mac-dot is-yellow" href="inicio.html" title="Inicio"></a>
+                <button class="mac-dot is-white" type="button" title="Recarregar" onclick="window.location.reload()"></button>
+            </div>
+            <div class="inicio-topbar-title">SIGA - Painel Interno</div>
+            <button class="inicio-topbar-logout" type="button" onclick="auth.logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                SAIR
+            </button>
+        </header>
+
+        <div class="inicio-body">
+        <div class="inicio-rail" aria-label="Menu e Plantao">
+            <aside class="inicio-menu" aria-label="Menu principal">
+                <div aria-hidden="true">
+                    <a href="inicio.html"><img src="assets/img/prf.png"></a>
+                </div>
+                <nav class="inicio-menu-items">
+                        <a class="inicio-menu-item" href="inicio.html">
+                            <i class="fas fa-house"></i>
+                            <span>Inicio</span>
+                        </a>
+                        <a class="inicio-menu-item" href="paineldgp.html" data-requires-admin="true">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Painel DGP</span>
+                            <i class="fas fa-lock inicio-menu-lock" aria-hidden="true"></i>
+                        </a>
+                        <a class="inicio-menu-item is-active" href="meu-perfil.html">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatorios.html">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Relatorios</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatoriospublicados.html">
+                            <i class="fas fa-file-circle-check"></i>
+                            <span>Relatorios publicados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="regulamentos.html">
+                            <i class="fas fa-scale-balanced"></i>
+                            <span>Regulamentos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="avisos-internos.html">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Avisos internos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="equipe.html">
+                            <i class="fas fa-users"></i>
+                            <span>Equipe</span>
+                        </a>
+                        <a class="inicio-menu-item" href="diario-oficial.html">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Diario Oficial</span>
+                        </a>
+                </nav>
+
+                <div class="inicio-menu-footer">
+                    <a class="inicio-menu-avatar-link" href="meu-perfil.html">
+                        <img id="inicio-footer-avatar" class="inicio-menu-avatar" src="assets/img/prf.png" alt="Foto do usuario">
+                    </a>
+                    <span id="inicio-footer-name" class="inicio-menu-user">Operador</span>
+                </div>
+            </aside>
+
+            <section class="plantao-panel" aria-label="Plantao">
+                <header class="plantao-header">
+                    <div class="plantao-title">
+                        <h2>Plantão</h2>
+                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    </div>
+                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                        <i class="fas fa-user-clock"></i>
+                        Entrar em servico
+                    </button>
+                </header>
+                <div class="plantao-list" id="inicio-on-duty-list">
+                    <p class="plantao-empty">Carregando agentes...</p>
+                </div>
+            </section>
+        </div>
+
+        <main class="inicio-main">
+
+
+            <section class="inicio-content-card" aria-label="Conteudo">
+                <div class="perfil-layout">
+                    <section class="perfil-card" aria-label="Perfil">
+                        <div class="perfil-photo">
+                            <img id="perfil-photo" src="assets/img/prf.png" alt="Foto do usuario">
+                        </div>
+                        <h2 id="perfil-name" class="perfil-name">Usuario</h2>
+                        <img id="perfil-cargo-img" class="perfil-cargo-insignia is-hidden" src="assets/img/prf.png" alt="Insignia do cargo">
+                        <p id="perfil-cargo" class="perfil-cargo">Cargo do agente</p>
+                        <p id="perfil-rg" class="perfil-rg">RG: -</p>
+                        <button id="perfil-edit-btn" class="perfil-edit-btn" type="button">
+                            <i class="fas fa-pen"></i>
+                            Editar perfil
+                        </button>
+                        <form id="perfil-edit-form" class="perfil-edit-form is-hidden" aria-hidden="true">
+                            <label>
+                                <span>Nome</span>
+                                <input id="perfil-input-name" type="text" autocomplete="name" required>
+                            </label>
+                            <label>
+                                <span>RG</span>
+                                <input id="perfil-input-rg" type="text" autocomplete="off" required>
+                            </label>
+                            <label>
+                                <span>Foto de perfil</span>
+                                <input id="perfil-input-photo" type="file" accept="image/*">
+                            </label>
+                            <button class="perfil-save-btn" type="submit">Salvar alteracoes</button>
+                            <div id="perfil-save-status" class="perfil-save-status" aria-live="polite"></div>
+                        </form>
+                    </section>
+
+                    <div class="perfil-info">
+                        <div class="perfil-stats">
+                            <div class="perfil-stat-card">
+                                <span class="perfil-stat-label">Ocorrências</span>
+                                <strong id="perfil-stat-ocorrencias" class="perfil-stat-value">0</strong>
+                            </div>
+                            <div class="perfil-stat-card">
+                                <span class="perfil-stat-label">AIT realizados</span>
+                                <strong id="perfil-stat-aits" class="perfil-stat-value">0</strong>
+                                <span id="perfil-stat-multas" class="perfil-stat-subvalue">R$ 0,00 em multas</span>
+                            </div>
+                            <div class="perfil-stat-card">
+                                <span class="perfil-stat-label">BOUs relacionados</span>
+                                <strong id="perfil-stat-bous" class="perfil-stat-value">0</strong>
+                            </div>
+                        </div>
+                        <div class="perfil-meta-grid">
+                            <section class="perfil-meta-card">
+                                <h3>Grupamentos</h3>
+                                <p id="perfil-grupos" class="perfil-meta-text">-</p>
+                            </section>
+                            <section class="perfil-meta-card">
+                                <h3>Cursos e Especializações</h3>
+                                <div id="perfil-cursos" class="perfil-meta-tags">-</div>
+                            </section>
+                            <section class="perfil-meta-card">
+                                <h3>Condecorações e Medalhas</h3>
+                                <div id="perfil-medals" class="perfil-meta-medals">-</div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+     </div>
+</div>
+    <script src="../app.js" defer></script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupInicioShiftControl() {
+                if (window.__shiftControl && window.__shiftControlUserId) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+                window.__inicioSupabaseClient = client;
+                window.__inicioUserId = String(userId);
+
+                const listeners = [];
+                let currentState = { status: 'idle', startAt: null, shiftId: null, totalMs: null };
+
+                const formatHms = function (totalMs) {
+                    const safeMs = Math.max(0, Number(totalMs || 0));
+                    const totalSec = Math.floor(safeMs / 1000);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                };
+
+                const emit = function () {
+                    const payload = Object.assign({}, currentState);
+                    listeners.forEach(function (fn) {
+                        try { fn(payload); } catch (e) {}
+                    });
+                    try {
+                        window.dispatchEvent(new CustomEvent('shift-state-changed', { detail: payload }));
+                    } catch (e) {}
+                };
+
+                const setState = function (next) {
+                    currentState = Object.assign({}, currentState, next);
+                    emit();
+                };
+
+                const fetchOpen = async function () {
+                    const result = await client
+                        .from('agent_pontos')
+                        .select('id,inicio_at')
+                        .eq('user_id', userId)
+                        .is('fim_at', null)
+                        .order('inicio_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    return result && result.data ? result.data : null;
+                };
+
+                const refresh = async function () {
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const latestResult = await client
+                        .from('agent_pontos')
+                        .select('status,duracao_min')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    const latest = latestResult && latestResult.data ? latestResult.data : null;
+
+                    if (latest && String(latest.status || '') === 'encerrado') {
+                        setState({
+                            status: 'closed',
+                            shiftId: null,
+                            startAt: null,
+                            totalMs: Math.max(0, Number(latest.duracao_min || 0)) * 60000
+                        });
+                    } else {
+                        setState({ status: 'idle', shiftId: null, startAt: null, totalMs: null });
+                    }
+                    return Object.assign({}, currentState);
+                };
+
+                const start = async function () {
+                    if (currentState.status === 'active') return Object.assign({}, currentState);
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const nowIso = new Date().toISOString();
+                    const insert = await client
+                        .from('agent_pontos')
+                        .insert({ user_id: userId, inicio_at: nowIso, status: 'em_servico' })
+                        .select('id,inicio_at')
+                        .single();
+
+                    if (insert.error || !insert.data) return refresh();
+
+                    setState({
+                        status: 'active',
+                        shiftId: insert.data.id,
+                        startAt: insert.data.inicio_at ? new Date(insert.data.inicio_at).getTime() : Date.now(),
+                        totalMs: null
+                    });
+                    return Object.assign({}, currentState);
+                };
+
+                const stop = async function () {
+                    let shiftId = currentState.shiftId;
+                    let startAt = currentState.startAt;
+
+                    if (!shiftId || !startAt) {
+                        const openRow = await fetchOpen();
+                        if (!openRow) return refresh();
+                        shiftId = openRow.id;
+                        startAt = openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now();
+                    }
+
+                    const totalMs = Math.max(0, Date.now() - Number(startAt));
+                    await client
+                        .from('agent_pontos')
+                        .update({
+                            fim_at: new Date().toISOString(),
+                            duracao_min: Math.floor(totalMs / 60000),
+                            status: 'encerrado'
+                        })
+                        .eq('id', shiftId)
+                        .eq('user_id', userId);
+
+                    setState({ status: 'closed', shiftId: null, startAt: null, totalMs: totalMs });
+                    return Object.assign({}, currentState);
+                };
+
+                const toggle = async function () {
+                    return currentState.status === 'active' ? stop() : start();
+                };
+
+                const subscribe = function (fn) {
+                    if (typeof fn !== 'function') return function () {};
+                    listeners.push(fn);
+                    try { fn(Object.assign({}, currentState)); } catch (e) {}
+                    return function () {
+                        const idx = listeners.indexOf(fn);
+                        if (idx >= 0) listeners.splice(idx, 1);
+                    };
+                };
+
+                window.__shiftControl = {
+                    getState: function () { return Object.assign({}, currentState); },
+                    refresh: refresh,
+                    start: start,
+                    stop: stop,
+                    toggle: toggle,
+                    subscribe: subscribe,
+                    formatHms: formatHms
+                };
+                window.__shiftControlUserId = userId;
+                await refresh();
+            })();
+            (async function setupInicioShiftButton() {
+                function byId(id) { return document.getElementById(id); }
+                const btn = byId('inicio-shift-btn');
+                if (!btn) return;
+
+                const waitShiftControl = async () => {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__shiftControl && typeof window.__shiftControl.toggle === 'function') {
+                            return window.__shiftControl;
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                const shiftControl = await waitShiftControl();
+                if (!shiftControl) return;
+                let showClosedState = false;
+
+                const render = (state) => {
+                    const s = state || shiftControl.getState();
+                    btn.classList.remove('plantao-shift-btn--idle', 'plantao-shift-btn--active', 'plantao-shift-btn--closed');
+
+                    if (s.status === 'active' && s.startAt) {
+                        btn.classList.add('plantao-shift-btn--active');
+                        btn.textContent = 'Em serviço ' + shiftControl.formatHms(Date.now() - Number(s.startAt));
+                        return;
+                    }
+
+                    if (s.status === 'closed') {
+                        if (!showClosedState) {
+                            btn.classList.add('plantao-shift-btn--idle');
+                            btn.textContent = 'Entrar em serviço';
+                            return;
+                        }
+                        btn.classList.add('plantao-shift-btn--closed');
+                        btn.textContent = s.totalMs
+                            ? ('Serviço encerrado ' + shiftControl.formatHms(s.totalMs))
+                            : 'Serviço encerrado';
+                        return;
+                    }
+
+                    btn.classList.add('plantao-shift-btn--idle');
+                    btn.textContent = 'Entrar em serviço';
+                };
+
+                btn.addEventListener('click', async function () {
+                    const current = shiftControl.getState();
+                    showClosedState = current.status === 'active';
+                    await shiftControl.toggle();
+                });
+
+                shiftControl.subscribe((state) => render(state));
+                setInterval(() => render(shiftControl.getState()), 1000);
+                render(shiftControl.getState());
+            })();
+
+            (function setupInicioOnDutyList() {
+                function byId(id) { return document.getElementById(id); }
+                const listNode = byId('inicio-on-duty-list');
+                const countNode = byId('inicio-on-duty-count');
+                if (!listNode) return;
+
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                let refreshTimer = null;
+                let busy = false;
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const initials = function (name) {
+                    const parts = safe(name, '').split(' ').filter(Boolean);
+                    if (!parts.length) return 'PRF';
+                    const first = parts[0][0] || '';
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+                    return (first + last).toUpperCase();
+                };
+
+                const render = function (items) {
+                    const total = items.length;
+                    if (countNode) countNode.textContent = String(total);
+                    if (!total) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nenhum agente em serviço.</p>';
+                        return;
+                    }
+                    const selfId = window.__shiftControlUserId ? String(window.__shiftControlUserId) : '';
+                    const isSelfActive = !!(window.__shiftControl && window.__shiftControl.getState && window.__shiftControl.getState().status === 'active');
+                    listNode.innerHTML = items.map(function (agent) {
+                        const nome = safe(agent.nome_guerra, 'Agente');
+                        const cargo = safe(agent.cargo, 'Cargo não definido');
+                        const grupamentoRaw = safe(agent.grupamento, 'Grupamento não definido');
+                        const grupamento = grupamentoRaw.includes(' || ')
+                            ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                            : grupamentoRaw;
+                        const foto = safe(agent.foto_url, 'assets/img/prf.png');
+                        const isSelf = selfId && agent && String(agent.id || '') === selfId;
+                        const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
+                        const fallback = initials(nome);
+                        return (
+                            '<article class="plantao-item' + destaque + '">' +
+                            '<div class="plantao-avatar">' +
+                            '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
+                            '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
+                            '</div>' +
+                            '<div class="plantao-body">' +
+                            '<h3>' + nome + '</h3>' +
+                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+                };
+
+                const fetchList = async function () {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        const active = await client
+                            .from('agent_pontos')
+                            .select('user_id,inicio_at')
+                            .is('fim_at', null)
+                            .order('inicio_at', { ascending: true });
+
+                        if (active.error || !Array.isArray(active.data)) {
+                            listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                            if (countNode) countNode.textContent = '0';
+                            return;
+                        }
+
+                        const orderedIds = [];
+                        const seen = new Set();
+                        active.data.forEach(function (row) {
+                            const id = row && row.user_id ? String(row.user_id) : '';
+                            if (!id || seen.has(id)) return;
+                            seen.add(id);
+                            orderedIds.push(id);
+                        });
+
+                        if (!orderedIds.length) {
+                            render([]);
+                            return;
+                        }
+
+                        let profiles = await client
+    .from('profiles')
+    .select('id,nome_guerra,cargo,grupamento,foto_url')
+    .in('id', orderedIds);
+
+if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+    const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+    if (!fallback.error && Array.isArray(fallback.data)) {
+        profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+    }
+}
+
+const map = new Map();
+                        if (profiles && Array.isArray(profiles.data)) {
+                            profiles.data.forEach(function (p) {
+                                if (p && p.id) map.set(String(p.id), p);
+                            });
+                        }
+
+                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        render(items);
+                    } catch (e) {
+                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        if (countNode) countNode.textContent = '0';
+                    } finally {
+                        busy = false;
+                    }
+                };
+
+                const scheduleRefresh = function () {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(fetchList, 300);
+                };
+
+                fetchList();
+                try {
+                    client
+                        .channel('agent_pontos_live_inicio')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_pontos' }, scheduleRefresh)
+                        .subscribe();
+                } catch (e) {
+                    /* ignore */
+                }
+
+                window.addEventListener('shift-state-changed', scheduleRefresh);
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioProfile() {
+                const nameNode = document.getElementById('inicio-user-name');
+                const cargoNode = document.getElementById('inicio-user-cargo');
+                const photoNode = document.getElementById('inicio-user-photo');
+                const cargoImgNode = document.getElementById('inicio-user-cargo-img');
+                const perfilCargoImg = document.getElementById('perfil-cargo-img');
+                const perfilName = document.getElementById('perfil-name');
+                const perfilCargo = document.getElementById('perfil-cargo');
+                const perfilRg = document.getElementById('perfil-rg');
+                const perfilPhoto = document.getElementById('perfil-photo');
+                const perfilInputName = document.getElementById('perfil-input-name');
+                const perfilInputRg = document.getElementById('perfil-input-rg');
+                const hasInicioNodes = !!(nameNode || cargoNode || photoNode || cargoImgNode);
+                const hasPerfilNodes = !!(perfilName || perfilCargo || perfilRg || perfilPhoto || perfilInputName || perfilInputRg || perfilCargoImg);
+                if (!hasInicioNodes && !hasPerfilNodes) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,grupamento_principal,grupamento_secundario,cursos')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const profile = profileResult ? profileResult.data : null;
+                if (!profile) return;
+
+                const nome = (profile.nome_guerra || 'Usuario').toString();
+                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const rgNode = document.getElementById('inicio-user-rg');
+                const gruposNode = document.getElementById('inicio-user-grupamentos');
+                const cursosNode = document.getElementById('inicio-user-cursos');
+                const perfilGrupos = document.getElementById('perfil-grupos');
+                const perfilCursos = document.getElementById('perfil-cursos');
+                if (nameNode) nameNode.textContent = nome;
+                if (cargoNode) cargoNode.textContent = cargo;
+                if (rgNode) rgNode.textContent = 'RG: ' + (profile.rg || '-');
+                if (perfilName) perfilName.textContent = nome;
+                if (perfilCargo) perfilCargo.textContent = cargo;
+                if (perfilRg) perfilRg.textContent = 'RG: ' + (profile.rg || '-');
+                if (perfilInputName) perfilInputName.value = nome;
+                if (perfilInputRg) perfilInputRg.value = profile.rg || '';
+                if (gruposNode || perfilGrupos) {
+                    const grupamentoRaw = String(profile.grupamento || '').trim();
+                    const primario = String(profile.grupamento_principal || '').trim()
+                        || (grupamentoRaw ? grupamentoRaw.split('||')[0].trim() : '');
+                    const grupos = grupamentoRaw
+                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                        : 'Grupamento';
+                    if (gruposNode) gruposNode.textContent = grupos;
+                    if (perfilGrupos) {
+                        const groupImageMap = {
+                            'Diretoria de Gestão de Pessoas': 'rprf.png',
+                            'Diretoria Executiva': 'rprf.png',
+                            'Diretoria Operacional': 'rprf.png',
+                            'Ronda PRF': 'rprf.png',
+                            'Universidade Corporativa da PRF': 'uniprf.png',
+                            'Grupo de Patrulhamento Tático': 'gpt.png',
+                            'Núcleo de Operações Especiais': 'noe.png',
+                            'Grupo de Patrulhamento Motorizado': 'gpm.png',
+                            'Divisão de Operações Aéreas': 'doa.png'
+                        };
+                        const primLabel = primario || 'Grupamento';
+                        const img = groupImageMap[primLabel] || '';
+                        const imgTag = img
+                            ? '<img class="perfil-grupo-logo" src="assets/img/' + img + '" alt="' + primLabel + '">'
+                            : '';
+                        perfilGrupos.innerHTML =
+                            '<div class="perfil-grupo-wrap">' +
+                            imgTag +
+                            '<span class="perfil-grupo-name">' + primLabel.replace(/</g, '&lt;') + '</span>' +
+                            '</div>';
+                    }
+                }
+                if (cursosNode || perfilCursos) {
+                    const rawCursos = String(profile.cursos || '').trim();
+                    const courseImageMap = {
+                        'CAD': 'CAD.png',
+                        'CDT': 'CDT.png',
+                        'CDD': 'CDD.png',
+                        'COA': 'COA.png',
+                        'ARP': 'ARP.png',
+                        'EP': 'EP.png',
+                        'CFP': 'CFP.png',
+                        'ERC': 'ERC.png',
+                        'OP': 'OP.png',
+                        'CDP': 'CDP.png',
+                        'CGO': 'CGO.png',
+                        'COTEM': 'COTEM.png',
+                        'CTCO': 'CTCO.png',
+                        'COESP': 'COESP.png',
+                        'TPCC': 'TPCC.png',
+                        'CFMT': 'CFMT.png',
+                        'CFMB': 'CFMB.png',
+                        'CCP': 'CCP.png',
+                        'CHOQUE': 'CHOQUE.png',
+                        'CPPAR': 'CPPAR.png',
+                        'CAFIT-TRÂNSITO': 'CAFIT-TRÂNSITO.png',
+                        'APH': 'APH.png'
+                    };
+                    if (!rawCursos) {
+                        if (cursosNode) cursosNode.textContent = '-';
+                        if (perfilCursos) perfilCursos.textContent = '-';
+                    } else {
+                        const parts = rawCursos.split('||').map(function (p) { return p.trim(); }).filter(Boolean);
+                        const asText = parts.length ? parts.map(function (p) { return p.replace(/</g, '&lt;'); }).join('<br>') : '-';
+                        if (cursosNode) cursosNode.innerHTML = asText;
+                        if (perfilCursos) {
+                            if (!parts.length) {
+                                perfilCursos.textContent = '-';
+                            } else {
+                                const html = parts.map(function (p) {
+                                    const safe = p.replace(/</g, '&lt;');
+                                    const code = p.split('|')[0].trim().toUpperCase();
+                                    const img = courseImageMap[code];
+                                    const imgTag = img
+                                        ? '<img class="perfil-course-icon" src="assets/img/' + img + '" alt="' + code + '">'
+                                        : '';
+                                    return '<div class="perfil-course-item">' + imgTag + '<span>' + safe + '</span></div>';
+                                }).join('');
+                                perfilCursos.innerHTML = html;
+                            }
+                        }
+                    }
+                }
+
+                if (photoNode && profile.foto_url) {
+                    photoNode.src = profile.foto_url;
+                }
+                if (perfilPhoto && profile.foto_url) {
+                    perfilPhoto.src = profile.foto_url;
+                }
+                const footerAvatar = document.getElementById('inicio-footer-avatar');
+                const footerName = document.getElementById('inicio-footer-name');
+                if (footerAvatar && profile.foto_url) {
+                    footerAvatar.src = profile.foto_url;
+                }
+                if (footerName) {
+                    footerName.textContent = nome;
+                }
+
+                const cargoKey = cargo.toLowerCase().trim();
+                const cargoMap = {
+                    'diretor-geral': 'diretor.png',
+                    'superintendente': 'superintendente.png',
+                    'coordenador': 'coordenador.png',
+                    'chefe de divisão': 'chefededivisao.png',
+                    'chefe de servico': 'chefedeservico.png',
+                    'chefe de serviço': 'chefedeservico.png',
+                    'chefe de núcleo': 'chefedenucleo.png',
+                    'chefe de nucleo': 'chefedenucleo.png',
+                    'agente de classe especial': 'classeespecial.png',
+                    'agente de primeira classe': 'primeiraclasse.png',
+                    'agente de segunda classe': 'terceiraclasse.png',
+                    'agente aluno': 'aluno.png'
+                };
+                const cargoImg = cargoMap[cargoKey];
+                if (cargoImg) {
+                    if (cargoImgNode) {
+                        cargoImgNode.src = 'assets/img/' + cargoImg;
+                        cargoImgNode.classList.remove('is-hidden');
+                    }
+                    if (perfilCargoImg) {
+                        perfilCargoImg.src = 'assets/img/' + cargoImg;
+                        perfilCargoImg.classList.remove('is-hidden');
+                    }
+                }
+
+                const medalsNode = document.getElementById('inicio-user-medals');
+                const perfilMedals = document.getElementById('perfil-medals');
+                const resolveMedalImage = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'assets/img/mencaoelogio.png';
+                    const lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) return raw;
+                    if (raw.startsWith('/') || raw.startsWith('assets/')) return raw;
+                    return 'assets/img/' + raw;
+                };
+
+                if (medalsNode || perfilMedals) {
+                    try {
+                        const medalResult = await client
+                            .from('profile_medals')
+                            .select('medal_image, medal_name')
+                    .eq('user_id', userId)
+                            .order('awarded_at', { ascending: false })
+                            .limit(24);
+                        const medals = medalResult && Array.isArray(medalResult.data) ? medalResult.data : [];
+                        if (medals.length) {
+                            const html = medals.map(function (medal) {
+                                const src = resolveMedalImage(medal.medal_image);
+                                const alt = medal.medal_name ? String(medal.medal_name) : 'Condecoração do usuário';
+                                return `<img src="${src}" alt="${alt}" class="inicio-user-medal" onerror="this.src='assets/img/mencaoelogio.png'">`;
+                            }).join('');
+                            if (medalsNode) {
+                                medalsNode.innerHTML = html;
+                                medalsNode.classList.remove('is-hidden');
+                            }
+                            if (perfilMedals) {
+                                const perfilHtml = medals.map(function (medal) {
+                                    const src = resolveMedalImage(medal.medal_image);
+                                    const name = medal.medal_name ? String(medal.medal_name) : 'Condecoração do usuário';
+                                    const safeName = name.replace(/</g, '&lt;');
+                                    return '<div class="perfil-medal-item">' +
+                                        '<img src="' + src + '" alt="' + safeName + '" onerror="this.src=\'assets/img/mencaoelogio.png\'">' +
+                                        '<span>' + safeName + '</span>' +
+                                        '</div>';
+                                }).join('');
+                                perfilMedals.innerHTML = perfilHtml;
+                            }
+                        } else {
+                            if (medalsNode) medalsNode.classList.add('is-hidden');
+                            if (perfilMedals) perfilMedals.textContent = '-';
+                        }
+                    } catch (e) {
+                        if (medalsNode) medalsNode.classList.add('is-hidden');
+                        if (perfilMedals) perfilMedals.textContent = '-';
+                    }
+                }
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupPerfilEdicaoEStats() {
+                const editBtn = document.getElementById('perfil-edit-btn');
+                const editForm = document.getElementById('perfil-edit-form');
+                const inputName = document.getElementById('perfil-input-name');
+                const inputRg = document.getElementById('perfil-input-rg');
+                const inputPhoto = document.getElementById('perfil-input-photo');
+                const statusNode = document.getElementById('perfil-save-status');
+
+                const statOcorrencias = document.getElementById('perfil-stat-ocorrencias');
+                const statAits = document.getElementById('perfil-stat-aits');
+                const statMultas = document.getElementById('perfil-stat-multas');
+                const statBous = document.getElementById('perfil-stat-bous');
+
+                if (editBtn && editForm) {
+                    if (!editForm.classList.contains('is-hidden')) {
+                        editForm.classList.add('is-hidden');
+                    }
+                    editBtn.setAttribute('aria-expanded', 'false');
+                    editBtn.addEventListener('click', function () {
+                        editForm.classList.toggle('is-hidden');
+                        editBtn.setAttribute('aria-expanded', editForm.classList.contains('is-hidden') ? 'false' : 'true');
+                    });
+                }
+
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const setStatus = function (text, isError) {
+                    if (!statusNode) return;
+                    statusNode.textContent = text;
+                    statusNode.style.color = isError ? '#b91c1c' : '#374151';
+                };
+
+                if (editForm) {
+                    editForm.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+                        setStatus('Salvando...', false);
+                        try {
+                            const nome = inputName ? inputName.value.trim() : '';
+                            const rg = inputRg ? inputRg.value.trim() : '';
+                            if (!nome) {
+                                setStatus('Informe o nome.', true);
+                                return;
+                            }
+
+                            const basicResult = await client.rpc('update_own_profile_basic', {
+                                p_nome_guerra: nome,
+                                p_rg: rg
+                            });
+                            if (basicResult.error) {
+                                setStatus('Nao foi possivel salvar nome e RG.', true);
+                                return;
+                            }
+
+                            if (inputPhoto && inputPhoto.files && inputPhoto.files[0]) {
+                                const file = inputPhoto.files[0];
+                                const originalName = (file.name || 'foto').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+                                const ext = sanitizedName.includes('.') ? sanitizedName.split('.').pop().toLowerCase() : 'jpg';
+                                const random = Math.random().toString(36).slice(2, 8);
+                                const path = `${userId}/${Date.now()}_${random}.${ext}`;
+
+                                const uploadResult = await client
+                                    .storage
+                                    .from('profile-photos')
+                                    .upload(path, file, { cacheControl: '3600', upsert: false });
+
+                                if (uploadResult.error) {
+                                    setStatus('Foto nao enviada: ' + uploadResult.error.message, true);
+                                    return;
+                                }
+
+                                const publicUrlResult = client
+                                    .storage
+                                    .from('profile-photos')
+                                    .getPublicUrl(path);
+                                const publicUrl = publicUrlResult && publicUrlResult.data ? publicUrlResult.data.publicUrl : '';
+
+                                const photoResult = await client.rpc('update_own_profile_photo', {
+                                    p_foto_url: publicUrl,
+                                    p_foto_path: path
+                                });
+                                if (photoResult.error) {
+                                    setStatus('Falha ao salvar a foto.', true);
+                                    return;
+                                }
+                            }
+
+                            setStatus('Perfil atualizado com sucesso.', false);
+                            window.location.reload();
+                        } catch (e) {
+                            setStatus('Erro ao salvar.', true);
+                        }
+                    });
+                }
+
+                const parseMoney = function (value) {
+                    if (value === null || value === undefined) return 0;
+                    if (typeof value === 'number') return value;
+                    const raw = String(value);
+                    const normalized = raw.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+                    const parsed = Number(normalized);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                };
+
+                const sumMultasFromConteudo = function (conteudo) {
+                    if (!conteudo) return 0;
+                    let total = 0;
+                    if (typeof conteudo === 'object') {
+                        const keys = ['valor_multa', 'valor', 'multa', 'valor_total', 'valorMulta', 'valor_ait', 'total_multa'];
+                        keys.forEach(function (key) {
+                            if (conteudo && Object.prototype.hasOwnProperty.call(conteudo, key)) {
+                                total += parseMoney(conteudo[key]);
+                            }
+                        });
+                    }
+                    if (!total) {
+                        const text = typeof conteudo === 'string' ? conteudo : JSON.stringify(conteudo);
+                        const matches = text.match(/\d{1,3}(?:\.\d{3})*,\d{2}|\d+(?:\.\d+)?/g) || [];
+                        matches.forEach(function (m) { total += parseMoney(m); });
+                    }
+                    return total;
+                };
+
+                try {
+                    if (statBous && client.rpc) {
+                        const bousResult = await client.rpc('list_recent_bous_for_user', { p_days: 3650 });
+                        const bous = Array.isArray(bousResult.data) ? bousResult.data : [];
+                        statBous.textContent = String(bous.length);
+                    }
+                } catch (e) {}
+
+                try {
+                    if (statAits && client.rpc) {
+                        const aitsResult = await client.rpc('list_recent_aits_for_user', { p_days: 3650 });
+                        const aits = Array.isArray(aitsResult.data) ? aitsResult.data : [];
+                        statAits.textContent = String(aits.length);
+                        if (statMultas) {
+                            const total = aits.reduce(function (acc, item) {
+                                return acc + sumMultasFromConteudo(item && item.conteudo_completo ? item.conteudo_completo : null);
+                            }, 0);
+                            statMultas.textContent = 'R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' em multas';
+                        }
+                    }
+                } catch (e) {}
+
+                try {
+                    if (statOcorrencias) {
+                        const profileRes = await client
+                            .from('profiles')
+                            .select('nome_guerra,rg,email')
+                            .eq('id', userId)
+                            .maybeSingle();
+                        const profile = profileRes && profileRes.data ? profileRes.data : null;
+                        const nome = profile && profile.nome_guerra ? String(profile.nome_guerra) : '';
+                        const rg = profile && profile.rg ? String(profile.rg) : '';
+                        const email = profile && profile.email ? String(profile.email) : '';
+                        const filters = [];
+                        filters.push('user_id.eq.' + userId);
+                        if (nome) filters.push('conteudo_completo.ilike.%' + nome.toLowerCase().replace(/%/g, '') + '%');
+                        if (rg) filters.push('conteudo_completo.ilike.%' + rg.toLowerCase().replace(/%/g, '') + '%');
+                        if (email) filters.push('conteudo_completo.ilike.%' + email.toLowerCase().replace(/%/g, '') + '%');
+                        const orFilter = filters.join(',');
+                        const ocorrRes = await client
+                            .from('patrulhas')
+                            .select('id', { count: 'exact', head: true })
+                            .or(orFilter);
+                        const total = ocorrRes && typeof ocorrRes.count === 'number' ? ocorrRes.count : 0;
+                        statOcorrencias.textContent = String(total);
+                    }
+                } catch (e) {}
+            })();
+        });
+    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            document.body.classList.add('inicio-loaded');
+        }, 700);
+    });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+

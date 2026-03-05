@@ -1,0 +1,1217 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>RIPAT Publicados - PRF Jaguar&eacute;</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+
+        (async function enforceAuth() {
+            try {
+                if (!window.supabase || !window.supabase.createClient) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const result = await client.auth.getSession();
+                const session = result && result.data ? result.data.session : null;
+                const user = session ? session.user : null;
+                if (!user) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                const profileQuery = await client
+                    .from('profiles')
+                    .select('aprovado')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                const profile = profileQuery ? profileQuery.data : null;
+                const profileError = profileQuery ? profileQuery.error : null;
+
+                if (profileError || !profile || profile.aprovado !== true) {
+                    await client.auth.signOut();
+                    window.location.replace('../login.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('../login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="inicio-page">
+<div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
+    <div class="inicio-loader"></div>
+    <div class="inicio-loader-section section-left"></div>
+    <div class="inicio-loader-section section-right"></div>
+    <img class="inicio-loader-logo" src="assets/img/prf.png" alt="PRF">
+</div>
+    <div class="inicio-shell">
+        <header class="inicio-topbar" aria-label="Cabecalho">
+            <div class="inicio-topbar-controls" aria-label="Controles da janela">
+                <a class="mac-dot is-red" href="../index.html" title="Voltar ao site"></a>
+                <a class="mac-dot is-yellow" href="inicio.html" title="Inicio"></a>
+                <button class="mac-dot is-white" type="button" title="Recarregar" onclick="window.location.reload()"></button>
+            </div>
+            <div class="inicio-topbar-title">SIGA - Painel Interno</div>
+            <button class="inicio-topbar-logout" type="button" onclick="auth.logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                SAIR
+            </button>
+        </header>
+
+        <div class="inicio-body">
+        <div class="inicio-rail" aria-label="Menu e Plantao">
+            <aside class="inicio-menu" aria-label="Menu principal">
+                <div aria-hidden="true">
+                    <a href="inicio.html"><img src="assets/img/prf.png"></a>
+                </div>
+                <nav class="inicio-menu-items">
+                        <a class="inicio-menu-item" href="inicio.html">
+                            <i class="fas fa-house"></i>
+                            <span>Inicio</span>
+                        </a>
+                        <a class="inicio-menu-item" href="paineldgp.html" data-requires-admin="true">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Painel DGP</span>
+                            <i class="fas fa-lock inicio-menu-lock" aria-hidden="true"></i>
+                        </a>
+                        <a class="inicio-menu-item" href="meu-perfil.html">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatorios.html">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Relatorios</span>
+                        </a>
+                        <a class="inicio-menu-item is-active" href="relatoriospublicados.html">
+                            <i class="fas fa-file-circle-check"></i>
+                            <span>Relatorios publicados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="regulamentos.html">
+                            <i class="fas fa-scale-balanced"></i>
+                            <span>Regulamentos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="avisos-internos.html">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Avisos internos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="equipe.html">
+                            <i class="fas fa-users"></i>
+                            <span>Equipe</span>
+                        </a>
+                        <a class="inicio-menu-item" href="diario-oficial.html">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Diario Oficial</span>
+                        </a>
+                </nav>
+
+                <div class="inicio-menu-footer">
+                    <a class="inicio-menu-avatar-link" href="meu-perfil.html">
+                        <img id="inicio-footer-avatar" class="inicio-menu-avatar" src="assets/img/prf.png" alt="Foto do usuario">
+                    </a>
+                    <span id="inicio-footer-name" class="inicio-menu-user">Operador</span>
+                </div>
+            </aside>
+
+            <section class="plantao-panel" aria-label="Plantao">
+                <header class="plantao-header">
+                    <div class="plantao-title">
+                        <h2>Plantão</h2>
+                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    </div>
+                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                        <i class="fas fa-user-clock"></i>
+                        Entrar em servico
+                    </button>
+                </header>
+                <div class="plantao-list" id="inicio-on-duty-list">
+                    <p class="plantao-empty">Carregando agentes...</p>
+                </div>
+            </section>
+        </div>
+
+        <main class="inicio-main">
+            <header class="inicio-header">
+                <div class="inicio-user-card">
+                    <div class="inicio-user-photo">
+                        <img id="inicio-user-photo" src="assets/img/prf.png" alt="Foto do usuario">
+                    </div>
+                    <div class="inicio-user-text">
+                        <h1 id="inicio-user-name" class="inicio-user-name">Usuario</h1>
+                        <div class="inicio-user-cargo">
+                            <img id="inicio-user-cargo-img" class="inicio-user-cargo-img is-hidden" alt="Imagem do cargo">
+                            <span id="inicio-user-cargo">Cargo do agente</span>
+                        </div>
+                        <span id="inicio-user-rg" class="inicio-user-rg">RG: -</span>
+                        <div id="inicio-user-medals" class="inicio-user-medals is-hidden" aria-label="Condecorações do Usuário"></div>
+                    </div>
+                </div>
+                <aside class="inicio-user-meta">
+                    <div id="inicio-user-grupamentos" class="inicio-user-meta-title">Grupamento</div>
+                    <div class="inicio-user-meta-row">
+                        <div class="inicio-user-meta-label">Cursos:</div>
+                        <div id="inicio-user-cursos" class="inicio-user-meta-value">-</div>
+                    </div>
+                </aside>
+            </header>
+
+            <section class="inicio-content-card" aria-label="Conteudo">
+                <nav class="relatorios-subnav" aria-label="Submenu relatórios publicados">
+                    <a class="relatorios-subnav-item" href="relatoriospublicados.html"><i class="fas fa-gavel"></i>BOU</a>
+                    <a class="relatorios-subnav-item" href="aitpublicados.html"><i class="fas fa-ticket"></i>AIT</a>
+                    <a class="relatorios-subnav-item" href="acepublicados.html"><i class="fas fa-user-graduate"></i>ACE</a>
+                    <a class="relatorios-subnav-item is-active" href="ripatpublicados.html"><i class="fas fa-road"></i>RIPAT</a>
+                    <a class="relatorios-subnav-item" href="ravoppublicados.html"><i class="fas fa-helicopter"></i>RAVOP</a>
+                </nav>
+                <div class="publicados-header">
+                    <h2>RIPAT publicados</h2>
+                    <p>Relatórios de patrulha enviados no sistema.</p>
+                </div>
+                <div class="publicados-filters" role="group" aria-label="Filtros de RIPAT publicados">
+                    <button class="publicados-filter is-active" type="button" data-filter="all">Todos os RIPAT</button>
+                    <button class="publicados-filter" type="button" data-filter="mine">RIPAT realizados</button>
+                    <button class="publicados-filter" type="button" data-filter="mentioned">RIPAT citados</button>
+                </div>
+                <div id="publicados-status" class="publicados-status">Carregando RIPATs...</div>
+                <div id="publicados-list" class="publicados-list" aria-live="polite"></div>
+            </section>
+        </main>
+     </div>
+</div>
+    <div id="publicados-modal" class="publicados-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="publicados-modal-card">
+            <button class="publicados-modal-close" type="button" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <div class="publicados-modal-body">
+                <button class="publicados-modal-copy" type="button">
+                    <i class="fas fa-copy"></i>
+                    Copiar
+                </button>
+                <h3 id="publicados-modal-title">RIPAT</h3>
+                <div id="publicados-modal-meta" class="publicados-modal-meta"></div>
+                <div id="publicados-modal-content" class="publicados-modal-content"></div>
+            </div>
+        </div>
+    </div>
+    <script src="../app.js" defer></script>
+    <script>
+        window.addEventListener('load', function () {
+            const listNode = document.getElementById('publicados-list');
+            const statusNode = document.getElementById('publicados-status');
+            const modal = document.getElementById('publicados-modal');
+            const modalTitle = document.getElementById('publicados-modal-title');
+            const modalMeta = document.getElementById('publicados-modal-meta');
+            const modalContent = document.getElementById('publicados-modal-content');
+            const closeBtn = modal ? modal.querySelector('.publicados-modal-close') : null;
+            const copyBtn = modal ? modal.querySelector('.publicados-modal-copy') : null;
+            const filterButtons = Array.from(document.querySelectorAll('.publicados-filter'));
+
+            const state = {
+                userId: null,
+                userName: '',
+                userRg: '',
+                userEmail: '',
+                people: {},
+                authors: {},
+                items: [],
+                filter: 'all'
+            };
+
+            const safe = function (value, fallback) {
+                const text = (value ?? '').toString().trim();
+                return text || (fallback || '-');
+            };
+
+            const normalizeText = function (value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '');
+            };
+
+            const formatDate = function (value) {
+                if (!value) return '-';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return '-';
+                return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+            };
+
+            const escapeHtml = function (value) {
+                return String(value || '').replace(/</g, '&lt;');
+            };
+
+            const normalizeConteudo = function (conteudo) {
+                if (!conteudo) return null;
+                if (typeof conteudo === 'string') {
+                    try { return JSON.parse(conteudo); } catch (e) { return conteudo; }
+                }
+                return conteudo;
+            };
+
+            const getConteudoField = function (conteudo, key) {
+                if (!conteudo || typeof conteudo !== 'object') return '';
+                if (conteudo[key] !== undefined && conteudo[key] !== null) return conteudo[key];
+                if (conteudo.campos && conteudo.campos[key] !== undefined && conteudo.campos[key] !== null) {
+                    return conteudo.campos[key];
+                }
+                return '';
+            };
+
+            const getNested = function (conteudo, path) {
+                if (!conteudo || typeof conteudo !== 'object') return '';
+                const parts = path.split('.');
+                let current = conteudo;
+                for (let i = 0; i < parts.length; i += 1) {
+                    if (!current || typeof current !== 'object') return '';
+                    current = current[parts[i]];
+                }
+                return current ?? '';
+            };
+
+            const isUuid = function (value) {
+                return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+            };
+
+            const resolvePerson = function (value) {
+                const raw = safe(value, '');
+                if (!raw) return '-';
+                if (isUuid(raw) && state.people[raw]) {
+                    return safe(state.people[raw].nome_guerra, raw);
+                }
+                return raw;
+            };
+
+            const buildAuxiliares = function (conteudo) {
+                const aux1 = resolvePerson(getNested(conteudo, 'equipe.auxiliar_1') || getConteudoField(conteudo, 'auxiliar_1'));
+                const aux2 = resolvePerson(getNested(conteudo, 'equipe.auxiliar_2') || getConteudoField(conteudo, 'auxiliar_2'));
+                const list = [aux1, aux2].filter(function (v) { return v && v !== '-'; });
+                return list.length ? list.join(' | ') : '-';
+            };
+
+            const buildEquipeIds = function (conteudo) {
+                const ids = [];
+                const fields = [
+                    getNested(conteudo, 'equipe.motorista') || getConteudoField(conteudo, 'motorista'),
+                    getNested(conteudo, 'equipe.chefe_viatura') || getConteudoField(conteudo, 'chefe_viatura'),
+                    getNested(conteudo, 'equipe.auxiliar_1') || getConteudoField(conteudo, 'auxiliar_1'),
+                    getNested(conteudo, 'equipe.auxiliar_2') || getConteudoField(conteudo, 'auxiliar_2')
+                ];
+                fields.forEach(function (value) {
+                    if (isUuid(value)) ids.push(String(value));
+                });
+                return ids;
+            };
+
+            const buildMentionText = function (conteudo) {
+                if (!conteudo || typeof conteudo !== 'object') return '';
+                return normalizeText(JSON.stringify(conteudo));
+            };
+
+            const renderModalContent = function (item) {
+                if (!modalContent) return;
+                const normalized = normalizeConteudo(item ? item.conteudo_completo : null);
+                if (!normalized || typeof normalized !== 'object') {
+                    modalContent.innerHTML = '<pre class="publicados-pre"></pre>';
+                    modalContent.querySelector('pre').textContent = String(normalized || '');
+                    modalContent.setAttribute('data-copy-text', String(normalized || ''));
+                    return;
+                }
+
+                const motorista = resolvePerson(getNested(normalized, 'equipe.motorista') || getConteudoField(normalized, 'motorista'));
+                const chefe = resolvePerson(getNested(normalized, 'equipe.chefe_viatura') || getConteudoField(normalized, 'chefe_viatura'));
+                const aux1 = resolvePerson(getNested(normalized, 'equipe.auxiliar_1') || getConteudoField(normalized, 'auxiliar_1'));
+                const aux2 = resolvePerson(getNested(normalized, 'equipe.auxiliar_2') || getConteudoField(normalized, 'auxiliar_2'));
+                const unidade = safe(
+                    getNested(normalized, 'dados_patrulhamento.unidade')
+                    || getNested(normalized, 'dados_patrulhamento.unidade_manual')
+                    || getConteudoField(normalized, 'unidade')
+                    || getConteudoField(normalized, 'unidade_manual'),
+                    safe(item.area, '-')
+                );
+                const area = safe(getNested(normalized, 'dados_patrulhamento.area'), '-');
+                const dataInicio = safe(getNested(normalized, 'dados_patrulhamento.data_inicio'), '-');
+                const horaInicio = safe(getNested(normalized, 'dados_patrulhamento.horario_inicio'), '-');
+                const dataFim = safe(getNested(normalized, 'dados_patrulhamento.data_fim'), '-');
+                const horaFim = safe(getNested(normalized, 'dados_patrulhamento.horario_fim'), '-');
+                const ocorrencias = safe(getNested(normalized, 'dados_patrulhamento.ocorrencias'), '-');
+                const abordagens = safe(getNested(normalized, 'dados_patrulhamento.abordagens'), '-');
+                const prisoes = safe(getNested(normalized, 'dados_patrulhamento.prisoes'), '-');
+                const bous = getNested(normalized, 'vinculos.bous');
+                const aits = getNested(normalized, 'vinculos.aits');
+                const aces = getNested(normalized, 'vinculos.aces');
+                const observacoes = safe(getConteudoField(normalized, 'observacoes'), '-');
+
+                const rows = [
+                    ['Motorista', motorista],
+                    ['Chefe de equipe', chefe],
+                    ['Auxiliar 1', aux1],
+                    ['Auxiliar 2', aux2],
+                    ['Unidade', unidade],
+                    ['Área', area],
+                    ['Data início', dataInicio],
+                    ['Hora início', horaInicio],
+                    ['Data término', dataFim],
+                    ['Hora término', horaFim],
+                    ['Ocorrências', ocorrencias],
+                    ['Abordagens', abordagens],
+                    ['Prisões', prisoes],
+                    ['BOU', Array.isArray(bous) ? bous.join(', ') : safe(bous, '-')],
+                    ['AIT', Array.isArray(aits) ? aits.join(', ') : safe(aits, '-')],
+                    ['ACE', Array.isArray(aces) ? aces.join(', ') : safe(aces, '-')],
+                    ['Observações', observacoes]
+                ];
+
+                const html = rows.map(function (row) {
+                    if (!row[1] || row[1] === '-') return '';
+                    return (
+                        '<div class="publicados-detail-row">' +
+                        '<span>' + escapeHtml(row[0]) + '</span>' +
+                        '<strong>' + escapeHtml(row[1]) + '</strong>' +
+                        '</div>'
+                    );
+                }).filter(Boolean).join('');
+
+                modalContent.innerHTML = html || '<p class="publicados-empty">Nenhum detalhe disponível.</p>';
+                modalContent.setAttribute('data-copy-text', rows
+                    .filter(function (row) { return row[1] && row[1] !== '-'; })
+                    .map(function (row) { return row[0] + ': ' + row[1]; })
+                    .join('\n'));
+            };
+
+            const openModal = function (item) {
+                if (!modal || !modalTitle || !modalMeta) return;
+                const conteudo = normalizeConteudo(item.conteudo_completo) || {};
+                const unidade = safe(getNested(conteudo, 'dados_patrulhamento.unidade'), safe(item.area, 'RIPAT'));
+                modalTitle.textContent = unidade;
+                modalMeta.textContent = formatDate(item.dataBase || item.data_inicio || item.created_at);
+                renderModalContent(item);
+                modal.classList.add('is-active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('publicados-modal-open');
+            };
+
+            const closeModal = function () {
+                if (!modal) return;
+                modal.classList.remove('is-active');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('publicados-modal-open');
+            };
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (modal) {
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) closeModal();
+                });
+            }
+            if (copyBtn) {
+                copyBtn.addEventListener('click', async function () {
+                    const text = modalContent ? (modalContent.getAttribute('data-copy-text') || modalContent.innerText || '') : '';
+                    if (!text) return;
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        copyBtn.textContent = 'Copiado';
+                        setTimeout(function () {
+                            copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        }, 1200);
+                    } catch (e) {
+                        /* ignore */
+                    }
+                });
+            }
+
+            const setActiveFilter = function (value) {
+                state.filter = value;
+                filterButtons.forEach(function (btn) {
+                    const isActive = btn.getAttribute('data-filter') === value;
+                    btn.classList.toggle('is-active', isActive);
+                });
+                renderList();
+            };
+
+            const renderList = function () {
+                if (!listNode) return;
+                if (!state.items.length) {
+                    listNode.innerHTML = '<p class="publicados-empty">Nenhum RIPAT encontrado.</p>';
+                    return;
+                }
+
+                const filtered = state.items.filter(function (item) {
+                    if (state.filter === 'mine') return item.matchesMine;
+                    if (state.filter === 'mentioned') return item.matchesMention;
+                    return true;
+                });
+
+                if (!filtered.length) {
+                    listNode.innerHTML = '<p class="publicados-empty">Nenhum RIPAT encontrado para este filtro.</p>';
+                    return;
+                }
+
+                listNode.innerHTML = filtered.map(function (item) {
+                    const conteudo = normalizeConteudo(item.conteudo_completo) || {};
+                const unidade = safe(
+                    getNested(conteudo, 'dados_patrulhamento.unidade')
+                    || getNested(conteudo, 'dados_patrulhamento.unidade_manual')
+                    || getConteudoField(conteudo, 'unidade')
+                    || getConteudoField(conteudo, 'unidade_manual'),
+                    safe(item.area, 'RIPAT')
+                );
+                const motorista = resolvePerson(getNested(conteudo, 'equipe.motorista') || getConteudoField(conteudo, 'motorista'));
+                const chefe = resolvePerson(getNested(conteudo, 'equipe.chefe_viatura') || getConteudoField(conteudo, 'chefe_viatura'));
+                    const auxiliares = buildAuxiliares(conteudo);
+                    const author = state.authors[item.user_id] || {};
+                    const authorName = safe(author.nome_guerra, 'Autor');
+                    const authorPhoto = safe(author.foto_url, 'assets/img/prf.png');
+                    return (
+                        '<article class="publicados-card">' +
+                        '<div class="publicados-card-main">' +
+                        '<h3>' + escapeHtml(unidade) + '</h3>' +
+                        '<span class="publicados-card-date">' + formatDate(item.dataBase || item.data_inicio || item.created_at) + '</span>' +
+                        '<div class="publicados-card-grid">' +
+                        '<div><span>Motorista</span><strong>' + escapeHtml(motorista) + '</strong></div>' +
+                        '<div><span>Chefe de equipe</span><strong>' + escapeHtml(chefe) + '</strong></div>' +
+                        '<div><span>Auxiliares</span><strong>' + escapeHtml(auxiliares) + '</strong></div>' +
+                        '</div>' +
+                        '<div class="publicados-card-author-row">' +
+                        '<span>Autor</span>' +
+                        '<div class="publicados-card-author">' +
+                        '<img src="' + authorPhoto + '" alt="' + escapeHtml(authorName) + '" onerror="this.src=\'assets/img/prf.png\'">' +
+                        '<span>' + escapeHtml(authorName) + '</span>' +
+                        '</div>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="publicados-card-actions">' +
+                        '<button class="publicados-card-open" type="button" data-id="' + item.id + '">Expandir</button>' +
+                        '</div>' +
+                        '</article>'
+                    );
+                }).join('');
+
+                listNode.querySelectorAll('.publicados-card-open').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const id = btn.getAttribute('data-id');
+                        const item = state.items.find(function (entry) { return String(entry.id) === String(id); });
+                        if (item) openModal(item);
+                    });
+                });
+            };
+
+            const loadRipat = async function () {
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                if (statusNode) statusNode.textContent = 'Carregando RIPATs...';
+
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                if (!user || !user.id) {
+                    if (statusNode) statusNode.textContent = 'Faça login para ver os RIPATs.';
+                    return;
+                }
+
+                state.userId = String(user.id);
+                state.userEmail = user.email || '';
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,rg')
+                    .eq('id', state.userId)
+                    .maybeSingle();
+                const profile = profileResult && profileResult.data ? profileResult.data : null;
+                state.userName = profile ? (profile.nome_guerra || '') : '';
+                state.userRg = profile ? (profile.rg || '') : '';
+
+                const result = await client
+                    .from('patrulhas')
+                    .select('id,user_id,titulo,conteudo_completo,created_at,data_inicio,area')
+                    .order('created_at', { ascending: false })
+                    .limit(200);
+
+                if (result.error) {
+                    if (statusNode) statusNode.textContent = 'Não foi possível carregar os RIPATs.';
+                    return;
+                }
+
+                const rows = Array.isArray(result.data) ? result.data : [];
+                const ids = new Set();
+                rows.forEach(function (row) {
+                    if (row.user_id) ids.add(String(row.user_id));
+                    const conteudo = normalizeConteudo(row.conteudo_completo);
+                    buildEquipeIds(conteudo).forEach(function (id) { ids.add(String(id)); });
+                });
+
+                state.people = {};
+                state.authors = {};
+                if (ids.size) {
+                    const profilesResult = await client
+                        .from('profiles')
+                        .select('id,nome_guerra,cargo,foto_url')
+                        .in('id', Array.from(ids));
+                    if (profilesResult && Array.isArray(profilesResult.data)) {
+                        profilesResult.data.forEach(function (p) {
+                            if (p && p.id) {
+                                state.people[String(p.id)] = p;
+                                if (p.id && rows.some(function (r) { return String(r.user_id) === String(p.id); })) {
+                                    state.authors[String(p.id)] = p;
+                                }
+                            }
+                        });
+                    }
+                }
+
+                const userNameNorm = normalizeText(state.userName);
+                const userRgNorm = normalizeText(state.userRg);
+                const userEmailNorm = normalizeText(state.userEmail);
+
+                state.items = rows.map(function (row) {
+                    const conteudo = normalizeConteudo(row.conteudo_completo);
+                    const mentionText = buildMentionText(conteudo);
+                    const equipeIds = buildEquipeIds(conteudo);
+                    const matchesMine = String(row.user_id) === state.userId;
+                    const matchesMention =
+                        equipeIds.some(function (id) { return String(id) === state.userId; }) ||
+                        (userNameNorm && mentionText.includes(userNameNorm)) ||
+                        (userRgNorm && mentionText.includes(userRgNorm)) ||
+                        (userEmailNorm && mentionText.includes(userEmailNorm));
+                    return Object.assign({}, row, {
+                        dataBase: row.created_at,
+                        conteudo_completo: conteudo,
+                        matchesMine: matchesMine,
+                        matchesMention: matchesMention
+                    });
+                });
+
+                if (statusNode) statusNode.textContent = '';
+                renderList();
+            };
+
+            filterButtons.forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    setActiveFilter(btn.getAttribute('data-filter') || 'all');
+                });
+            });
+
+            loadRipat();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            const applyRavopLock = function () {
+                document.querySelectorAll('.relatorios-subnav-item[href="ravoppublicados.html"]').forEach(function (link) {
+                    link.classList.remove('is-active');
+                    link.classList.add('is-locked');
+                    link.setAttribute('aria-disabled', 'true');
+                    link.setAttribute('title', 'Acesso restrito');
+                    if (!link.querySelector('.relatorios-subnav-lock')) {
+                        const lock = document.createElement('span');
+                        lock.className = 'relatorios-subnav-lock';
+                        lock.innerHTML = '<i class="fas fa-lock" aria-hidden="true"></i>';
+                        link.appendChild(lock);
+                    }
+                    link.addEventListener('click', function (event) {
+                        event.preventDefault();
+                    });
+                });
+            };
+
+            const checkRavopAccess = async function () {
+                if (!window.supabase || !window.supabase.createClient) {
+                    applyRavopLock();
+                    return;
+                }
+                try {
+                    const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) {
+                        applyRavopLock();
+                        return;
+                    }
+
+                    const profileResult = await client
+                        .from('profiles')
+                        .select('is_admin,cargo,grupamento,grupamento_principal,grupamento_secundario')
+                        .eq('id', user.id)
+                        .maybeSingle();
+                    const profile = profileResult && profileResult.data ? profileResult.data : null;
+                    if (!profile) {
+                        applyRavopLock();
+                        return;
+                    }
+
+                    const isAdmin = profile.is_admin === true;
+                    const rawGroups = [
+                        profile.grupamento_principal,
+                        profile.grupamento_secundario,
+                        profile.grupamento
+                    ].filter(Boolean).join(' | ');
+                    const normalized = rawGroups
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase();
+                    const isDoa = normalized.includes('divisao de operacoes aereas');
+
+                    if (!isAdmin && !isDoa) {
+                        applyRavopLock();
+                    }
+                } catch (e) {
+                    applyRavopLock();
+                }
+            };
+
+            checkRavopAccess();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupInicioShiftControl() {
+                if (window.__shiftControl && window.__shiftControlUserId) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+                window.__inicioSupabaseClient = client;
+                window.__inicioUserId = String(userId);
+
+                const listeners = [];
+                let currentState = { status: 'idle', startAt: null, shiftId: null, totalMs: null };
+
+                const formatHms = function (totalMs) {
+                    const safeMs = Math.max(0, Number(totalMs || 0));
+                    const totalSec = Math.floor(safeMs / 1000);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                };
+
+                const emit = function () {
+                    const payload = Object.assign({}, currentState);
+                    listeners.forEach(function (fn) {
+                        try { fn(payload); } catch (e) {}
+                    });
+                    try {
+                        window.dispatchEvent(new CustomEvent('shift-state-changed', { detail: payload }));
+                    } catch (e) {}
+                };
+
+                const setState = function (next) {
+                    currentState = Object.assign({}, currentState, next);
+                    emit();
+                };
+
+                const fetchOpen = async function () {
+                    const result = await client
+                        .from('agent_pontos')
+                        .select('id,inicio_at')
+                        .eq('user_id', userId)
+                        .is('fim_at', null)
+                        .order('inicio_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    return result && result.data ? result.data : null;
+                };
+
+                const refresh = async function () {
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const latestResult = await client
+                        .from('agent_pontos')
+                        .select('status,duracao_min')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    const latest = latestResult && latestResult.data ? latestResult.data : null;
+
+                    if (latest && String(latest.status || '') === 'encerrado') {
+                        setState({
+                            status: 'closed',
+                            shiftId: null,
+                            startAt: null,
+                            totalMs: Math.max(0, Number(latest.duracao_min || 0)) * 60000
+                        });
+                    } else {
+                        setState({ status: 'idle', shiftId: null, startAt: null, totalMs: null });
+                    }
+                    return Object.assign({}, currentState);
+                };
+
+                const start = async function () {
+                    if (currentState.status === 'active') return Object.assign({}, currentState);
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const nowIso = new Date().toISOString();
+                    const insert = await client
+                        .from('agent_pontos')
+                        .insert({ user_id: userId, inicio_at: nowIso, status: 'em_servico' })
+                        .select('id,inicio_at')
+                        .single();
+
+                    if (insert.error || !insert.data) return refresh();
+
+                    setState({
+                        status: 'active',
+                        shiftId: insert.data.id,
+                        startAt: insert.data.inicio_at ? new Date(insert.data.inicio_at).getTime() : Date.now(),
+                        totalMs: null
+                    });
+                    return Object.assign({}, currentState);
+                };
+
+                const stop = async function () {
+                    let shiftId = currentState.shiftId;
+                    let startAt = currentState.startAt;
+
+                    if (!shiftId || !startAt) {
+                        const openRow = await fetchOpen();
+                        if (!openRow) return refresh();
+                        shiftId = openRow.id;
+                        startAt = openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now();
+                    }
+
+                    const totalMs = Math.max(0, Date.now() - Number(startAt));
+                    await client
+                        .from('agent_pontos')
+                        .update({
+                            fim_at: new Date().toISOString(),
+                            duracao_min: Math.floor(totalMs / 60000),
+                            status: 'encerrado'
+                        })
+                        .eq('id', shiftId)
+                        .eq('user_id', userId);
+
+                    setState({ status: 'closed', shiftId: null, startAt: null, totalMs: totalMs });
+                    return Object.assign({}, currentState);
+                };
+
+                const toggle = async function () {
+                    return currentState.status === 'active' ? stop() : start();
+                };
+
+                const subscribe = function (fn) {
+                    if (typeof fn !== 'function') return function () {};
+                    listeners.push(fn);
+                    try { fn(Object.assign({}, currentState)); } catch (e) {}
+                    return function () {
+                        const idx = listeners.indexOf(fn);
+                        if (idx >= 0) listeners.splice(idx, 1);
+                    };
+                };
+
+                window.__shiftControl = {
+                    getState: function () { return Object.assign({}, currentState); },
+                    refresh: refresh,
+                    start: start,
+                    stop: stop,
+                    toggle: toggle,
+                    subscribe: subscribe,
+                    formatHms: formatHms
+                };
+                window.__shiftControlUserId = userId;
+                await refresh();
+            })();
+            (async function setupInicioShiftButton() {
+                function byId(id) { return document.getElementById(id); }
+                const btn = byId('inicio-shift-btn');
+                if (!btn) return;
+
+                const waitShiftControl = async () => {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__shiftControl && typeof window.__shiftControl.toggle === 'function') {
+                            return window.__shiftControl;
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                const shiftControl = await waitShiftControl();
+                if (!shiftControl) return;
+                let showClosedState = false;
+
+                const render = (state) => {
+                    const s = state || shiftControl.getState();
+                    btn.classList.remove('plantao-shift-btn--idle', 'plantao-shift-btn--active', 'plantao-shift-btn--closed');
+
+                    if (s.status === 'active' && s.startAt) {
+                        btn.classList.add('plantao-shift-btn--active');
+                        btn.textContent = 'Em serviço ' + shiftControl.formatHms(Date.now() - Number(s.startAt));
+                        return;
+                    }
+
+                    if (s.status === 'closed') {
+                        if (!showClosedState) {
+                            btn.classList.add('plantao-shift-btn--idle');
+                            btn.textContent = 'Entrar em serviço';
+                            return;
+                        }
+                        btn.classList.add('plantao-shift-btn--closed');
+                        btn.textContent = s.totalMs
+                            ? ('Serviço encerrado ' + shiftControl.formatHms(s.totalMs))
+                            : 'Serviço encerrado';
+                        return;
+                    }
+
+                    btn.classList.add('plantao-shift-btn--idle');
+                    btn.textContent = 'Entrar em serviço';
+                };
+
+                btn.addEventListener('click', async function () {
+                    const current = shiftControl.getState();
+                    showClosedState = current.status === 'active';
+                    await shiftControl.toggle();
+                });
+
+                shiftControl.subscribe((state) => render(state));
+                setInterval(() => render(shiftControl.getState()), 1000);
+                render(shiftControl.getState());
+            })();
+
+            (function setupInicioOnDutyList() {
+                function byId(id) { return document.getElementById(id); }
+                const listNode = byId('inicio-on-duty-list');
+                const countNode = byId('inicio-on-duty-count');
+                if (!listNode) return;
+
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                let refreshTimer = null;
+                let busy = false;
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const initials = function (name) {
+                    const parts = safe(name, '').split(' ').filter(Boolean);
+                    if (!parts.length) return 'PRF';
+                    const first = parts[0][0] || '';
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+                    return (first + last).toUpperCase();
+                };
+
+                const render = function (items) {
+                    const total = items.length;
+                    if (countNode) countNode.textContent = String(total);
+                    if (!total) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nenhum agente em serviço.</p>';
+                        return;
+                    }
+                    const selfId = window.__shiftControlUserId ? String(window.__shiftControlUserId) : '';
+                    const isSelfActive = !!(window.__shiftControl && window.__shiftControl.getState && window.__shiftControl.getState().status === 'active');
+                    listNode.innerHTML = items.map(function (agent) {
+                        const nome = safe(agent.nome_guerra, 'Agente');
+                        const cargo = safe(agent.cargo, 'Cargo não definido');
+                        const grupamentoRaw = safe(agent.grupamento, 'Grupamento não definido');
+                        const grupamento = grupamentoRaw.includes(' || ')
+                            ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                            : grupamentoRaw;
+                        const foto = safe(agent.foto_url, 'assets/img/prf.png');
+                        const isSelf = selfId && agent && String(agent.id || '') === selfId;
+                        const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
+                        const fallback = initials(nome);
+                        return (
+                            '<article class="plantao-item' + destaque + '">' +
+                            '<div class="plantao-avatar">' +
+                            '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
+                            '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
+                            '</div>' +
+                            '<div class="plantao-body">' +
+                            '<h3>' + nome + '</h3>' +
+                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+                };
+
+                const fetchList = async function () {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        const active = await client
+                            .from('agent_pontos')
+                            .select('user_id,inicio_at')
+                            .is('fim_at', null)
+                            .order('inicio_at', { ascending: true });
+
+                        if (active.error || !Array.isArray(active.data)) {
+                            listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                            if (countNode) countNode.textContent = '0';
+                            return;
+                        }
+
+                        const orderedIds = [];
+                        const seen = new Set();
+                        active.data.forEach(function (row) {
+                            const id = row && row.user_id ? String(row.user_id) : '';
+                            if (!id || seen.has(id)) return;
+                            seen.add(id);
+                            orderedIds.push(id);
+                        });
+
+                        if (!orderedIds.length) {
+                            render([]);
+                            return;
+                        }
+
+                        let profiles = await client
+    .from('profiles')
+    .select('id,nome_guerra,cargo,grupamento,foto_url')
+    .in('id', orderedIds);
+
+if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+    const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+    if (!fallback.error && Array.isArray(fallback.data)) {
+        profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+    }
+}
+
+const map = new Map();
+                        if (profiles && Array.isArray(profiles.data)) {
+                            profiles.data.forEach(function (p) {
+                                if (p && p.id) map.set(String(p.id), p);
+                            });
+                        }
+
+                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        render(items);
+                    } catch (e) {
+                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        if (countNode) countNode.textContent = '0';
+                    } finally {
+                        busy = false;
+                    }
+                };
+
+                const scheduleRefresh = function () {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(fetchList, 300);
+                };
+
+                fetchList();
+                try {
+                    client
+                        .channel('agent_pontos_live_inicio')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_pontos' }, scheduleRefresh)
+                        .subscribe();
+                } catch (e) {
+                    /* ignore */
+                }
+
+                window.addEventListener('shift-state-changed', scheduleRefresh);
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioProfile() {
+                const nameNode = document.getElementById('inicio-user-name');
+                const cargoNode = document.getElementById('inicio-user-cargo');
+                const photoNode = document.getElementById('inicio-user-photo');
+                const cargoImgNode = document.getElementById('inicio-user-cargo-img');
+                if (!nameNode || !cargoNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const profile = profileResult ? profileResult.data : null;
+                if (!profile) return;
+
+                const nome = (profile.nome_guerra || 'Usuario').toString();
+                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const rgNode = document.getElementById('inicio-user-rg');
+                const gruposNode = document.getElementById('inicio-user-grupamentos');
+                const cursosNode = document.getElementById('inicio-user-cursos');
+                nameNode.textContent = nome;
+                cargoNode.textContent = cargo;
+                if (rgNode) rgNode.textContent = 'RG: ' + (profile.rg || '-');
+                if (gruposNode) {
+                    const grupamentoRaw = String(profile.grupamento || '').trim();
+                    const grupos = grupamentoRaw
+                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                        : 'Grupamento';
+                    gruposNode.textContent = grupos;
+                }
+                if (cursosNode) {
+                    const rawCursos = String(profile.cursos || '').trim();
+                    if (!rawCursos) {
+                        cursosNode.textContent = '-';
+                    } else {
+                        const parts = rawCursos.split('||').map(function (p) { return p.trim(); }).filter(Boolean);
+                        cursosNode.innerHTML = parts.length ? parts.map(function (p) { return p.replace(/</g, '&lt;'); }).join('<br>') : '-';
+                    }
+                }
+
+                if (photoNode && profile.foto_url) {
+                    photoNode.src = profile.foto_url;
+                }
+                const footerAvatar = document.getElementById('inicio-footer-avatar');
+                const footerName = document.getElementById('inicio-footer-name');
+                if (footerAvatar && profile.foto_url) {
+                    footerAvatar.src = profile.foto_url;
+                }
+                if (footerName) {
+                    footerName.textContent = nome;
+                }
+
+                const cargoKey = cargo.toLowerCase().trim();
+                const cargoMap = {
+                    'diretor-geral': 'diretor.png',
+                    'superintendente': 'superintendente.png',
+                    'coordenador': 'coordenador.png',
+                    'chefe de divisão': 'chefededivisao.png',
+                    'chefe de servico': 'chefedeservico.png',
+                    'chefe de serviço': 'chefedeservico.png',
+                    'chefe de núcleo': 'chefedenucleo.png',
+                    'chefe de nucleo': 'chefedenucleo.png',
+                    'agente de classe especial': 'classeespecial.png',
+                    'agente de primeira classe': 'primeiraclasse.png',
+                    'agente de segunda classe': 'terceiraclasse.png',
+                    'agente aluno': 'aluno.png'
+                };
+                const cargoImg = cargoMap[cargoKey];
+                if (cargoImg && cargoImgNode) {
+                    cargoImgNode.src = 'assets/img/' + cargoImg;
+                    cargoImgNode.classList.remove('is-hidden');
+                }
+
+                const medalsNode = document.getElementById('inicio-user-medals');
+                const resolveMedalImage = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'assets/img/mencaoelogio.png';
+                    const lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) return raw;
+                    if (raw.startsWith('/') || raw.startsWith('assets/')) return raw;
+                    return 'assets/img/' + raw;
+                };
+
+                if (medalsNode) {
+                    try {
+                        const medalResult = await client
+                            .from('profile_medals')
+                            .select('medal_image, medal_name')
+                    .eq('user_id', userId)
+                            .order('awarded_at', { ascending: false })
+                            .limit(24);
+                        const medals = medalResult && Array.isArray(medalResult.data) ? medalResult.data : [];
+                        if (medals.length) {
+                            medalsNode.innerHTML = medals.map(function (medal) {
+                                const src = resolveMedalImage(medal.medal_image);
+                                const alt = medal.medal_name ? String(medal.medal_name) : 'condecoração do Usuário';
+                                return `<img src="${src}" alt="${alt}" class="inicio-user-medal" onerror="this.src='assets/img/mencaoelogio.png'">`;
+                            }).join('');
+                            medalsNode.classList.remove('is-hidden');
+                        } else {
+                            medalsNode.classList.add('is-hidden');
+                        }
+                    } catch (e) {
+                        medalsNode.classList.add('is-hidden');
+                    }
+                }
+            })();
+        });
+    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            document.body.classList.add('inicio-loaded');
+        }, 700);
+    });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

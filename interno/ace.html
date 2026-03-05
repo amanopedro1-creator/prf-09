@@ -1,0 +1,1171 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>ACE - PRF Jaguar&eacute;</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+
+        (async function enforceAuth() {
+            try {
+                if (!window.supabase || !window.supabase.createClient) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const result = await client.auth.getSession();
+                const session = result && result.data ? result.data.session : null;
+                const user = session ? session.user : null;
+                if (!user) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                const profileQuery = await client
+                    .from('profiles')
+                    .select('aprovado')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                const profile = profileQuery ? profileQuery.data : null;
+                const profileError = profileQuery ? profileQuery.error : null;
+
+                if (profileError || !profile || profile.aprovado !== true) {
+                    await client.auth.signOut();
+                    window.location.replace('../login.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('../login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="inicio-page">
+<div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
+    <div class="inicio-loader"></div>
+    <div class="inicio-loader-section section-left"></div>
+    <div class="inicio-loader-section section-right"></div>
+    <img class="inicio-loader-logo" src="assets/img/prf.png" alt="PRF">
+</div>
+    <div class="inicio-shell">
+        <header class="inicio-topbar" aria-label="Cabecalho">
+            <div class="inicio-topbar-controls" aria-label="Controles da janela">
+                <a class="mac-dot is-red" href="../index.html" title="Voltar ao site"></a>
+                <a class="mac-dot is-yellow" href="inicio.html" title="Inicio"></a>
+                <button class="mac-dot is-white" type="button" title="Recarregar" onclick="window.location.reload()"></button>
+            </div>
+            <div class="inicio-topbar-title">SIGA - Painel Interno</div>
+            <button class="inicio-topbar-logout" type="button" onclick="auth.logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                SAIR
+            </button>
+        </header>
+
+        <div class="inicio-body">
+        <div class="inicio-rail" aria-label="Menu e Plantao">
+            <aside class="inicio-menu" aria-label="Menu principal">
+                <div aria-hidden="true">
+                    <a href="inicio.html"><img src="assets/img/prf.png"></a>
+                </div>
+                <nav class="inicio-menu-items">
+                        <a class="inicio-menu-item" href="inicio.html">
+                            <i class="fas fa-house"></i>
+                            <span>Inicio</span>
+                        </a>
+                        <a class="inicio-menu-item" href="paineldgp.html" data-requires-admin="true">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Painel DGP</span>
+                            <i class="fas fa-lock inicio-menu-lock" aria-hidden="true"></i>
+                        </a>
+                        <a class="inicio-menu-item" href="meu-perfil.html">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a class="inicio-menu-item is-active" href="relatorios.html">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Relatorios</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatoriospublicados.html">
+                            <i class="fas fa-file-circle-check"></i>
+                            <span>Relatorios publicados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="regulamentos.html">
+                            <i class="fas fa-scale-balanced"></i>
+                            <span>Regulamentos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="avisos-internos.html">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Avisos internos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="equipe.html">
+                            <i class="fas fa-users"></i>
+                            <span>Equipe</span>
+                        </a>
+                        <a class="inicio-menu-item" href="diario-oficial.html">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Diario Oficial</span>
+                        </a>
+                </nav>
+
+                <div class="inicio-menu-footer">
+                    <a class="inicio-menu-avatar-link" href="meu-perfil.html">
+                        <img id="inicio-footer-avatar" class="inicio-menu-avatar" src="assets/img/prf.png" alt="Foto do usuario">
+                    </a>
+                    <span id="inicio-footer-name" class="inicio-menu-user">Operador</span>
+                </div>
+            </aside>
+
+            <section class="plantao-panel" aria-label="Plantao">
+                <header class="plantao-header">
+                    <div class="plantao-title">
+                        <h2>Plantão</h2>
+                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    </div>
+                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                        <i class="fas fa-user-clock"></i>
+                        Entrar em servico
+                    </button>
+                </header>
+                <div class="plantao-list" id="inicio-on-duty-list">
+                    <p class="plantao-empty">Carregando agentes...</p>
+                </div>
+            </section>
+        </div>
+
+        <main class="inicio-main">
+            <header class="inicio-header">
+                <div class="inicio-user-card">
+                    <div class="inicio-user-photo">
+                        <img id="inicio-user-photo" src="assets/img/prf.png" alt="Foto do usuario">
+                    </div>
+                    <div class="inicio-user-text">
+                        <h1 id="inicio-user-name" class="inicio-user-name">Usuario</h1>
+                        <div class="inicio-user-cargo">
+                            <img id="inicio-user-cargo-img" class="inicio-user-cargo-img is-hidden" alt="Imagem do cargo">
+                            <span id="inicio-user-cargo">Cargo do agente</span>
+                        </div>
+                        <span id="inicio-user-rg" class="inicio-user-rg">RG: -</span>
+                        <div id="inicio-user-medals" class="inicio-user-medals is-hidden" aria-label="Condecorações do Usuário"></div>
+                    </div>
+                </div>
+                <aside class="inicio-user-meta">
+                    <div id="inicio-user-grupamentos" class="inicio-user-meta-title">Grupamento</div>
+                    <div class="inicio-user-meta-row">
+                        <div class="inicio-user-meta-label">Cursos:</div>
+                        <div id="inicio-user-cursos" class="inicio-user-meta-value">-</div>
+                    </div>
+                </aside>
+            </header>
+
+            <section class="inicio-content-card" aria-label="Conteudo">
+                <nav class="relatorios-subnav" aria-label="Submenu relatórios">
+                    <a class="relatorios-subnav-item" href="relatorios.html"><i class="fas fa-gavel"></i>BOU</a>
+                    <a class="relatorios-subnav-item" href="ait.html"><i class="fas fa-ticket"></i>AIT</a>
+                    <a class="relatorios-subnav-item is-active" href="ace.html"><i class="fas fa-user-graduate"></i>ACE</a>
+                    <a class="relatorios-subnav-item" href="ripat.html"><i class="fas fa-road"></i>RIPAT</a>
+                    <a class="relatorios-subnav-item" href="ravop.html"><i class="fas fa-helicopter"></i>RAVOP</a>
+                </nav>
+                <form id="ace-form" class="bou-form" aria-label="Formulario ACE">
+                    <div><h3 class="black">Avaliação de Capacitação e Ensino - ACE</h3></div>
+                    <div class="bou-form-row">
+                        <label class="bou-form-field">
+                            <span>Policial responsável</span>
+                            <input id="ace-responsavel" type="text" readonly>
+                        </label>
+                        <label class="bou-form-field">
+                            <span>Data</span>
+                            <input id="ace-data" type="date" required>
+                        </label>
+                    </div>
+                    <div class="bou-form-row">
+                        <label class="bou-form-field">
+                            <span>Horário</span>
+                            <input id="ace-hora" type="time" required>
+                        </label>
+                        <div class="bou-form-field">
+                            <span>Unidade</span>
+                            <div class="bou-text-select" data-target="ace-unidade" data-placeholder="Selecionar unidade...">
+                                <button type="button" class="bou-text-trigger">
+                                    <span class="bou-text-value">Selecionar unidade...</span>
+                                </button>
+                                <div class="bou-text-options"></div>
+                            </div>
+                            <input id="ace-unidade" type="hidden" required>
+                        </div>
+                    </div>
+
+                    <div class="bou-form-row">
+                        <div class="bou-form-field is-full">
+                            <span>Lista de alunos</span>
+                            <div class="bou-user-select" data-target="ace-aluno">
+                                <button type="button" class="bou-user-trigger">
+                                    <span class="bou-user-avatar"></span>
+                                    <span class="bou-user-name">Selecionar alunos...</span>
+                                    <span class="bou-user-cargo">-</span>
+                                </button>
+                                <div class="bou-user-options"></div>
+                            </div>
+                            <input id="ace-aluno" type="hidden" required>
+                        </div>
+                    </div>
+
+                    <h3 class="ace-section-title">Disciplina e postura</h3>
+                    <p class="ace-section-desc">
+                        Mantém postura profissional e apresentação pessoal adequada. Demonstra pontualidade e assiduidade nas atividades.
+                        Cumpre normas, ordens e orientações sem resistência indevida. Mantém autocontrole emocional em situações de pressão.
+                        Demonstra respeito à hierarquia, instrutores e colegas.
+                    </p>
+                    <div class="ace-rating-group">
+                        <input type="radio" name="ace-disciplina" id="ace-disciplina-pessimo" value="Péssimo" required>
+                        <label for="ace-disciplina-pessimo" class="ace-rating-btn is-pessimo">Péssimo</label>
+                        <input type="radio" name="ace-disciplina" id="ace-disciplina-ruim" value="Ruim">
+                        <label for="ace-disciplina-ruim" class="ace-rating-btn is-ruim">Ruim</label>
+                        <input type="radio" name="ace-disciplina" id="ace-disciplina-satisf" value="Satisfatório">
+                        <label for="ace-disciplina-satisf" class="ace-rating-btn is-satisf">Satisfatório</label>
+                        <input type="radio" name="ace-disciplina" id="ace-disciplina-bom" value="Bom">
+                        <label for="ace-disciplina-bom" class="ace-rating-btn is-bom">Bom</label>
+                        <input type="radio" name="ace-disciplina" id="ace-disciplina-excelente" value="Excelente">
+                        <label for="ace-disciplina-excelente" class="ace-rating-btn is-excelente">Excelente</label>
+                    </div>
+
+                    <h3 class="ace-section-title">Conhecimento e aprendizado</h3>
+                    <p class="ace-section-desc">
+                        Assimila conteúdos teóricos com eficiência. Aplica corretamente procedimentos operacionais ensinados. Demonstra evolução
+                        ao longo do treinamento. Tem iniciativa para estudar e tirar dúvidas de forma proativa. Mantém atenção e concentração durante instruções e briefings.
+                    </p>
+                    <div class="ace-rating-group">
+                        <input type="radio" name="ace-conhecimento" id="ace-conhecimento-pessimo" value="Péssimo" required>
+                        <label for="ace-conhecimento-pessimo" class="ace-rating-btn is-pessimo">Péssimo</label>
+                        <input type="radio" name="ace-conhecimento" id="ace-conhecimento-ruim" value="Ruim">
+                        <label for="ace-conhecimento-ruim" class="ace-rating-btn is-ruim">Ruim</label>
+                        <input type="radio" name="ace-conhecimento" id="ace-conhecimento-satisf" value="Satisfatório">
+                        <label for="ace-conhecimento-satisf" class="ace-rating-btn is-satisf">Satisfatório</label>
+                        <input type="radio" name="ace-conhecimento" id="ace-conhecimento-bom" value="Bom">
+                        <label for="ace-conhecimento-bom" class="ace-rating-btn is-bom">Bom</label>
+                        <input type="radio" name="ace-conhecimento" id="ace-conhecimento-excelente" value="Excelente">
+                        <label for="ace-conhecimento-excelente" class="ace-rating-btn is-excelente">Excelente</label>
+                    </div>
+
+                    <h3 class="ace-section-title">Trabalho em equipe e comunicação</h3>
+                    <p class="ace-section-desc">
+                        Coopera com colegas e contribui para o trabalho coletivo. Recebe feedback de forma madura e aplica melhorias.
+                        Comunica-se de forma respeitosa, clara e sem conflitos desnecessários. Demonstra liderança positiva quando necessário, sem extrapolar.
+                        Mantém conduta adequada em ambientes internos (base, sala de aula, pátio) e externos.
+                    </p>
+                    <div class="ace-rating-group">
+                        <input type="radio" name="ace-equipe" id="ace-equipe-pessimo" value="Péssimo" required>
+                        <label for="ace-equipe-pessimo" class="ace-rating-btn is-pessimo">Péssimo</label>
+                        <input type="radio" name="ace-equipe" id="ace-equipe-ruim" value="Ruim">
+                        <label for="ace-equipe-ruim" class="ace-rating-btn is-ruim">Ruim</label>
+                        <input type="radio" name="ace-equipe" id="ace-equipe-satisf" value="Satisfatório">
+                        <label for="ace-equipe-satisf" class="ace-rating-btn is-satisf">Satisfatório</label>
+                        <input type="radio" name="ace-equipe" id="ace-equipe-bom" value="Bom">
+                        <label for="ace-equipe-bom" class="ace-rating-btn is-bom">Bom</label>
+                        <input type="radio" name="ace-equipe" id="ace-equipe-excelente" value="Excelente">
+                        <label for="ace-equipe-excelente" class="ace-rating-btn is-excelente">Excelente</label>
+                    </div>
+
+                    <h3 class="ace-section-title">Avaliação geral</h3>
+                    <div class="ace-rating-group">
+                        <input type="radio" name="ace-geral" id="ace-geral-pessimo" value="Péssimo" required>
+                        <label for="ace-geral-pessimo" class="ace-rating-btn is-pessimo">Péssimo</label>
+                        <input type="radio" name="ace-geral" id="ace-geral-ruim" value="Ruim">
+                        <label for="ace-geral-ruim" class="ace-rating-btn is-ruim">Ruim</label>
+                        <input type="radio" name="ace-geral" id="ace-geral-satisf" value="Satisfatório">
+                        <label for="ace-geral-satisf" class="ace-rating-btn is-satisf">Satisfatório</label>
+                        <input type="radio" name="ace-geral" id="ace-geral-bom" value="Bom">
+                        <label for="ace-geral-bom" class="ace-rating-btn is-bom">Bom</label>
+                        <input type="radio" name="ace-geral" id="ace-geral-excelente" value="Excelente">
+                        <label for="ace-geral-excelente" class="ace-rating-btn is-excelente">Excelente</label>
+                    </div>
+
+                    <label class="bou-form-field is-full">
+                        <span>Observações</span>
+                        <textarea id="ace-observacoes" rows="4" placeholder="Descreva observações detalhadas"></textarea>
+                    </label>
+
+                    <div class="bou-form-actions">
+                        <button id="ace-submit" type="submit" class="bou-submit-btn">Enviar ACE</button>
+                        <span id="ace-status" class="bou-status" aria-live="polite"></span>
+                    </div>
+                </form>
+            </section>
+        </main>
+     </div>
+</div>
+    <script src="../app.js" defer></script>
+    <script>
+        window.addEventListener('load', function () {
+            const applyRavopLock = function () {
+                document.querySelectorAll('.relatorios-subnav-item[href="ravop.html"]').forEach(function (link) {
+                    link.classList.remove('is-active');
+                    link.classList.add('is-locked');
+                    link.setAttribute('aria-disabled', 'true');
+                    link.setAttribute('title', 'Acesso restrito');
+                    if (!link.querySelector('.relatorios-subnav-lock')) {
+                        const lock = document.createElement('span');
+                        lock.className = 'relatorios-subnav-lock';
+                        lock.innerHTML = '<i class="fas fa-lock" aria-hidden="true"></i>';
+                        link.appendChild(lock);
+                    }
+                    link.addEventListener('click', function (event) {
+                        event.preventDefault();
+                    });
+                });
+            };
+
+            const checkRavopAccess = async function () {
+                if (!window.supabase || !window.supabase.createClient) {
+                    applyRavopLock();
+                    return;
+                }
+                try {
+                    const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) {
+                        applyRavopLock();
+                        return;
+                    }
+
+                    const profileResult = await client
+                        .from('profiles')
+                        .select('is_admin,cargo,grupamento,grupamento_principal,grupamento_secundario')
+                        .eq('id', user.id)
+                        .maybeSingle();
+                    const profile = profileResult && profileResult.data ? profileResult.data : null;
+                    if (!profile) {
+                        applyRavopLock();
+                        return;
+                    }
+
+                    const normalize = (value) => String(value || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase();
+                    const isAdmin = Boolean(profile.is_admin);
+                    const cargo = normalize(profile.cargo);
+                    const gp = normalize(profile.grupamento_principal);
+                    const gs = normalize(profile.grupamento_secundario);
+                    const legacy = normalize(profile.grupamento);
+                    const allowed =
+                        isAdmin ||
+                        cargo.includes('divisao de operacoes aereas') ||
+                        gp.includes('divisao de operacoes aereas') ||
+                        gs.includes('divisao de operacoes aereas') ||
+                        legacy.includes('divisao de operacoes aereas');
+
+                    if (!allowed) {
+                        applyRavopLock();
+                    }
+                } catch (e) {
+                    applyRavopLock();
+                }
+            };
+
+            checkRavopAccess();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupInicioShiftControl() {
+                if (window.__shiftControl && window.__shiftControlUserId) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+                window.__inicioSupabaseClient = client;
+                window.__inicioUserId = String(userId);
+
+                const listeners = [];
+                let currentState = { status: 'idle', startAt: null, shiftId: null, totalMs: null };
+
+                const formatHms = function (totalMs) {
+                    const safeMs = Math.max(0, Number(totalMs || 0));
+                    const totalSec = Math.floor(safeMs / 1000);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                };
+
+                const emit = function () {
+                    const payload = Object.assign({}, currentState);
+                    listeners.forEach(function (fn) {
+                        try { fn(payload); } catch (e) {}
+                    });
+                    try {
+                        window.dispatchEvent(new CustomEvent('shift-state-changed', { detail: payload }));
+                    } catch (e) {}
+                };
+
+                const setState = function (next) {
+                    currentState = Object.assign({}, currentState, next);
+                    emit();
+                };
+
+                const fetchOpen = async function () {
+                    const result = await client
+                        .from('agent_pontos')
+                        .select('id,inicio_at')
+                        .eq('user_id', userId)
+                        .is('fim_at', null)
+                        .order('inicio_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    return result && result.data ? result.data : null;
+                };
+
+                const refresh = async function () {
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const latestResult = await client
+                        .from('agent_pontos')
+                        .select('status,duracao_min')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    const latest = latestResult && latestResult.data ? latestResult.data : null;
+
+                    if (latest && String(latest.status || '') === 'encerrado') {
+                        setState({
+                            status: 'closed',
+                            shiftId: null,
+                            startAt: null,
+                            totalMs: Math.max(0, Number(latest.duracao_min || 0)) * 60000
+                        });
+                    } else {
+                        setState({ status: 'idle', shiftId: null, startAt: null, totalMs: null });
+                    }
+                    return Object.assign({}, currentState);
+                };
+
+                const start = async function () {
+                    if (currentState.status === 'active') return Object.assign({}, currentState);
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const nowIso = new Date().toISOString();
+                    const insert = await client
+                        .from('agent_pontos')
+                        .insert({ user_id: userId, inicio_at: nowIso, status: 'em_servico' })
+                        .select('id,inicio_at')
+                        .single();
+
+                    if (insert.error || !insert.data) return refresh();
+
+                    setState({
+                        status: 'active',
+                        shiftId: insert.data.id,
+                        startAt: insert.data.inicio_at ? new Date(insert.data.inicio_at).getTime() : Date.now(),
+                        totalMs: null
+                    });
+                    return Object.assign({}, currentState);
+                };
+
+                const stop = async function () {
+                    let shiftId = currentState.shiftId;
+                    let startAt = currentState.startAt;
+
+                    if (!shiftId || !startAt) {
+                        const openRow = await fetchOpen();
+                        if (!openRow) return refresh();
+                        shiftId = openRow.id;
+                        startAt = openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now();
+                    }
+
+                    const totalMs = Math.max(0, Date.now() - Number(startAt));
+                    await client
+                        .from('agent_pontos')
+                        .update({
+                            fim_at: new Date().toISOString(),
+                            duracao_min: Math.floor(totalMs / 60000),
+                            status: 'encerrado'
+                        })
+                        .eq('id', shiftId)
+                        .eq('user_id', userId);
+
+                    setState({ status: 'closed', shiftId: null, startAt: null, totalMs: totalMs });
+                    return Object.assign({}, currentState);
+                };
+
+                const toggle = async function () {
+                    return currentState.status === 'active' ? stop() : start();
+                };
+
+                const subscribe = function (fn) {
+                    if (typeof fn !== 'function') return function () {};
+                    listeners.push(fn);
+                    try { fn(Object.assign({}, currentState)); } catch (e) {}
+                    return function () {
+                        const idx = listeners.indexOf(fn);
+                        if (idx >= 0) listeners.splice(idx, 1);
+                    };
+                };
+
+                window.__shiftControl = {
+                    getState: function () { return Object.assign({}, currentState); },
+                    refresh: refresh,
+                    start: start,
+                    stop: stop,
+                    toggle: toggle,
+                    subscribe: subscribe,
+                    formatHms: formatHms
+                };
+                window.__shiftControlUserId = userId;
+                await refresh();
+            })();
+            (async function setupInicioShiftButton() {
+                function byId(id) { return document.getElementById(id); }
+                const btn = byId('inicio-shift-btn');
+                if (!btn) return;
+
+                const waitShiftControl = async () => {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__shiftControl && typeof window.__shiftControl.toggle === 'function') {
+                            return window.__shiftControl;
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                const shiftControl = await waitShiftControl();
+                if (!shiftControl) return;
+                let showClosedState = false;
+
+                const render = (state) => {
+                    const s = state || shiftControl.getState();
+                    btn.classList.remove('plantao-shift-btn--idle', 'plantao-shift-btn--active', 'plantao-shift-btn--closed');
+
+                    if (s.status === 'active' && s.startAt) {
+                        btn.classList.add('plantao-shift-btn--active');
+                        btn.textContent = 'Em serviço ' + shiftControl.formatHms(Date.now() - Number(s.startAt));
+                        return;
+                    }
+
+                    if (s.status === 'closed') {
+                        if (!showClosedState) {
+                            btn.classList.add('plantao-shift-btn--idle');
+                            btn.textContent = 'Entrar em serviço';
+                            return;
+                        }
+                        btn.classList.add('plantao-shift-btn--closed');
+                        btn.textContent = s.totalMs
+                            ? ('Serviço encerrado ' + shiftControl.formatHms(s.totalMs))
+                            : 'Serviço encerrado';
+                        return;
+                    }
+
+                    btn.classList.add('plantao-shift-btn--idle');
+                    btn.textContent = 'Entrar em serviço';
+                };
+
+                btn.addEventListener('click', async function () {
+                    const current = shiftControl.getState();
+                    showClosedState = current.status === 'active';
+                    await shiftControl.toggle();
+                });
+
+                shiftControl.subscribe((state) => render(state));
+                setInterval(() => render(shiftControl.getState()), 1000);
+                render(shiftControl.getState());
+            })();
+
+            (function setupInicioOnDutyList() {
+                function byId(id) { return document.getElementById(id); }
+                const listNode = byId('inicio-on-duty-list');
+                const countNode = byId('inicio-on-duty-count');
+                if (!listNode) return;
+
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                let refreshTimer = null;
+                let busy = false;
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const initials = function (name) {
+                    const parts = safe(name, '').split(' ').filter(Boolean);
+                    if (!parts.length) return 'PRF';
+                    const first = parts[0][0] || '';
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+                    return (first + last).toUpperCase();
+                };
+
+                const render = function (items) {
+                    const total = items.length;
+                    if (countNode) countNode.textContent = String(total);
+                    if (!total) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nenhum agente em serviço.</p>';
+                        return;
+                    }
+                    const selfId = window.__shiftControlUserId ? String(window.__shiftControlUserId) : '';
+                    const isSelfActive = !!(window.__shiftControl && window.__shiftControl.getState && window.__shiftControl.getState().status === 'active');
+                    listNode.innerHTML = items.map(function (agent) {
+                        const nome = safe(agent.nome_guerra, 'Agente');
+                        const cargo = safe(agent.cargo, 'Cargo não definido');
+                        const grupamentoRaw = safe(agent.grupamento, 'Grupamento não definido');
+                        const grupamento = grupamentoRaw.includes(' || ')
+                            ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                            : grupamentoRaw;
+                        const foto = safe(agent.foto_url, 'assets/img/prf.png');
+                        const isSelf = selfId && agent && String(agent.id || '') === selfId;
+                        const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
+                        const fallback = initials(nome);
+                        return (
+                            '<article class="plantao-item' + destaque + '">' +
+                            '<div class="plantao-avatar">' +
+                            '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
+                            '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
+                            '</div>' +
+                            '<div class="plantao-body">' +
+                            '<h3>' + nome + '</h3>' +
+                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+                };
+
+                const fetchList = async function () {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        const active = await client
+                            .from('agent_pontos')
+                            .select('user_id,inicio_at')
+                            .is('fim_at', null)
+                            .order('inicio_at', { ascending: true });
+
+                        if (active.error || !Array.isArray(active.data)) {
+                            listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                            if (countNode) countNode.textContent = '0';
+                            return;
+                        }
+
+                        const orderedIds = [];
+                        const seen = new Set();
+                        active.data.forEach(function (row) {
+                            const id = row && row.user_id ? String(row.user_id) : '';
+                            if (!id || seen.has(id)) return;
+                            seen.add(id);
+                            orderedIds.push(id);
+                        });
+
+                        if (!orderedIds.length) {
+                            render([]);
+                            return;
+                        }
+
+                        let profiles = await client
+    .from('profiles')
+    .select('id,nome_guerra,cargo,grupamento,foto_url')
+    .in('id', orderedIds);
+
+if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+    const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+    if (!fallback.error && Array.isArray(fallback.data)) {
+        profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+    }
+}
+
+const map = new Map();
+                        if (profiles && Array.isArray(profiles.data)) {
+                            profiles.data.forEach(function (p) {
+                                if (p && p.id) map.set(String(p.id), p);
+                            });
+                        }
+
+                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        render(items);
+                    } catch (e) {
+                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        if (countNode) countNode.textContent = '0';
+                    } finally {
+                        busy = false;
+                    }
+                };
+
+                const scheduleRefresh = function () {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(fetchList, 300);
+                };
+
+                fetchList();
+                try {
+                    client
+                        .channel('agent_pontos_live_inicio')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_pontos' }, scheduleRefresh)
+                        .subscribe();
+                } catch (e) {
+                    /* ignore */
+                }
+
+                window.addEventListener('shift-state-changed', scheduleRefresh);
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioProfile() {
+                const nameNode = document.getElementById('inicio-user-name');
+                const cargoNode = document.getElementById('inicio-user-cargo');
+                const photoNode = document.getElementById('inicio-user-photo');
+                const cargoImgNode = document.getElementById('inicio-user-cargo-img');
+                if (!nameNode || !cargoNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const profile = profileResult ? profileResult.data : null;
+                if (!profile) return;
+
+                const nome = (profile.nome_guerra || 'Usuario').toString();
+                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const rgNode = document.getElementById('inicio-user-rg');
+                const gruposNode = document.getElementById('inicio-user-grupamentos');
+                const cursosNode = document.getElementById('inicio-user-cursos');
+                nameNode.textContent = nome;
+                cargoNode.textContent = cargo;
+                if (rgNode) rgNode.textContent = 'RG: ' + (profile.rg || '-');
+                if (gruposNode) {
+                    const grupamentoRaw = String(profile.grupamento || '').trim();
+                    const grupos = grupamentoRaw
+                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                        : 'Grupamento';
+                    gruposNode.textContent = grupos;
+                }
+                if (cursosNode) {
+                    const rawCursos = String(profile.cursos || '').trim();
+                    if (!rawCursos) {
+                        cursosNode.textContent = '-';
+                    } else {
+                        const parts = rawCursos.split('||').map(function (p) { return p.trim(); }).filter(Boolean);
+                        cursosNode.innerHTML = parts.length ? parts.map(function (p) { return p.replace(/</g, '&lt;'); }).join('<br>') : '-';
+                    }
+                }
+
+                if (photoNode && profile.foto_url) {
+                    photoNode.src = profile.foto_url;
+                }
+                const footerAvatar = document.getElementById('inicio-footer-avatar');
+                const footerName = document.getElementById('inicio-footer-name');
+                if (footerAvatar && profile.foto_url) {
+                    footerAvatar.src = profile.foto_url;
+                }
+                if (footerName) {
+                    footerName.textContent = nome;
+                }
+
+                const cargoKey = cargo.toLowerCase().trim();
+                const cargoMap = {
+                    'diretor-geral': 'diretor.png',
+                    'superintendente': 'superintendente.png',
+                    'coordenador': 'coordenador.png',
+                    'chefe de divisão': 'chefededivisao.png',
+                    'chefe de servico': 'chefedeservico.png',
+                    'chefe de serviço': 'chefedeservico.png',
+                    'chefe de núcleo': 'chefedenucleo.png',
+                    'chefe de nucleo': 'chefedenucleo.png',
+                    'agente de classe especial': 'classeespecial.png',
+                    'agente de primeira classe': 'primeiraclasse.png',
+                    'agente de segunda classe': 'terceiraclasse.png',
+                    'agente aluno': 'aluno.png'
+                };
+                const cargoImg = cargoMap[cargoKey];
+                if (cargoImg && cargoImgNode) {
+                    cargoImgNode.src = 'assets/img/' + cargoImg;
+                    cargoImgNode.classList.remove('is-hidden');
+                }
+
+                const medalsNode = document.getElementById('inicio-user-medals');
+                const resolveMedalImage = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'assets/img/mencaoelogio.png';
+                    const lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) return raw;
+                    if (raw.startsWith('/') || raw.startsWith('assets/')) return raw;
+                    return 'assets/img/' + raw;
+                };
+
+                if (medalsNode) {
+                    try {
+                        const medalResult = await client
+                            .from('profile_medals')
+                            .select('medal_image, medal_name')
+                    .eq('user_id', userId)
+                            .order('awarded_at', { ascending: false })
+                            .limit(24);
+                        const medals = medalResult && Array.isArray(medalResult.data) ? medalResult.data : [];
+                        if (medals.length) {
+                            medalsNode.innerHTML = medals.map(function (medal) {
+                                const src = resolveMedalImage(medal.medal_image);
+                                const alt = medal.medal_name ? String(medal.medal_name) : 'condecoração do Usuário';
+                                return `<img src="${src}" alt="${alt}" class="inicio-user-medal" onerror="this.src='assets/img/mencaoelogio.png'">`;
+                            }).join('');
+                            medalsNode.classList.remove('is-hidden');
+                        } else {
+                            medalsNode.classList.add('is-hidden');
+                        }
+                    } catch (e) {
+                        medalsNode.classList.add('is-hidden');
+                    }
+                }
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupAceForm() {
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                if (!user || !user.id) return;
+                const userId = String(user.id);
+
+                const form = document.getElementById('ace-form');
+                const statusNode = document.getElementById('ace-status');
+                const submitBtn = document.getElementById('ace-submit');
+                const responsavelInput = document.getElementById('ace-responsavel');
+                const dataInput = document.getElementById('ace-data');
+                const horaInput = document.getElementById('ace-hora');
+
+                const setStatus = function (text, isError) {
+                    if (!statusNode) return;
+                    statusNode.textContent = text;
+                    statusNode.style.color = isError ? '#b91c1c' : '#111827';
+                };
+
+                const pad = (n) => String(n).padStart(2, '0');
+                const now = new Date();
+                if (dataInput) dataInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                if (horaInput) horaInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo')
+                    .eq('id', userId)
+                    .maybeSingle();
+                const profile = profileResult && profileResult.data ? profileResult.data : null;
+                const nome = profile && profile.nome_guerra ? profile.nome_guerra : 'Usuario';
+                const cargo = profile && profile.cargo ? profile.cargo : '';
+                if (responsavelInput) {
+                    responsavelInput.value = `${nome}${cargo ? ' - ' + cargo : ''}`;
+                }
+
+                const alunosResult = await client
+                    .from('profiles')
+                    .select('id,nome_guerra,cargo,foto_url')
+                    .ilike('cargo', '%Agente Aluno%')
+                    .order('nome_guerra', { ascending: true });
+                const alunos = Array.isArray(alunosResult.data) ? alunosResult.data : [];
+
+                const setupUserSelect = function (wrapper) {
+                    if (!wrapper) return;
+                    const targetId = wrapper.getAttribute('data-target');
+                    const hiddenInput = document.getElementById(targetId);
+                    const trigger = wrapper.querySelector('.bou-user-trigger');
+                    const list = wrapper.querySelector('.bou-user-options');
+                    const nameNode = trigger ? trigger.querySelector('.bou-user-name') : null;
+                    const cargoNode = trigger ? trigger.querySelector('.bou-user-cargo') : null;
+                    const avatarNode = trigger ? trigger.querySelector('.bou-user-avatar') : null;
+
+                    const closeAll = function () {
+                        document.querySelectorAll('.bou-user-select.is-open').forEach(function (el) {
+                            el.classList.remove('is-open');
+                        });
+                    };
+
+                    const renderOption = function (student) {
+                        const option = document.createElement('div');
+                        option.className = 'bou-user-option';
+                        option.dataset.value = student.id || '';
+                        option.dataset.name = student.nome_guerra || 'Aluno';
+                        option.dataset.cargo = student.cargo || '';
+                        option.dataset.foto = student.foto_url || '';
+                        option.innerHTML =
+                            '<span class="bou-user-avatar"></span>' +
+                            '<span class="bou-user-name">' + (student.nome_guerra || 'Aluno') + '</span>' +
+                            '<span class="bou-user-cargo">' + (student.cargo || '-') + '</span>';
+                        const avatar = option.querySelector('.bou-user-avatar');
+                        if (avatar && student.foto_url) {
+                            avatar.style.backgroundImage = `url('${student.foto_url}')`;
+                        }
+                        option.addEventListener('click', function () {
+                            if (hiddenInput) hiddenInput.value = student.id || '';
+                            if (nameNode) nameNode.textContent = student.nome_guerra || 'Aluno';
+                            if (cargoNode) cargoNode.textContent = student.cargo || '-';
+                            if (avatarNode) {
+                                avatarNode.style.backgroundImage = student.foto_url ? `url('${student.foto_url}')` : '';
+                            }
+                            closeAll();
+                        });
+                        return option;
+                    };
+
+                    if (list) {
+                        list.innerHTML = '';
+                        alunos.forEach(function (aluno) { list.appendChild(renderOption(aluno)); });
+                    }
+
+                    if (trigger) {
+                        trigger.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            const isOpen = wrapper.classList.contains('is-open');
+                            closeAll();
+                            if (!isOpen) wrapper.classList.add('is-open');
+                        });
+                    }
+
+                    document.addEventListener('click', function (event) {
+                        if (!wrapper.contains(event.target)) {
+                            wrapper.classList.remove('is-open');
+                        }
+                    });
+                };
+
+                document.querySelectorAll('.bou-user-select').forEach(setupUserSelect);
+
+                const unidades = [
+                    'Diretoria 100',
+                    'Supervisao 110',
+                    'Supervisao 120',
+                    'Ronda PRF 200',
+                    'Ronda PRF 210',
+                    'Ronda PRF 220',
+                    'Ronda PRF 230',
+                    'Ronda PRF 240',
+                    'Ronda PRF 250',
+                    'GPM Alpha',
+                    'GPM Bravo',
+                    'GPT Alpha',
+                    'GPT Bravo',
+                    'GPT Delta',
+                    'NOE Supervisao',
+                    'NOE Zulu 01',
+                    'NOE Yankee 20'
+                ];
+
+                const setupTextSelect = function (wrapper, items) {
+                    if (!wrapper) return;
+                    const targetId = wrapper.getAttribute('data-target');
+                    const placeholder = wrapper.getAttribute('data-placeholder') || 'Selecionar...';
+                    const hiddenInput = document.getElementById(targetId);
+                    const trigger = wrapper.querySelector('.bou-text-trigger');
+                    const valueNode = wrapper.querySelector('.bou-text-value');
+                    const list = wrapper.querySelector('.bou-text-options');
+
+                    const closeAll = function () {
+                        document.querySelectorAll('.bou-text-select.is-open').forEach(function (el) {
+                            el.classList.remove('is-open');
+                        });
+                    };
+
+                    if (list) {
+                        list.innerHTML = '';
+                        items.forEach(function (item) {
+                            const opt = document.createElement('div');
+                            opt.className = 'bou-text-option';
+                            opt.textContent = item;
+                            opt.addEventListener('click', function () {
+                                if (hiddenInput) hiddenInput.value = item;
+                                if (valueNode) valueNode.textContent = item;
+                                closeAll();
+                            });
+                            list.appendChild(opt);
+                        });
+                    }
+
+                    if (trigger) {
+                        trigger.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            const isOpen = wrapper.classList.contains('is-open');
+                            closeAll();
+                            if (!isOpen) wrapper.classList.add('is-open');
+                        });
+                    }
+
+                    document.addEventListener('click', function (event) {
+                        if (!wrapper.contains(event.target)) {
+                            wrapper.classList.remove('is-open');
+                        }
+                    });
+
+                    if (valueNode) valueNode.textContent = placeholder;
+                };
+
+                setupTextSelect(document.querySelector('.bou-text-select[data-target="ace-unidade"]'), unidades);
+
+                if (form) {
+                    form.addEventListener('submit', async function (event) {
+                        event.preventDefault();
+                        if (submitBtn) submitBtn.disabled = true;
+                        setStatus('Enviando...', false);
+
+                        const alunoId = document.getElementById('ace-aluno')?.value || '';
+                        const alunoInfo = alunos.find((aluno) => String(aluno.id) === String(alunoId)) || {};
+
+                        const payload = {
+                            responsavel: responsavelInput ? responsavelInput.value : '',
+                            responsavel_nome: nome,
+                            responsavel_cargo: cargo,
+                            data: dataInput ? dataInput.value : '',
+                            horario: horaInput ? horaInput.value : '',
+                            unidade: document.getElementById('ace-unidade')?.value || '',
+                            aluno_id: alunoId,
+                            aluno_nome: alunoInfo.nome_guerra || '',
+                            aluno_cargo: alunoInfo.cargo || '',
+                            avaliacoes: {
+                                disciplina: document.querySelector('input[name="ace-disciplina"]:checked')?.value || '',
+                                conhecimento: document.querySelector('input[name="ace-conhecimento"]:checked')?.value || '',
+                                equipe: document.querySelector('input[name="ace-equipe"]:checked')?.value || '',
+                                geral: document.querySelector('input[name="ace-geral"]:checked')?.value || ''
+                            },
+                            observacoes: document.getElementById('ace-observacoes')?.value || ''
+                        };
+
+                        try {
+                            const insertResult = await client
+                                .from('relatorios_aluno')
+                                .insert({
+                                    user_id: userId,
+                                    titulo: payload.aluno_nome ? ('ACE - ' + payload.aluno_nome) : 'ACE',
+                                    texto: payload.observacoes || '',
+                                    detalhes: payload.unidade || '',
+                                    conteudo_completo: payload
+                                })
+                                .select('id')
+                                .single();
+
+                            if (insertResult.error || !insertResult.data) {
+                                setStatus('Falha ao salvar no banco.', true);
+                                if (submitBtn) submitBtn.disabled = false;
+                                return;
+                            }
+
+                            const aceId = insertResult.data.id;
+                            const rpcResult = await client.rpc('send_ace_to_discord', { p_ace_id: aceId });
+                            if (rpcResult && rpcResult.error) {
+                                setStatus('Salvo, mas falhou ao enviar ao Discord.', true);
+                            } else {
+                                setStatus('ACE enviado com sucesso.', false);
+                            }
+                            form.reset();
+                            if (responsavelInput) responsavelInput.value = `${nome}${cargo ? ' - ' + cargo : ''}`;
+                            if (dataInput) dataInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                            if (horaInput) horaInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                        } catch (e) {
+                            setStatus('Erro ao enviar.', true);
+                        } finally {
+                            if (submitBtn) submitBtn.disabled = false;
+                        }
+                    });
+                }
+            })();
+        });
+    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            document.body.classList.add('inicio-loaded');
+        }, 700);
+    });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

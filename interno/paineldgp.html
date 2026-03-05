@@ -1,0 +1,2168 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Painel DGP - PRF Jaguaré</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+
+        (async function enforceAuth() {
+            try {
+                if (!window.supabase || !window.supabase.createClient) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const result = await client.auth.getSession();
+                const session = result && result.data ? result.data.session : null;
+                const user = session ? session.user : null;
+                if (!user) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                const profileQuery = await client
+                    .from('profiles')
+                    .select('aprovado,is_admin')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                const profile = profileQuery ? profileQuery.data : null;
+                const profileError = profileQuery ? profileQuery.error : null;
+
+                if (profileError || !profile || profile.aprovado !== true) {
+                    await client.auth.signOut();
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                if (profile.is_admin === true) {
+                    document.documentElement.classList.add('is-admin');
+                } else {
+                    document.documentElement.classList.add('is-not-admin');
+                    window.location.replace('inicio.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('../login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="inicio-page">
+    <div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
+        <div class="inicio-loader"></div>
+        <div class="inicio-loader-section section-left"></div>
+        <div class="inicio-loader-section section-right"></div>
+        <img class="inicio-loader-logo" src="assets/img/prf.png" alt="PRF">
+    </div>
+    <div class="inicio-shell">
+        <header class="inicio-topbar" aria-label="Cabecalho">
+            <div class="inicio-topbar-controls" aria-label="Controles da janela">
+                <a class="mac-dot is-red" href="../index.html" title="Voltar ao site"></a>
+                <a class="mac-dot is-yellow" href="inicio.html" title="Inicio"></a>
+                <button class="mac-dot is-white" type="button" title="Recarregar" onclick="window.location.reload()"></button>
+            </div>
+            <div class="inicio-topbar-title">SIGA - Painel DGP</div>
+            <button class="inicio-topbar-logout" type="button" onclick="auth.logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                SAIR
+            </button>
+        </header>
+
+        <div class="inicio-body">
+        <div class="inicio-rail" aria-label="Menu e Plantao">
+            <aside class="inicio-menu" aria-label="Menu principal">
+                <div aria-hidden="true">
+                    <a href="inicio.html"><img src="assets/img/prf.png"></a>
+                </div>
+                <nav class="inicio-menu-items">
+                        <a class="inicio-menu-item" href="inicio.html">
+                            <i class="fas fa-house"></i>
+                            <span>Inicio</span>
+                        </a>
+                        <a class="inicio-menu-item is-active" href="paineldgp.html" data-requires-admin="true">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Painel DGP</span>
+                            <i class="fas fa-lock inicio-menu-lock" aria-hidden="true"></i>
+                        </a>
+                        <a class="inicio-menu-item" href="meu-perfil.html">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatorios.html">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Relatorios</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatoriospublicados.html">
+                            <i class="fas fa-file-circle-check"></i>
+                            <span>Relatorios publicados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="regulamentos.html">
+                            <i class="fas fa-scale-balanced"></i>
+                            <span>Regulamentos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="avisos-internos.html">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Avisos internos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="equipe.html">
+                            <i class="fas fa-users"></i>
+                            <span>Equipe</span>
+                        </a>
+                        <a class="inicio-menu-item" href="diario-oficial.html">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Diario Oficial</span>
+                        </a>
+                        <a class="inicio-menu-item" href="corregedoria.html">
+                            <i class="fas fa-gavel"></i>
+                            <span>Corregedoria</span>
+                        </a>
+                </nav>
+
+                <div class="inicio-menu-footer">
+                    <a class="inicio-menu-avatar-link" href="meu-perfil.html">
+                        <img id="inicio-footer-avatar" class="inicio-menu-avatar" src="assets/img/prf.png" alt="Foto do usuario">
+                    </a>
+                    <span id="inicio-footer-name" class="inicio-menu-user">Operador</span>
+                </div>
+            </aside>
+
+            <section class="plantao-panel" aria-label="Plantao">
+                <header class="plantao-header">
+                    <div class="plantao-title">
+                        <h2>Plantão</h2>
+                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    </div>
+                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                        <i class="fas fa-user-clock"></i>
+                        Entrar em servico
+                    </button>
+                </header>
+                <div class="plantao-list" id="inicio-on-duty-list">
+                    <p class="plantao-empty">Carregando agentes...</p>
+                </div>
+            </section>
+        </div>
+
+        <main class="inicio-main">
+            <header class="inicio-header">
+                <div class="inicio-user-card">
+                    <div class="inicio-user-photo">
+                        <img id="inicio-user-photo" src="assets/img/prf.png" alt="Foto do usuario">
+                    </div>
+                    <div class="inicio-user-text">
+                        <h1 id="inicio-user-name" class="inicio-user-name">Usuario</h1>
+                        <div class="inicio-user-cargo">
+                            <img id="inicio-user-cargo-img" class="inicio-user-cargo-img is-hidden" alt="Imagem do cargo">
+                            <span id="inicio-user-cargo">Cargo do agente</span>
+                        </div>
+                        <span id="inicio-user-rg" class="inicio-user-rg">RG: -</span>
+                        <div id="inicio-user-medals" class="inicio-user-medals is-hidden" aria-label="Condecorações do Usuário"></div>
+                    </div>
+                </div>
+                <aside class="inicio-user-meta">
+                    <div id="inicio-user-grupamentos" class="inicio-user-meta-title">Grupamento</div>
+                    <div class="inicio-user-meta-row">
+                        <div class="inicio-user-meta-label">Cursos:</div>
+                        <div id="inicio-user-cursos" class="inicio-user-meta-value">-</div>
+                    </div>
+                </aside>
+            </header>
+
+            <section class="inicio-content-card" aria-label="Conteudo">
+                <section class="dgp-section" id="dgp-perfis">
+                    <div class="dgp-section-header">
+                        <div>
+                            <h2>Perfis</h2>
+                            <p>Gerencie acesso, cargos, grupamentos, cursos e condecoracoes.</p>
+                        </div>
+                        <span id="dgp-profiles-count" class="dgp-count-pill">0 perfis</span>
+                    </div>
+                    <div id="dgp-profiles-grid" class="dgp-profiles-grid">
+                        <div class="dgp-empty">Carregando perfis...</div>
+                    </div>
+                </section>
+
+                <section class="dgp-section" id="dgp-relatorios">
+                    <div class="dgp-section-header">
+                        <div>
+                            <h2>Relatorios feitos</h2>
+                            <p>Visualize e exclua relatorios de todos os usuarios.</p>
+                        </div>
+                    </div>
+                    <div class="dgp-report-grid" id="dgp-report-grid">
+                        <div class="dgp-report-card" data-report="bous">
+                            <h3>BOU</h3>
+                            <p id="dgp-bou-count">0</p>
+                            <button class="dgp-primary-btn" type="button">Ver</button>
+                        </div>
+                        <div class="dgp-report-card" data-report="aits">
+                            <h3>AIT</h3>
+                            <p id="dgp-ait-count">0</p>
+                            <button class="dgp-primary-btn" type="button">Ver</button>
+                        </div>
+                        <div class="dgp-report-card" data-report="ripat">
+                            <h3>RIPAT</h3>
+                            <p id="dgp-ripat-count">0</p>
+                            <button class="dgp-primary-btn" type="button">Ver</button>
+                        </div>
+                        <div class="dgp-report-card" data-report="ace">
+                            <h3>ACE</h3>
+                            <p id="dgp-ace-count">0</p>
+                            <button class="dgp-primary-btn" type="button">Ver</button>
+                        </div>
+                        <div class="dgp-report-card" data-report="ravop">
+                            <h3>RAVOP</h3>
+                            <p id="dgp-ravop-count">0</p>
+                            <button class="dgp-primary-btn" type="button">Ver</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="dgp-section" id="dgp-avisos">
+                    <div class="dgp-section-header">
+                        <div>
+                            <h2>Avisos</h2>
+                            <p>Publice avisos que aparecem em avisos internos e no inicio.</p>
+                        </div>
+                        <button id="dgp-open-aviso" class="dgp-primary-btn" type="button">Publicar aviso</button>
+                    </div>
+                    <div id="dgp-avisos-list" class="dgp-report-grid"></div>
+                </section>
+
+                <section class="dgp-section" id="dgp-noticias">
+                    <div class="dgp-section-header">
+                        <div>
+                            <h2>Noticias</h2>
+                            <p>Publice noticias exibidas no site.</p>
+                        </div>
+                        <button id="dgp-open-noticia" class="dgp-primary-btn" type="button">Publicar noticia</button>
+                    </div>
+                    <div id="dgp-noticias-list" class="dgp-report-grid"></div>
+                </section>
+
+                <section class="dgp-section" id="dgp-diario">
+                    <div class="dgp-section-header">
+                        <div>
+                            <h2>Diario Oficial</h2>
+                            <p>Publice edicoes do Diario Oficial.</p>
+                        </div>
+                        <button id="dgp-open-diario" class="dgp-primary-btn" type="button">Publicar diario</button>
+                    </div>
+                    <div id="dgp-diarios-list" class="dgp-report-grid"></div>
+                </section>
+
+                <section class="dgp-section" id="dgp-corregedoria">
+                    <div class="dgp-section-header">
+                        <div>
+                            <h2>Corregedoria</h2>
+                            <p>Publice comunicados da corregedoria e cite usuarios.</p>
+                        </div>
+                        <button id="dgp-open-corregedoria" class="dgp-primary-btn" type="button">Publicar corregedoria</button>
+                    </div>
+                </section>
+            </section>
+        </main>
+     </div>
+</div>
+
+    <div class="modal" id="dgp-cursos-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Cursos do usuario</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div id="dgp-cursos-body" class="dgp-modal-body"></div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-cursos-save" class="dgp-primary-btn" type="button">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-medals-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Condecoracoes</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div id="dgp-medals-body" class="dgp-modal-body"></div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-medal-add" class="dgp-primary-btn" type="button">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-report-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 id="dgp-report-title" class="modal-title">Relatorios</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="modal-form-group">
+                <label for="dgp-report-search">Buscar (titulo, autor, acusado)</label>
+                <input id="dgp-report-search" type="text" placeholder="Digite para filtrar...">
+            </div>
+            <div id="dgp-report-body" class="dgp-modal-body"></div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-report-delete-selected" class="dgp-secondary-btn is-danger" type="button">Excluir selecionados</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-aviso-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Publicar aviso</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="dgp-modal-body">
+                <div class="modal-form-group">
+                    <label for="dgp-aviso-titulo">Titulo</label>
+                    <input id="dgp-aviso-titulo" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-aviso-subtitulo">Descricao</label>
+                    <input id="dgp-aviso-subtitulo" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-aviso-texto">Texto</label>
+                    <textarea id="dgp-aviso-texto" rows="4"></textarea>
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-aviso-foto">Foto (URL)</label>
+                    <input id="dgp-aviso-foto" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-aviso-file">Foto (upload)</label>
+                    <input id="dgp-aviso-file" type="file" accept="image/*">
+                </div>
+                <div class="modal-form-group">
+                    <label>Imagens publicadas</label>
+                    <div id="dgp-aviso-images" class="dgp-modal-body"></div>
+                </div>
+            </div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-aviso-save" class="dgp-primary-btn" type="button">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-noticia-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Publicar noticia</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="dgp-modal-body">
+                <div class="modal-form-group">
+                    <label for="dgp-noticia-titulo">Titulo</label>
+                    <input id="dgp-noticia-titulo" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-noticia-subtitulo">Subtitulo</label>
+                    <input id="dgp-noticia-subtitulo" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-noticia-conteudo">Corpo da noticia</label>
+                    <textarea id="dgp-noticia-conteudo" rows="6"></textarea>
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-noticia-foto">Foto (URL)</label>
+                    <input id="dgp-noticia-foto" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-noticia-file">Foto (upload)</label>
+                    <input id="dgp-noticia-file" type="file" accept="image/*">
+                </div>
+            </div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-noticia-save" class="dgp-primary-btn" type="button">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-diario-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Publicar Diario Oficial</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="dgp-modal-body">
+                <div class="modal-form-group">
+                    <label for="dgp-diario-texto">Texto</label>
+                    <textarea id="dgp-diario-texto" rows="6"></textarea>
+                </div>
+                <div class="dgp-modal-grid">
+                    <div class="modal-form-group">
+                        <label for="dgp-diario-edicao">Edicao</label>
+                        <input id="dgp-diario-edicao" type="number">
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="dgp-diario-secao">Secao</label>
+                        <input id="dgp-diario-secao" type="number">
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="dgp-diario-pagina">Pagina</label>
+                        <input id="dgp-diario-pagina" type="number">
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="dgp-diario-decreto">Numero decreto</label>
+                        <input id="dgp-diario-decreto" type="number">
+                    </div>
+                </div>
+            </div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-diario-save" class="dgp-primary-btn" type="button">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-corregedoria-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Publicar Corregedoria</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="dgp-modal-body">
+                <div class="modal-form-group">
+                    <label for="dgp-cor-numero">Numero do decreto</label>
+                    <input id="dgp-cor-numero" type="text">
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-cor-tipo">Tipo</label>
+                    <select id="dgp-cor-tipo" class="dgp-select">
+                        <option value="">Selecionar...</option>
+                        <option value="Resolução de Mérito de Inquérito Policial Disciplinar">Resolução de Mérito de Inquérito Policial Disciplinar</option>
+                        <option value="Convocação de Inquérito Policial Disciplinar">Convocação de Inquérito Policial Disciplinar</option>
+                        <option value="Instauração de Inquérito Policial Disciplinar">Instauração de Inquérito Policial Disciplinar</option>
+                        <option value="Alteração e publicação do Estatuto da Corregedoria">Alteração e publicação do Estatuto da Corregedoria</option>
+                        <option value="Alteração e publicação de Regulamento Disciplinar">Alteração e publicação de Regulamento Disciplinar</option>
+                    </select>
+                </div>
+                <div class="modal-form-group">
+                    <label for="dgp-cor-texto">Texto</label>
+                    <textarea id="dgp-cor-texto" rows="6"></textarea>
+                </div>
+                <div class="modal-form-group">
+                    <label>Citar usuarios</label>
+                    <div id="dgp-cor-citados" class="corregedoria-citados-list"></div>
+                </div>
+            </div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-cor-save" class="dgp-primary-btn" type="button">Publicar</button>
+            </div>
+        </div>
+    </div>
+    <script src="../app.js" defer></script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupInicioShiftControl() {
+                if (window.__shiftControl && window.__shiftControlUserId) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+                window.__inicioSupabaseClient = client;
+                window.__inicioUserId = String(userId);
+
+                const listeners = [];
+                let currentState = { status: 'idle', startAt: null, shiftId: null, totalMs: null };
+
+                const formatHms = function (totalMs) {
+                    const safeMs = Math.max(0, Number(totalMs || 0));
+                    const totalSec = Math.floor(safeMs / 1000);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                };
+
+                const emit = function () {
+                    const payload = Object.assign({}, currentState);
+                    listeners.forEach(function (fn) {
+                        try { fn(payload); } catch (e) {}
+                    });
+                    try {
+                        window.dispatchEvent(new CustomEvent('shift-state-changed', { detail: payload }));
+                    } catch (e) {}
+                };
+
+                const setState = function (next) {
+                    currentState = Object.assign({}, currentState, next);
+                    emit();
+                };
+
+                const fetchOpen = async function () {
+                    const result = await client
+                        .from('agent_pontos')
+                        .select('id,inicio_at')
+                        .eq('user_id', userId)
+                        .is('fim_at', null)
+                        .order('inicio_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    return result && result.data ? result.data : null;
+                };
+
+                const refresh = async function () {
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const latestResult = await client
+                        .from('agent_pontos')
+                        .select('status,duracao_min')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    const latest = latestResult && latestResult.data ? latestResult.data : null;
+
+                    if (latest && String(latest.status || '') === 'encerrado') {
+                        setState({
+                            status: 'closed',
+                            shiftId: null,
+                            startAt: null,
+                            totalMs: Math.max(0, Number(latest.duracao_min || 0)) * 60000
+                        });
+                    } else {
+                        setState({ status: 'idle', shiftId: null, startAt: null, totalMs: null });
+                    }
+                    return Object.assign({}, currentState);
+                };
+
+                const start = async function () {
+                    if (currentState.status === 'active') return Object.assign({}, currentState);
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const nowIso = new Date().toISOString();
+                    const insert = await client
+                        .from('agent_pontos')
+                        .insert({ user_id: userId, inicio_at: nowIso, status: 'em_servico' })
+                        .select('id,inicio_at')
+                        .single();
+
+                    if (insert.error || !insert.data) return refresh();
+
+                    setState({
+                        status: 'active',
+                        shiftId: insert.data.id,
+                        startAt: insert.data.inicio_at ? new Date(insert.data.inicio_at).getTime() : Date.now(),
+                        totalMs: null
+                    });
+                    return Object.assign({}, currentState);
+                };
+
+                const stop = async function () {
+                    let shiftId = currentState.shiftId;
+                    let startAt = currentState.startAt;
+
+                    if (!shiftId || !startAt) {
+                        const openRow = await fetchOpen();
+                        if (!openRow) return refresh();
+                        shiftId = openRow.id;
+                        startAt = openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now();
+                    }
+
+                    const totalMs = Math.max(0, Date.now() - Number(startAt));
+                    await client
+                        .from('agent_pontos')
+                        .update({
+                            fim_at: new Date().toISOString(),
+                            duracao_min: Math.floor(totalMs / 60000),
+                            status: 'encerrado'
+                        })
+                        .eq('id', shiftId)
+                        .eq('user_id', userId);
+
+                    setState({ status: 'closed', shiftId: null, startAt: null, totalMs: totalMs });
+                    return Object.assign({}, currentState);
+                };
+
+                const toggle = async function () {
+                    return currentState.status === 'active' ? stop() : start();
+                };
+
+                const subscribe = function (fn) {
+                    if (typeof fn !== 'function') return function () {};
+                    listeners.push(fn);
+                    try { fn(Object.assign({}, currentState)); } catch (e) {}
+                    return function () {
+                        const idx = listeners.indexOf(fn);
+                        if (idx >= 0) listeners.splice(idx, 1);
+                    };
+                };
+
+                window.__shiftControl = {
+                    getState: function () { return Object.assign({}, currentState); },
+                    refresh: refresh,
+                    start: start,
+                    stop: stop,
+                    toggle: toggle,
+                    subscribe: subscribe,
+                    formatHms: formatHms
+                };
+                window.__shiftControlUserId = userId;
+                await refresh();
+            })();
+            (async function setupInicioShiftButton() {
+                function byId(id) { return document.getElementById(id); }
+                const btn = byId('inicio-shift-btn');
+                if (!btn) return;
+
+                const waitShiftControl = async () => {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__shiftControl && typeof window.__shiftControl.toggle === 'function') {
+                            return window.__shiftControl;
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                const shiftControl = await waitShiftControl();
+                if (!shiftControl) return;
+                let showClosedState = false;
+
+                const render = (state) => {
+                    const s = state || shiftControl.getState();
+                    btn.classList.remove('plantao-shift-btn--idle', 'plantao-shift-btn--active', 'plantao-shift-btn--closed');
+
+                    if (s.status === 'active' && s.startAt) {
+                        btn.classList.add('plantao-shift-btn--active');
+                        btn.textContent = 'Em serviço ' + shiftControl.formatHms(Date.now() - Number(s.startAt));
+                        return;
+                    }
+
+                    if (s.status === 'closed') {
+                        if (!showClosedState) {
+                            btn.classList.add('plantao-shift-btn--idle');
+                            btn.textContent = 'Entrar em serviço';
+                            return;
+                        }
+                        btn.classList.add('plantao-shift-btn--closed');
+                        btn.textContent = s.totalMs
+                            ? ('Serviço encerrado ' + shiftControl.formatHms(s.totalMs))
+                            : 'Serviço encerrado';
+                        return;
+                    }
+
+                    btn.classList.add('plantao-shift-btn--idle');
+                    btn.textContent = 'Entrar em serviço';
+                };
+
+                btn.addEventListener('click', async function () {
+                    const current = shiftControl.getState();
+                    showClosedState = current.status === 'active';
+                    await shiftControl.toggle();
+                });
+
+                shiftControl.subscribe((state) => render(state));
+                setInterval(() => render(shiftControl.getState()), 1000);
+                render(shiftControl.getState());
+            })();
+
+            (function setupInicioOnDutyList() {
+                function byId(id) { return document.getElementById(id); }
+                const listNode = byId('inicio-on-duty-list');
+                const countNode = byId('inicio-on-duty-count');
+                if (!listNode) return;
+
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                let refreshTimer = null;
+                let busy = false;
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const initials = function (name) {
+                    const parts = safe(name, '').split(' ').filter(Boolean);
+                    if (!parts.length) return 'PRF';
+                    const first = parts[0][0] || '';
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+                    return (first + last).toUpperCase();
+                };
+
+                const render = function (items) {
+                    const total = items.length;
+                    if (countNode) countNode.textContent = String(total);
+                    if (!total) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nenhum agente em serviço.</p>';
+                        return;
+                    }
+                    const selfId = window.__shiftControlUserId ? String(window.__shiftControlUserId) : '';
+                    const isSelfActive = !!(window.__shiftControl && window.__shiftControl.getState && window.__shiftControl.getState().status === 'active');
+                    listNode.innerHTML = items.map(function (agent) {
+                        const nome = safe(agent.nome_guerra, 'Agente');
+                        const cargo = safe(agent.cargo, 'Cargo não definido');
+                        const grupamentoRaw = safe(agent.grupamento, 'Grupamento não definido');
+                        const grupamento = grupamentoRaw.includes(' || ')
+                            ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                            : grupamentoRaw;
+                        const foto = safe(agent.foto_url, 'assets/img/prf.png');
+                        const isSelf = selfId && agent && String(agent.id || '') === selfId;
+                        const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
+                        const fallback = initials(nome);
+                        return (
+                            '<article class="plantao-item' + destaque + '">' +
+                            '<div class="plantao-avatar">' +
+                            '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
+                            '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
+                            '</div>' +
+                            '<div class="plantao-body">' +
+                            '<h3>' + nome + '</h3>' +
+                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+                };
+
+                const fetchList = async function () {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        const active = await client
+                            .from('agent_pontos')
+                            .select('user_id,inicio_at')
+                            .is('fim_at', null)
+                            .order('inicio_at', { ascending: true });
+
+                        if (active.error || !Array.isArray(active.data)) {
+                            listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                            if (countNode) countNode.textContent = '0';
+                            return;
+                        }
+
+                        const orderedIds = [];
+                        const seen = new Set();
+                        active.data.forEach(function (row) {
+                            const id = row && row.user_id ? String(row.user_id) : '';
+                            if (!id || seen.has(id)) return;
+                            seen.add(id);
+                            orderedIds.push(id);
+                        });
+
+                        if (!orderedIds.length) {
+                            render([]);
+                            return;
+                        }
+
+                        let profiles = await client
+    .from('profiles')
+    .select('id,nome_guerra,cargo,grupamento,foto_url')
+    .in('id', orderedIds);
+
+if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+    const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+    if (!fallback.error && Array.isArray(fallback.data)) {
+        profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+    }
+}
+
+const map = new Map();
+                        if (profiles && Array.isArray(profiles.data)) {
+                            profiles.data.forEach(function (p) {
+                                if (p && p.id) map.set(String(p.id), p);
+                            });
+                        }
+
+                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        render(items);
+                    } catch (e) {
+                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        if (countNode) countNode.textContent = '0';
+                    } finally {
+                        busy = false;
+                    }
+                };
+
+                const scheduleRefresh = function () {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(fetchList, 300);
+                };
+
+                fetchList();
+                try {
+                    client
+                        .channel('agent_pontos_live_inicio')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_pontos' }, scheduleRefresh)
+                        .subscribe();
+                } catch (e) {
+                    /* ignore */
+                }
+
+                window.addEventListener('shift-state-changed', scheduleRefresh);
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            setTimeout(function () { document.body.classList.add('inicio-loaded'); }, 1400);
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioProfile() {
+                const nameNode = document.getElementById('inicio-user-name');
+                const cargoNode = document.getElementById('inicio-user-cargo');
+                const photoNode = document.getElementById('inicio-user-photo');
+                const cargoImgNode = document.getElementById('inicio-user-cargo-img');
+                if (!nameNode || !cargoNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const profile = profileResult ? profileResult.data : null;
+                if (!profile) return;
+
+                const nome = (profile.nome_guerra || 'Usuario').toString();
+                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const rgNode = document.getElementById('inicio-user-rg');
+                const gruposNode = document.getElementById('inicio-user-grupamentos');
+                const cursosNode = document.getElementById('inicio-user-cursos');
+                nameNode.textContent = nome;
+                cargoNode.textContent = cargo;
+                if (rgNode) rgNode.textContent = 'RG: ' + (profile.rg || '-');
+                if (gruposNode) {
+                    const grupamentoRaw = String(profile.grupamento || '').trim();
+                    const grupos = grupamentoRaw
+                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                        : 'Grupamento';
+                    gruposNode.textContent = grupos;
+                }
+                if (cursosNode) {
+                    const rawCursos = String(profile.cursos || '').trim();
+                    if (!rawCursos) {
+                        cursosNode.textContent = '-';
+                    } else {
+                        const parts = rawCursos.split('||').map(function (p) { return p.trim(); }).filter(Boolean);
+                        cursosNode.innerHTML = parts.length ? parts.map(function (p) { return p.replace(/</g, '&lt;'); }).join('<br>') : '-';
+                    }
+                }
+
+                if (photoNode && profile.foto_url) {
+                    photoNode.src = profile.foto_url;
+                }
+                const footerAvatar = document.getElementById('inicio-footer-avatar');
+                const footerName = document.getElementById('inicio-footer-name');
+                if (footerAvatar && profile.foto_url) {
+                    footerAvatar.src = profile.foto_url;
+                }
+                if (footerName) {
+                    footerName.textContent = nome;
+                }
+
+                const cargoKey = cargo.toLowerCase().trim();
+                const cargoMap = {
+                    'diretor-geral': 'diretor.png',
+                    'superintendente': 'superintendente.png',
+                    'coordenador': 'coordenador.png',
+                    'chefe de divisão': 'chefededivisao.png',
+                    'chefe de servico': 'chefedeservico.png',
+                    'chefe de serviço': 'chefedeservico.png',
+                    'chefe de núcleo': 'chefedenucleo.png',
+                    'chefe de nucleo': 'chefedenucleo.png',
+                    'agente de classe especial': 'classeespecial.png',
+                    'agente de primeira classe': 'primeiraclasse.png',
+                    'agente de segunda classe': 'terceiraclasse.png',
+                    'agente aluno': 'aluno.png'
+                };
+                const cargoImg = cargoMap[cargoKey];
+                if (cargoImg && cargoImgNode) {
+                    cargoImgNode.src = 'assets/img/' + cargoImg;
+                    cargoImgNode.classList.remove('is-hidden');
+                }
+
+                const medalsNode = document.getElementById('inicio-user-medals');
+                const resolveMedalImage = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'assets/img/mencaoelogio.png';
+                    const lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) return raw;
+                    if (raw.startsWith('/') || raw.startsWith('assets/')) return raw;
+                    return 'assets/img/' + raw;
+                };
+
+                if (medalsNode) {
+                    try {
+                        const medalResult = await client
+                            .from('profile_medals')
+                            .select('medal_image, medal_name')
+                    .eq('user_id', userId)
+                            .order('awarded_at', { ascending: false })
+                            .limit(24);
+                        const medals = medalResult && Array.isArray(medalResult.data) ? medalResult.data : [];
+                        if (medals.length) {
+                            medalsNode.innerHTML = medals.map(function (medal) {
+                                const src = resolveMedalImage(medal.medal_image);
+                                const alt = medal.medal_name ? String(medal.medal_name) : 'condecoração do Usuário';
+                                return `<img src="${src}" alt="${alt}" class="inicio-user-medal" onerror="this.src='assets/img/mencaoelogio.png'">`;
+                            }).join('');
+                            medalsNode.classList.remove('is-hidden');
+                        } else {
+                            medalsNode.classList.add('is-hidden');
+                        }
+                    } catch (e) {
+                        medalsNode.classList.add('is-hidden');
+                    }
+                }
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupDgpPanel() {
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                if (!user || !user.id) return;
+
+                const profilesGrid = document.getElementById('dgp-profiles-grid');
+                const profilesCount = document.getElementById('dgp-profiles-count');
+                const cursosModal = document.getElementById('dgp-cursos-modal');
+                const cursosBody = document.getElementById('dgp-cursos-body');
+                const cursosSave = document.getElementById('dgp-cursos-save');
+                const medalsModal = document.getElementById('dgp-medals-modal');
+                const medalsBody = document.getElementById('dgp-medals-body');
+                const medalAdd = document.getElementById('dgp-medal-add');
+                const reportModal = document.getElementById('dgp-report-modal');
+                const reportTitle = document.getElementById('dgp-report-title');
+                const reportBody = document.getElementById('dgp-report-body');
+                const reportDeleteSelected = document.getElementById('dgp-report-delete-selected');
+                const reportSearch = document.getElementById('dgp-report-search');
+
+                const avisoModal = document.getElementById('dgp-aviso-modal');
+                const noticiaModal = document.getElementById('dgp-noticia-modal');
+                const diarioModal = document.getElementById('dgp-diario-modal');
+                const avisoOpen = document.getElementById('dgp-open-aviso');
+                const noticiaOpen = document.getElementById('dgp-open-noticia');
+                const diarioOpen = document.getElementById('dgp-open-diario');
+                const corregedoriaOpen = document.getElementById('dgp-open-corregedoria');
+                const avisoSave = document.getElementById('dgp-aviso-save');
+                const noticiaSave = document.getElementById('dgp-noticia-save');
+                const diarioSave = document.getElementById('dgp-diario-save');
+                const avisoFile = document.getElementById('dgp-aviso-file');
+                const noticiaFile = document.getElementById('dgp-noticia-file');
+                const avisoImages = document.getElementById('dgp-aviso-images');
+                const avisosList = document.getElementById('dgp-avisos-list');
+                const noticiasList = document.getElementById('dgp-noticias-list');
+                const diariosList = document.getElementById('dgp-diarios-list');
+                const corModal = document.getElementById('dgp-corregedoria-modal');
+                const corSave = document.getElementById('dgp-cor-save');
+                const corCitados = document.getElementById('dgp-cor-citados');
+
+                let profiles = [];
+                let profileMap = new Map();
+                let activeCursosUser = null;
+                let activeMedalsUser = null;
+                let editingAvisoId = null;
+                let editingNoticiaId = null;
+                let editingDiarioId = null;
+
+                const cargos = [
+                    '',
+                    'Diretor-Geral',
+                    'Superintendente',
+                    'Coordenador',
+                    'Chefe de Divisão',
+                    'Chefe de Serviço',
+                    'Chefe de Núcleo',
+                    'Agente de Classe Especial',
+                    'Agente de Primeira Classe',
+                    'Agente de Segunda Classe',
+                    'Agente de Terceira Classe',
+                    'Agente Aluno'
+                ];
+
+                const grupamentos = [
+                    '',
+                    'Diretoria Executiva',
+                    'Diretoria Operacional',
+                    'Diretoria de Gestão de Pessoas',
+                    'Ronda PRF',
+                    'Grupo Patrulhamento Motorizado',
+                    'Grupo de Patrulhamento Tático',
+                    'Divisão de Operações Aéreas',
+                    'Núcleo de Operações Especiais',
+                    'Universidade Corporativa da PRF',
+                    'Corregedoria'
+                ];
+
+                const cursos = [
+                    { code: 'CFP', label: 'Curso de Formação Policial' },
+                    { code: 'CAFIT', label: 'Curso de Aperfeiçoamento em Fiscalização de Trânsito' },
+                    { code: 'CVP', label: 'Curso de Vigilância e Patrulhamento' },
+                    { code: 'OP', label: 'Operações Policiais' },
+                    { code: 'CDP', label: 'Curso de Direção Policial' },
+                    { code: 'CAD', label: 'Curso de Armamento e Defesa' },
+                    { code: 'COESP', label: 'Curso de Operações Especiais' },
+                    { code: 'CFMB', label: 'Curso de Formação de Motociclistas Batedores' },
+                    { code: 'CFMT', label: 'Curso de Formação de Motoristas' },
+                    { code: 'TPCC', label: 'Técnicas de Policiamento e Controle de Conflitos' },
+                    { code: 'COA', label: 'Curso de Operações Aéreas' },
+                    { code: 'CPPAR', label: 'Curso de Patrulhamento em Rodovias' },
+                    { code: 'ARP', label: 'Aerotático e Resgate Policial' }
+                ];
+
+                const openModal = function (modal) {
+                    if (!modal) return;
+                    modal.classList.add('active');
+                    document.body.classList.add('publicados-modal-open');
+                };
+
+                const closeModal = function (modal) {
+                    if (!modal) return;
+                    modal.classList.remove('active');
+                    document.body.classList.remove('publicados-modal-open');
+                };
+
+                document.querySelectorAll('[data-modal-close]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        closeModal(btn.closest('.modal'));
+                    });
+                });
+
+                document.querySelectorAll('.modal').forEach(function (modal) {
+                    modal.addEventListener('click', function (event) {
+                        if (event.target === modal) closeModal(modal);
+                    });
+                });
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const readFileAsDataUrl = function (file) {
+                    return new Promise(function (resolve) {
+                        if (!file) return resolve('');
+                        const reader = new FileReader();
+                        reader.onload = function () {
+                            resolve(typeof reader.result === 'string' ? reader.result : '');
+                        };
+                        reader.onerror = function () { resolve(''); };
+                        reader.readAsDataURL(file);
+                    });
+                };
+
+                const parseCursos = function (raw) {
+                    const text = String(raw || '').trim();
+                    if (!text) return [];
+                    return text.split('||').map(function (part) {
+                        const trimmed = part.trim();
+                        if (!trimmed) return null;
+                        const code = trimmed.split('|')[0].trim().toUpperCase();
+                        return code || null;
+                    }).filter(Boolean);
+                };
+
+                const formatCursos = function (codes) {
+                    return codes.map(function (code) {
+                        const item = cursos.find(function (c) { return c.code === code; });
+                        return item ? (item.code + ' | ' + item.label) : code;
+                    }).join(' || ');
+                };
+
+                const loadAvisoImages = async function () {
+                    if (!avisoImages) return;
+                    const result = await client
+                        .from('avisos')
+                        .select('id,titulo,midia_url,created_at')
+                        .not('midia_url', 'is', null)
+                        .order('created_at', { ascending: false })
+                        .limit(50);
+                    const rows = result && Array.isArray(result.data) ? result.data : [];
+                    if (!rows.length) {
+                        avisoImages.innerHTML = '<div class="dgp-empty">Nenhuma imagem cadastrada.</div>';
+                        return;
+                    }
+                    avisoImages.innerHTML = rows.map(function (row) {
+                        const title = safe(row.titulo, 'Aviso');
+                        const src = safe(row.midia_url, '');
+                        return (
+                            '<div class="dgp-report-item" data-id="' + row.id + '">' +
+                            '<div>' +
+                            '<h4>' + title + '</h4>' +
+                            (src ? '<img src="' + src + '" alt="' + title + '" style="max-width:120px;border-radius:8px;margin-top:6px;">' : '') +
+                            '</div>' +
+                            '<button class="dgp-secondary-btn is-danger dgp-aviso-remove" type="button">Remover imagem</button>' +
+                            '</div>'
+                        );
+                    }).join('');
+                    avisoImages.querySelectorAll('.dgp-aviso-remove').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const row = btn.closest('.dgp-report-item');
+                            const id = row ? row.getAttribute('data-id') : null;
+                            if (!id) return;
+                            const update = await client.from('avisos').update({ midia_url: null }).eq('id', id);
+                            if (!update.error) {
+                                row.remove();
+                                if (!avisoImages.querySelector('.dgp-report-item')) {
+                                    avisoImages.innerHTML = '<div class="dgp-empty">Nenhuma imagem cadastrada.</div>';
+                                }
+                            }
+                        });
+                    });
+                };
+
+                const loadAvisosList = async function () {
+                    if (!avisosList) return;
+                    const result = await client
+                        .from('avisos')
+                        .select('id,titulo,subtitulo,texto,created_at,midia_url')
+                        .order('created_at', { ascending: false })
+                        .limit(50);
+                    const rows = result && Array.isArray(result.data) ? result.data : [];
+                    if (!rows.length) {
+                        avisosList.innerHTML = '<div class="dgp-empty">Nenhum aviso publicado.</div>';
+                        return;
+                    }
+                    avisosList.innerHTML = rows.map(function (row) {
+                        const title = safe(row.titulo, 'Aviso');
+                        const sub = safe(row.subtitulo, '');
+                        const img = row.midia_url ? '<img src="' + row.midia_url + '" alt="' + title + '" style="width:100%;max-height:120px;object-fit:cover;border-radius:10px;margin-top:8px;">' : '';
+                        return (
+                            '<div class="dgp-report-card" data-id="' + row.id + '">' +
+                            '<h3>' + title + '</h3>' +
+                            (sub ? '<p style="font-size:12px;color:#475569;">' + sub + '</p>' : '') +
+                            img +
+                            '<button class="dgp-secondary-btn dgp-aviso-edit" type="button" style="margin-top:10px;">Editar aviso</button>' +
+                            '<button class="dgp-secondary-btn is-danger dgp-aviso-delete" type="button" style="margin-top:10px;">Apagar aviso</button>' +
+                            '</div>'
+                        );
+                    }).join('');
+                    avisosList.querySelectorAll('.dgp-aviso-edit').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const card = btn.closest('.dgp-report-card');
+                            const id = card ? card.getAttribute('data-id') : null;
+                            const row = rows.find(function (r) { return String(r.id) === String(id); });
+                            if (!row) return;
+                            editingAvisoId = row.id;
+                            document.getElementById('dgp-aviso-titulo').value = row.titulo || '';
+                            document.getElementById('dgp-aviso-subtitulo').value = row.subtitulo || '';
+                            document.getElementById('dgp-aviso-texto').value = row.texto || '';
+                            document.getElementById('dgp-aviso-foto').value = row.midia_url || '';
+                            if (avisoFile) avisoFile.value = '';
+                            openModal(avisoModal);
+                        });
+                    });
+                    avisosList.querySelectorAll('.dgp-aviso-delete').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const card = btn.closest('.dgp-report-card');
+                            const id = card ? card.getAttribute('data-id') : null;
+                            if (!id) return;
+                            const del = await client.from('avisos').delete().eq('id', id);
+                            if (!del.error) {
+                                card.remove();
+                                if (!avisosList.querySelector('.dgp-report-card')) {
+                                    avisosList.innerHTML = '<div class="dgp-empty">Nenhum aviso publicado.</div>';
+                                }
+                                await loadAvisoImages();
+                            }
+                        });
+                    });
+                };
+
+                const loadNoticiasList = async function () {
+                    if (!noticiasList) return;
+                    const result = await client
+                        .from('noticias')
+                        .select('id,titulo,resumo,conteudo,created_at,image_url')
+                        .order('created_at', { ascending: false })
+                        .limit(50);
+                    const rows = result && Array.isArray(result.data) ? result.data : [];
+                    if (!rows.length) {
+                        noticiasList.innerHTML = '<div class="dgp-empty">Nenhuma noticia publicada.</div>';
+                        return;
+                    }
+                    noticiasList.innerHTML = rows.map(function (row) {
+                        const title = safe(row.titulo, 'Noticia');
+                        const resume = safe(row.resumo, '');
+                        const img = row.image_url ? '<img src="' + row.image_url + '" alt="' + title + '" style="width:100%;max-height:120px;object-fit:cover;border-radius:10px;margin-top:8px;">' : '';
+                        return (
+                            '<div class="dgp-report-card" data-id="' + row.id + '">' +
+                            '<h3>' + title + '</h3>' +
+                            (resume ? '<p style="font-size:12px;color:#475569;">' + resume + '</p>' : '') +
+                            img +
+                            '<button class="dgp-secondary-btn dgp-noticia-edit" type="button" style="margin-top:10px;">Editar noticia</button>' +
+                            '<button class="dgp-secondary-btn is-danger dgp-noticia-delete" type="button" style="margin-top:10px;">Apagar noticia</button>' +
+                            '</div>'
+                        );
+                    }).join('');
+                    noticiasList.querySelectorAll('.dgp-noticia-edit').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const card = btn.closest('.dgp-report-card');
+                            const id = card ? card.getAttribute('data-id') : null;
+                            const row = rows.find(function (r) { return String(r.id) === String(id); });
+                            if (!row) return;
+                            editingNoticiaId = row.id;
+                            document.getElementById('dgp-noticia-titulo').value = row.titulo || '';
+                            document.getElementById('dgp-noticia-subtitulo').value = row.resumo || '';
+                            document.getElementById('dgp-noticia-conteudo').value = row.conteudo || '';
+                            document.getElementById('dgp-noticia-foto').value = row.image_url || '';
+                            if (noticiaFile) noticiaFile.value = '';
+                            openModal(noticiaModal);
+                        });
+                    });
+                    noticiasList.querySelectorAll('.dgp-noticia-delete').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const card = btn.closest('.dgp-report-card');
+                            const id = card ? card.getAttribute('data-id') : null;
+                            if (!id) return;
+                            const del = await client.from('noticias').delete().eq('id', id);
+                            if (!del.error) {
+                                card.remove();
+                                if (!noticiasList.querySelector('.dgp-report-card')) {
+                                    noticiasList.innerHTML = '<div class="dgp-empty">Nenhuma noticia publicada.</div>';
+                                }
+                            }
+                        });
+                    });
+                };
+
+                const loadDiariosList = async function () {
+                    if (!diariosList) return;
+                    const result = await client
+                        .from('diarios_oficiais')
+                        .select('id,texto,edicao_num,secao_num,pagina_num,numero_decreto,created_at')
+                        .order('created_at', { ascending: false })
+                        .limit(50);
+                    const rows = result && Array.isArray(result.data) ? result.data : [];
+                    if (!rows.length) {
+                        diariosList.innerHTML = '<div class="dgp-empty">Nenhum diario oficial publicado.</div>';
+                        return;
+                    }
+                    diariosList.innerHTML = rows.map(function (row) {
+                        const title = 'Edicao ' + safe(row.edicao_num, '-') + ' · Secao ' + safe(row.secao_num, '-') + ' · Pagina ' + safe(row.pagina_num, '-');
+                        const decreto = safe(row.numero_decreto, '-');
+                        return (
+                            '<div class="dgp-report-card" data-id="' + row.id + '">' +
+                            '<h3>' + title + '</h3>' +
+                            '<p style="font-size:12px;color:#475569;">Decreto: ' + decreto + '</p>' +
+                            '<button class="dgp-secondary-btn dgp-diario-edit" type="button" style="margin-top:10px;">Editar diario</button>' +
+                            '<button class="dgp-secondary-btn is-danger dgp-diario-delete" type="button" style="margin-top:10px;">Apagar diario</button>' +
+                            '</div>'
+                        );
+                    }).join('');
+                    diariosList.querySelectorAll('.dgp-diario-edit').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const card = btn.closest('.dgp-report-card');
+                            const id = card ? card.getAttribute('data-id') : null;
+                            const row = rows.find(function (r) { return String(r.id) === String(id); });
+                            if (!row) return;
+                            editingDiarioId = row.id;
+                            document.getElementById('dgp-diario-texto').value = row.texto || '';
+                            document.getElementById('dgp-diario-edicao').value = row.edicao_num || '';
+                            document.getElementById('dgp-diario-secao').value = row.secao_num || '';
+                            document.getElementById('dgp-diario-pagina').value = row.pagina_num || '';
+                            document.getElementById('dgp-diario-decreto').value = row.numero_decreto || '';
+                            openModal(diarioModal);
+                        });
+                    });
+                    diariosList.querySelectorAll('.dgp-diario-delete').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const card = btn.closest('.dgp-report-card');
+                            const id = card ? card.getAttribute('data-id') : null;
+                            if (!id) return;
+                            const del = await client.from('diarios_oficiais').delete().eq('id', id);
+                            if (!del.error) {
+                                card.remove();
+                                if (!diariosList.querySelector('.dgp-report-card')) {
+                                    diariosList.innerHTML = '<div class="dgp-empty">Nenhum diario oficial publicado.</div>';
+                                }
+                            }
+                        });
+                    });
+                };
+
+                const renderProfiles = function () {
+                    if (!profilesGrid) return;
+                    if (!profiles.length) {
+                        profilesGrid.innerHTML = '<div class="dgp-empty">Nenhum perfil encontrado.</div>';
+                        return;
+                    }
+                    if (profilesCount) profilesCount.textContent = profiles.length + ' perfis';
+                    profilesGrid.innerHTML = profiles.map(function (profile) {
+                        const nome = safe(profile.nome_guerra, 'Usuario');
+                        const cargo = safe(profile.cargo, '-');
+                        const rg = safe(profile.rg, '-');
+                        const gp = safe(profile.grupamento_principal, '-');
+                        const gs = safe(profile.grupamento_secundario, '-');
+                        const photo = safe(profile.foto_url, 'assets/img/prf.png');
+                        const aprovado = profile.aprovado === true;
+                        const status = aprovado ? 'Aprovado' : 'Recusado';
+                        return (
+                            '<article class="dgp-profile-card" data-user-id="' + profile.id + '">' +
+                            '<div class="dgp-profile-head">' +
+                            '<img class="dgp-profile-photo" src="' + photo + '" alt="' + nome + '">' +
+                            '<div>' +
+                            '<div class="dgp-profile-name">' + nome + '</div>' +
+                            '<div class="dgp-profile-meta">' + cargo + ' · RG ' + rg + '</div>' +
+                            '<div class="dgp-profile-meta">Principal: ' + gp + '</div>' +
+                            '<div class="dgp-profile-meta">Secundario: ' + gs + '</div>' +
+                            '<div class="dgp-profile-meta"><span class="dgp-tag">' + status + '</span></div>' +
+                            '</div>' +
+                            '</div>' +
+                            '<div class="dgp-profile-actions">' +
+                            '<button class="dgp-secondary-btn dgp-toggle-aprovacao" type="button">' + (aprovado ? 'Recusar perfil' : 'Aprovar perfil') + '</button>' +
+                            '<button class="dgp-secondary-btn is-danger dgp-delete-profile" type="button">Recusar e apagar</button>' +
+                            '</div>' +
+                            '<div class="dgp-profile-actions">' +
+                            '<select class="dgp-select dgp-cargo-select">' +
+                            cargos.map(function (c) {
+                                const label = c ? c : 'Sem cargo';
+                                return '<option value="' + c + '"' + (c === profile.cargo ? ' selected' : '') + '>' + label + '</option>';
+                            }).join('') +
+                            '</select>' +
+                            '<select class="dgp-select dgp-gp-select">' +
+                            grupamentos.map(function (g) {
+                                const label = g ? g : 'Sem grupamento';
+                                return '<option value="' + g + '"' + (g === profile.grupamento_principal ? ' selected' : '') + '>' + label + '</option>';
+                            }).join('') +
+                            '</select>' +
+                            '</div>' +
+                            '<div class="dgp-profile-actions">' +
+                            '<select class="dgp-select dgp-gs-select">' +
+                            grupamentos.map(function (g) {
+                                const label = g ? g : 'Sem grupamento';
+                                return '<option value="' + g + '"' + (g === profile.grupamento_secundario ? ' selected' : '') + '>' + label + '</option>';
+                            }).join('') +
+                            '</select>' +
+                            '<button class="dgp-secondary-btn dgp-cursos-btn" type="button">Cursos</button>' +
+                            '</div>' +
+                            '<div class="dgp-profile-actions">' +
+                            '<button class="dgp-secondary-btn dgp-medals-btn" type="button">Condecoracoes</button>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+
+                    profilesGrid.querySelectorAll('.dgp-toggle-aprovacao').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const card = btn.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            const profile = profileMap.get(userId);
+                            if (!profile) return;
+                            const next = !(profile.aprovado === true);
+                            const result = await client
+                                .from('profiles')
+                                .update({ aprovado: next })
+                                .eq('id', userId);
+                            if (!result.error) {
+                                profile.aprovado = next;
+                                renderProfiles();
+                            }
+                        });
+                    });
+
+                    profilesGrid.querySelectorAll('.dgp-delete-profile').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const card = btn.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            if (!userId) return;
+                            const result = await client.rpc('admin_delete_profile', { p_user_id: userId });
+                            if (!result.error) {
+                                profiles = profiles.filter(function (p) { return p.id !== userId; });
+                                profileMap.delete(userId);
+                                renderProfiles();
+                            }
+                        });
+                    });
+
+                    profilesGrid.querySelectorAll('.dgp-cargo-select').forEach(function (select) {
+                        select.addEventListener('change', async function () {
+                            const card = select.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            const value = select.value || null;
+                            const result = await client.from('profiles').update({ cargo: value }).eq('id', userId);
+                            if (!result.error) {
+                                const profile = profileMap.get(userId);
+                                if (profile) profile.cargo = value;
+                                renderProfiles();
+                            }
+                        });
+                    });
+
+                    profilesGrid.querySelectorAll('.dgp-gp-select').forEach(function (select) {
+                        select.addEventListener('change', async function () {
+                            const card = select.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            const value = select.value || null;
+                            const result = await client.from('profiles').update({ grupamento_principal: value }).eq('id', userId);
+                            if (!result.error) {
+                                const profile = profileMap.get(userId);
+                                if (profile) profile.grupamento_principal = value;
+                                renderProfiles();
+                            }
+                        });
+                    });
+
+                    profilesGrid.querySelectorAll('.dgp-gs-select').forEach(function (select) {
+                        select.addEventListener('change', async function () {
+                            const card = select.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            const value = select.value || null;
+                            const result = await client.from('profiles').update({ grupamento_secundario: value }).eq('id', userId);
+                            if (!result.error) {
+                                const profile = profileMap.get(userId);
+                                if (profile) profile.grupamento_secundario = value;
+                                renderProfiles();
+                            }
+                        });
+                    });
+
+                    profilesGrid.querySelectorAll('.dgp-cursos-btn').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            const card = btn.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            const profile = profileMap.get(userId);
+                            if (!profile) return;
+                            activeCursosUser = profile;
+                            const current = new Set(parseCursos(profile.cursos));
+                            cursosBody.innerHTML = cursos.map(function (course) {
+                                const checked = current.has(course.code) ? 'checked' : '';
+                                return (
+                                    '<label class="dgp-report-item">' +
+                                    '<span>' + course.code + ' - ' + course.label + '</span>' +
+                                    '<input type="checkbox" data-code="' + course.code + '" ' + checked + '>' +
+                                    '</label>'
+                                );
+                            }).join('');
+                            openModal(cursosModal);
+                        });
+                    });
+
+                    profilesGrid.querySelectorAll('.dgp-medals-btn').forEach(function (btn) {
+                        btn.addEventListener('click', async function () {
+                            const card = btn.closest('.dgp-profile-card');
+                            if (!card) return;
+                            const userId = card.getAttribute('data-user-id');
+                            const profile = profileMap.get(userId);
+                            if (!profile) return;
+                            activeMedalsUser = profile;
+                            const result = await client
+                                .from('profile_medals')
+                                .select('id,medal_code,medal_name,medal_image')
+                                .eq('user_id', userId)
+                                .order('awarded_at', { ascending: false });
+                            const medals = result && Array.isArray(result.data) ? result.data : [];
+                            medalsBody.innerHTML = (
+                                '<div class="modal-form-group">' +
+                                '<label>Condecoracao</label>' +
+                                '<select id="dgp-medal-select" class="dgp-select">' +
+                                '<option value="">Selecionar...</option>' +
+                                '<option value="Medalha Merito" data-image="medalhamerito.png">Medalha Merito</option>' +
+                                '<option value="Medalha Washington" data-image="medalhawashington.png">Medalha Washington</option>' +
+                                '<option value="Moeda Antonio Felix Bronze" data-image="moedaantoniofelixbronze.png">Moeda Antonio Felix Bronze</option>' +
+                                '<option value="Moeda Antonio Felix Ouro" data-image="moedaantoniofelixouro.png">Moeda Antonio Felix Ouro</option>' +
+                                '<option value="Moeda Antonio Felix Prata" data-image="moedaantoniofelixprata.png">Moeda Antonio Felix Prata</option>' +
+                                '<option value="Medalha Antonio Felix" data-image="medalhaantoniofelix.png">Medalha Antonio Felix</option>' +
+                                '<option value="Medalha Bravura" data-image="medalhabravura.png">Medalha Bravura</option>' +
+                                '<option value="Medalha Cruz Washington" data-image="medalhagracruzwashington.png">Medalha Cruz Washington</option>' +
+                                '<option value="Medalha Heroi das Estradas" data-image="medalhaheroiestradas.png">Medalha Heroi das Estradas</option>' +
+                                '</select>' +
+                                '</div>' +
+                                '<div class="modal-form-group">' +
+                                '<label>Codigo</label><input id="dgp-medal-code" type="text" readonly>' +
+                                '</div>' +
+                                '<div class="modal-form-group">' +
+                                '<label>Nome</label><input id="dgp-medal-name" type="text" readonly>' +
+                                '</div>' +
+                                '<div class="modal-form-group">' +
+                                '<label>Imagem</label><input id="dgp-medal-image" type="text" readonly>' +
+                                '</div>' +
+                                '<div class="dgp-modal-body">' +
+                                medals.map(function (medal) {
+                                    return (
+                                        '<div class="dgp-report-item" data-medal-id="' + medal.id + '">' +
+                                        '<span>' + safe(medal.medal_name, medal.medal_code) + '</span>' +
+                                        '<button class="dgp-secondary-btn dgp-medal-remove" type="button">Remover</button>' +
+                                        '</div>'
+                                    );
+                                }).join('') +
+                                '</div>'
+                            );
+                            const medalSelect = medalsBody.querySelector('#dgp-medal-select');
+                            if (medalSelect) {
+                                medalSelect.addEventListener('change', function () {
+                                    const value = medalSelect.value || '';
+                                    const selected = medalSelect.options[medalSelect.selectedIndex];
+                                    const image = selected ? selected.getAttribute('data-image') : '';
+                                    const codeInput = medalsBody.querySelector('#dgp-medal-code');
+                                    const nameInput = medalsBody.querySelector('#dgp-medal-name');
+                                    const imageInput = medalsBody.querySelector('#dgp-medal-image');
+                                    if (nameInput) nameInput.value = value;
+                                    if (imageInput) imageInput.value = image || '';
+                                    if (codeInput) {
+                                        const code = value
+                                            .normalize('NFD')
+                                            .replace(/[\u0300-\u036f]/g, '')
+                                            .replace(/[^a-zA-Z0-9]+/g, '_')
+                                            .toUpperCase()
+                                            .replace(/^_+|_+$/g, '');
+                                        codeInput.value = code;
+                                    }
+                                });
+                            }
+                            medalsBody.querySelectorAll('.dgp-medal-remove').forEach(function (removeBtn) {
+                                removeBtn.addEventListener('click', async function () {
+                                    const row = removeBtn.closest('.dgp-report-item');
+                                    const medalId = row ? row.getAttribute('data-medal-id') : null;
+                                    if (!medalId) return;
+                                    await client.from('profile_medals').delete().eq('id', medalId);
+                                    row.remove();
+                                });
+                            });
+                            openModal(medalsModal);
+                        });
+                    });
+                };
+
+                if (cursosSave) {
+                    cursosSave.addEventListener('click', async function () {
+                        if (!activeCursosUser) return;
+                        const selected = Array.from(cursosBody.querySelectorAll('input[type="checkbox"]'))
+                            .filter(function (input) { return input.checked; })
+                            .map(function (input) { return input.getAttribute('data-code'); })
+                            .filter(Boolean);
+                        const next = formatCursos(selected);
+                        const result = await client
+                            .from('profiles')
+                            .update({ cursos: next })
+                            .eq('id', activeCursosUser.id);
+                        if (!result.error) {
+                            activeCursosUser.cursos = next;
+                            renderProfiles();
+                            closeModal(cursosModal);
+                        }
+                    });
+                }
+
+                if (medalAdd) {
+                    medalAdd.addEventListener('click', async function () {
+                        if (!activeMedalsUser) return;
+                        const code = document.getElementById('dgp-medal-code')?.value || '';
+                        const name = document.getElementById('dgp-medal-name')?.value || '';
+                        const image = document.getElementById('dgp-medal-image')?.value || '';
+                        if (!code || !name || !image) return;
+                        const insert = await client.from('profile_medals').insert({
+                            user_id: activeMedalsUser.id,
+                            medal_code: code,
+                            medal_name: name,
+                            medal_image: image
+                        });
+                        if (!insert.error) {
+                            closeModal(medalsModal);
+                        }
+                    });
+                }
+
+                const reportConfig = {
+                    bous: {
+                        table: 'bous',
+                        title: 'BOU',
+                        select: 'id,user_id,titulo,conteudo_completo,created_at,data_criacao',
+                        label: function (r) { return safe(r.titulo, 'BOU #' + r.id); }
+                    },
+                    aits: {
+                        table: 'aits',
+                        title: 'AIT',
+                        select: 'id,user_id,numero_ait,conteudo_completo,created_at,data_criacao',
+                        label: function (r) { return safe(r.numero_ait, 'AIT #' + r.id); }
+                    },
+                    ripat: {
+                        table: 'patrulhas',
+                        title: 'RIPAT',
+                        select: 'id,user_id,conteudo_completo,created_at,data_criacao',
+                        label: function (r) {
+                            const unit = r && r.conteudo_completo && r.conteudo_completo.dados_patrulhamento ? r.conteudo_completo.dados_patrulhamento.unidade : '';
+                            return safe(unit, 'RIPAT #' + r.id);
+                        }
+                    },
+                    ace: {
+                        table: 'relatorios_aluno',
+                        title: 'ACE',
+                        select: 'id,user_id,titulo,conteudo_completo,created_at',
+                        label: function (r) { return safe(r.titulo, 'ACE #' + r.id); }
+                    },
+                    ravop: {
+                        table: 'relatorios_voo',
+                        title: 'RAVOP',
+                        select: 'id,user_id,conteudo,created_at',
+                        label: function (r) {
+                            const numero = r && r.conteudo && r.conteudo.campos ? r.conteudo.campos.numero : '';
+                            return safe(numero, 'RAVOP #' + r.id);
+                        }
+                    }
+                };
+
+                const updateCounts = async function () {
+                    const count = async function (table) {
+                        const res = await client.from(table).select('*', { count: 'exact', head: true });
+                        return res && res.count ? res.count : 0;
+                    };
+                    document.getElementById('dgp-bou-count').textContent = String(await count('bous'));
+                    document.getElementById('dgp-ait-count').textContent = String(await count('aits'));
+                    document.getElementById('dgp-ripat-count').textContent = String(await count('patrulhas'));
+                    let aceCount = 0;
+                    const aceRes = await client.from('relatorios_aluno').select('*', { count: 'exact', head: true });
+                    if (aceRes && !aceRes.error) {
+                        aceCount = aceRes.count || 0;
+                    } else {
+                        const aceFallback = await client.from('relatorio_aluno').select('*', { count: 'exact', head: true });
+                        aceCount = aceFallback && aceFallback.count ? aceFallback.count : 0;
+                    }
+                    document.getElementById('dgp-ace-count').textContent = String(aceCount);
+                    document.getElementById('dgp-ravop-count').textContent = String(await count('relatorios_voo'));
+                };
+
+                document.querySelectorAll('.dgp-report-card button').forEach(function (btn) {
+                    btn.addEventListener('click', async function () {
+                        const card = btn.closest('.dgp-report-card');
+                        if (!card) return;
+                        const type = card.getAttribute('data-report');
+                        const config = reportConfig[type];
+                        if (!config) return;
+                        reportTitle.textContent = config.title;
+                        let rows = [];
+                        let table = config.table;
+                        const selectFields = config.select;
+                        const result = await client.from(table).select(selectFields).order('created_at', { ascending: false }).limit(200);
+                        if (result.error && table === 'relatorios_aluno') {
+                            table = 'relatorio_aluno';
+                            const fallback = await client.from(table).select(selectFields).order('created_at', { ascending: false }).limit(200);
+                            rows = fallback && Array.isArray(fallback.data) ? fallback.data : [];
+                            config.table = table;
+                        } else {
+                            rows = result && Array.isArray(result.data) ? result.data : [];
+                        }
+
+                        const parseJson = function (value) {
+                            if (!value) return null;
+                            if (typeof value === 'object') return value;
+                            if (typeof value === 'string') {
+                                try { return JSON.parse(value); } catch (e) { return null; }
+                            }
+                            return null;
+                        };
+                        const toText = function (value) {
+                            if (!value) return '';
+                            if (typeof value === 'string') return value;
+                            try { return JSON.stringify(value, null, 2); } catch (e) { return ''; }
+                        };
+                        const escapeHtml = function (value) {
+                            return String(value || '')
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;');
+                        };
+                        const formatLines = function (lines) {
+                            return lines.filter(function (line) { return line !== null && line !== undefined; }).join('\n');
+                        };
+                        const formatReportContent = function (tableName, row) {
+                            const raw = row.conteudo_completo || row.conteudo || '';
+                            const parsed = parseJson(raw);
+                            const content = parsed || raw;
+
+                            if (tableName === 'bous') {
+                                const v = parsed || {};
+                                return formatLines([
+                                    'BOU',
+                                    'Titulo: ' + safe(v.titulo, row.titulo),
+                                    'Unidade: ' + safe(v.unidade, '-'),
+                                    'Equipe: ' + safe(v.equipe, '-'),
+                                    'Motorista: ' + safe(v.motorista, '-'),
+                                    'Chefe de Equipe: ' + safe(v.chefe_viatura, '-'),
+                                    'Terceiro Homem: ' + safe(v.terceiro_homem, '-'),
+                                    'Quarto Homem: ' + safe(v.quarto_homem, '-'),
+                                    '',
+                                    'Acusado',
+                                    'Nome: ' + safe(v.acusado_nome, '-'),
+                                    'RG: ' + safe(v.acusado_rg, '-'),
+                                    'Natureza: ' + safe(v.natureza, '-'),
+                                    '',
+                                    'Ocorrencia',
+                                    'Relato: ' + safe(v.relato, '-'),
+                                    'Data/Hora: ' + safe(v.data_hora, '-'),
+                                    'Local: ' + safe(v.local, '-'),
+                                    'Envolvidos: ' + safe(v.envolvidos, '-'),
+                                    'Resultado: ' + safe(v.resultado, '-'),
+                                    'Material: ' + safe(v.material, '-'),
+                                    'Veiculo: ' + safe(v.veiculo, '-'),
+                                    'Coloracao: ' + safe(v.coloracao, '-'),
+                                    '',
+                                    'Assinatura: ' + safe(v.assinatura, '-')
+                                ]);
+                            }
+
+                            if (tableName === 'aits') {
+                                const v = parsed || {};
+                                return formatLines([
+                                    'AIT',
+                                    'Numero: ' + safe(v.numero_ait, row.numero_ait),
+                                    'Responsavel: ' + safe(v.policial_responsavel, '-'),
+                                    'Infrator: ' + safe(v.infrator_nome, '-'),
+                                    'RG: ' + safe(v.infrator_rg, '-'),
+                                    'Infracoes: ' + safe(v.infracoes, '-'),
+                                    'Multa: ' + safe(v.valor_multa, '-'),
+                                    'Apreensao do veiculo: ' + safe(v.apreensao_veiculo, '-'),
+                                    'Data/Hora: ' + safe(v.data_hora, '-'),
+                                    'Local: ' + safe(v.local, '-'),
+                                    'Veiculo: ' + safe(v.veiculo, '-'),
+                                    'Placa: ' + safe(v.placa, '-')
+                                ]);
+                            }
+
+                            if (tableName === 'patrulhas') {
+                                const v = parsed || {};
+                                const equipe = v.equipe || {};
+                                const dados = v.dados_patrulhamento || {};
+                                const vinc = v.vinculos || {};
+                                const list = function (arr) {
+                                    if (Array.isArray(arr)) return arr.join(', ');
+                                    if (!arr) return '-';
+                                    return String(arr);
+                                };
+                                return formatLines([
+                                    'RIPAT',
+                                    'Motorista: ' + safe(equipe.motorista, '-'),
+                                    'Chefe de viatura: ' + safe(equipe.chefe_viatura, '-'),
+                                    'Auxiliar 1: ' + safe(equipe.auxiliar_1, '-'),
+                                    'Auxiliar 2: ' + safe(equipe.auxiliar_2, '-'),
+                                    '',
+                                    'Patrulhamento',
+                                    'Unidade: ' + safe(dados.unidade, '-'),
+                                    'Area: ' + safe(dados.area, '-'),
+                                    'Data inicio: ' + safe(dados.data_inicio, '-'),
+                                    'Hora inicio: ' + safe(dados.horario_inicio, '-'),
+                                    'Data termino: ' + safe(dados.data_fim, '-'),
+                                    'Hora termino: ' + safe(dados.horario_fim, '-'),
+                                    'Ocorrencias: ' + safe(dados.ocorrencias, '-'),
+                                    'Abordagens: ' + safe(dados.abordagens, '-'),
+                                    'Prisoes: ' + safe(dados.prisoes, '-'),
+                                    '',
+                                    'Vinculos',
+                                    'BOU: ' + list(vinc.bous),
+                                    'AIT: ' + list(vinc.aits),
+                                    'ACE: ' + list(vinc.aces),
+                                    '',
+                                    'Observacoes: ' + safe(v.observacoes, '-')
+                                ]);
+                            }
+
+                            if (tableName === 'relatorios_aluno' || tableName === 'relatorio_aluno') {
+                                if (!parsed) return toText(raw);
+                                const v = parsed;
+                                const aval = v.avaliacoes || {};
+                                return formatLines([
+                                    'ACE',
+                                    'Responsavel: ' + safe(v.responsavel, '-'),
+                                    'Data/Horario: ' + safe(v.data, '-') + ' ' + safe(v.horario, ''),
+                                    'Unidade: ' + safe(v.unidade, '-'),
+                                    'Aluno: ' + safe(v.aluno_nome, '-') + (v.aluno_cargo ? ' (' + v.aluno_cargo + ')' : ''),
+                                    '',
+                                    'Avaliacoes',
+                                    'Disciplina: ' + safe(aval.disciplina, '-'),
+                                    'Conhecimento: ' + safe(aval.conhecimento, '-'),
+                                    'Equipe: ' + safe(aval.equipe, '-'),
+                                    'Geral: ' + safe(aval.geral, '-'),
+                                    '',
+                                    'Observacoes: ' + safe(v.observacoes, '-')
+                                ]);
+                            }
+
+                            if (tableName === 'relatorios_voo') {
+                                const v = parsed || {};
+                                const campos = v.campos || {};
+                                const trip = campos.tripulacao;
+                                const tripTxt = Array.isArray(trip) ? trip.join(', ') : safe(trip, '-');
+                                return formatLines([
+                                    'RAVOP',
+                                    'Numero: ' + safe(campos.numero, '-'),
+                                    'Data: ' + safe(campos.data, '-'),
+                                    'Inicio: ' + safe(campos.inicio, '-'),
+                                    'Fim: ' + safe(campos.fim, '-'),
+                                    'Piloto: ' + safe(campos.piloto, '-'),
+                                    'Tripulacao: ' + tripTxt,
+                                    'Aeronave: ' + safe(campos.aeronave, '-'),
+                                    '',
+                                    'Resumo: ' + safe(campos.resumo, '-'),
+                                    'Avarias: ' + safe(campos.avarias, '-'),
+                                    'Uso letal: ' + safe(campos.uso_letal, '-')
+                                ]);
+                            }
+
+                            return toText(content);
+                        };
+                        const getAccused = function (row) {
+                            const raw = row.conteudo_completo || row.conteudo || {};
+                            const str = typeof raw === 'string' ? raw : '';
+                            if (str) return str;
+                            const a1 = raw.acusado_nome || raw.infrator_nome || raw.aluno_nome || raw.piloto || '';
+                            const a2 = raw.acusado2_nome || '';
+                            return [a1, a2].filter(Boolean).join(' ');
+                        };
+                        const buildItems = function (items) {
+                            return items.map(function (row) {
+                                const label = config.label(row);
+                                const author = profileMap.get(row.user_id) ? profileMap.get(row.user_id).nome_guerra : 'Usuario';
+                                const accused = getAccused(row);
+                                let content = formatReportContent(table, row);
+                                content = content.replace(/\\n/g, '\n').replace(/\\r\\n/g, '\n');
+                                const data = escapeHtml(content);
+                                return (
+                                    '<div class="dgp-report-item" data-id="' + row.id + '" data-table="' + table + '" data-label="' + label + '" data-author="' + author + '" data-accused="' + accused + '">' +
+                                    '<input class="dgp-report-check" type="checkbox">' +
+                                    '<div>' +
+                                    '<h4>' + label + '</h4>' +
+                                    '<span>' + author + '</span>' +
+                                    '</div>' +
+                                    '<div class="dgp-report-actions">' +
+                                    '<button class="dgp-secondary-btn dgp-report-expand" type="button">Expandir</button>' +
+                                    '<button class="dgp-secondary-btn is-danger dgp-report-delete" type="button">Excluir</button>' +
+                                    '</div>' +
+                                    '<div class="dgp-report-detail is-hidden"><pre>' + data + '</pre></div>' +
+                                    '</div>'
+                                );
+                            }).join('');
+                        };
+                        if (result.error && !rows.length) {
+                            reportBody.innerHTML = '<div class="dgp-empty">Nao foi possivel carregar: ' + safe(result.error.message, 'erro') + '</div>';
+                        } else {
+                            reportBody.innerHTML = rows.length ? buildItems(rows) : '<div class="dgp-empty">Nenhum registro.</div>';
+                        }
+
+                        reportBody.querySelectorAll('.dgp-report-delete').forEach(function (deleteBtn) {
+                            deleteBtn.addEventListener('click', async function () {
+                                const row = deleteBtn.closest('.dgp-report-item');
+                                const id = row ? row.getAttribute('data-id') : null;
+                                const tableName = row ? row.getAttribute('data-table') : null;
+                                if (!id || !tableName) return;
+                                await client.from(tableName).delete().eq('id', id);
+                                row.remove();
+                                updateCounts();
+                            });
+                        });
+                        reportBody.querySelectorAll('.dgp-report-expand').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                const row = btn.closest('.dgp-report-item');
+                                const detail = row ? row.querySelector('.dgp-report-detail') : null;
+                                if (!detail) return;
+                                detail.classList.toggle('is-hidden');
+                            });
+                        });
+
+                        if (reportSearch) {
+                            reportSearch.value = '';
+                            reportSearch.oninput = function () {
+                                const term = reportSearch.value.toLowerCase().trim();
+                                const items = Array.from(reportBody.querySelectorAll('.dgp-report-item'));
+                                items.forEach(function (item) {
+                                    const label = (item.getAttribute('data-label') || '').toLowerCase();
+                                    const author = (item.getAttribute('data-author') || '').toLowerCase();
+                                    const accused = (item.getAttribute('data-accused') || '').toLowerCase();
+                                    const match = !term || label.includes(term) || author.includes(term) || accused.includes(term);
+                                    item.style.display = match ? '' : 'none';
+                                });
+                            };
+                        }
+
+                        if (reportDeleteSelected) {
+                            reportDeleteSelected.onclick = async function () {
+                                const selected = Array.from(reportBody.querySelectorAll('.dgp-report-item')).filter(function (item) {
+                                    const check = item.querySelector('.dgp-report-check');
+                                    return check && check.checked;
+                                });
+                                for (const item of selected) {
+                                    const id = item.getAttribute('data-id');
+                                    const tableName = item.getAttribute('data-table');
+                                    if (!id || !tableName) continue;
+                                    await client.from(tableName).delete().eq('id', id);
+                                    item.remove();
+                                }
+                                updateCounts();
+                            };
+                        }
+
+                        openModal(reportModal);
+                    });
+                });
+
+                if (avisoOpen) avisoOpen.addEventListener('click', async function () {
+                    editingAvisoId = null;
+                    document.getElementById('dgp-aviso-titulo').value = '';
+                    document.getElementById('dgp-aviso-subtitulo').value = '';
+                    document.getElementById('dgp-aviso-texto').value = '';
+                    document.getElementById('dgp-aviso-foto').value = '';
+                    if (avisoFile) avisoFile.value = '';
+                    await loadAvisoImages();
+                    openModal(avisoModal);
+                });
+                if (noticiaOpen) noticiaOpen.addEventListener('click', function () {
+                    editingNoticiaId = null;
+                    document.getElementById('dgp-noticia-titulo').value = '';
+                    document.getElementById('dgp-noticia-subtitulo').value = '';
+                    document.getElementById('dgp-noticia-conteudo').value = '';
+                    document.getElementById('dgp-noticia-foto').value = '';
+                    if (noticiaFile) noticiaFile.value = '';
+                    openModal(noticiaModal);
+                });
+                if (diarioOpen) diarioOpen.addEventListener('click', function () {
+                    editingDiarioId = null;
+                    document.getElementById('dgp-diario-texto').value = '';
+                    document.getElementById('dgp-diario-edicao').value = '';
+                    document.getElementById('dgp-diario-secao').value = '';
+                    document.getElementById('dgp-diario-pagina').value = '';
+                    document.getElementById('dgp-diario-decreto').value = '';
+                    openModal(diarioModal);
+                });
+
+                if (corregedoriaOpen) corregedoriaOpen.addEventListener('click', function () {
+                    document.getElementById('dgp-cor-numero').value = '';
+                    document.getElementById('dgp-cor-tipo').value = '';
+                    document.getElementById('dgp-cor-texto').value = '';
+                    if (corCitados) {
+                        corCitados.innerHTML = profiles.map(function (p) {
+                            const name = p.nome_guerra || 'Usuario';
+                            return (
+                                '<label class="corregedoria-citado">' +
+                                '<input type="checkbox" value="' + p.id + '">' +
+                                name +
+                                '</label>'
+                            );
+                        }).join('');
+                    }
+                    openModal(corModal);
+                });
+
+                if (avisoSave) {
+                    avisoSave.addEventListener('click', async function () {
+                        const titulo = document.getElementById('dgp-aviso-titulo')?.value || '';
+                        const subtitulo = document.getElementById('dgp-aviso-subtitulo')?.value || '';
+                        const texto = document.getElementById('dgp-aviso-texto')?.value || '';
+                        const foto = document.getElementById('dgp-aviso-foto')?.value || '';
+                        const file = avisoFile && avisoFile.files ? avisoFile.files[0] : null;
+                        const uploadUrl = file ? await readFileAsDataUrl(file) : '';
+                        if (!titulo || !(texto || subtitulo)) return;
+                        const payload = {
+                            titulo: titulo,
+                            subtitulo: subtitulo,
+                            texto: texto || subtitulo,
+                            midia_url: uploadUrl || foto || null
+                        };
+                        const result = editingAvisoId
+                            ? await client.from('avisos').update(payload).eq('id', editingAvisoId)
+                            : await client.from('avisos').insert(Object.assign(payload, { created_by: user.id }));
+                        if (!result.error) {
+                            editingAvisoId = null;
+                            if (avisoFile) avisoFile.value = '';
+                            await loadAvisoImages();
+                            await loadAvisosList();
+                            closeModal(avisoModal);
+                        }
+                    });
+                }
+
+                if (noticiaSave) {
+                    noticiaSave.addEventListener('click', async function () {
+                        const titulo = document.getElementById('dgp-noticia-titulo')?.value || '';
+                        const subtitulo = document.getElementById('dgp-noticia-subtitulo')?.value || '';
+                        const conteudo = document.getElementById('dgp-noticia-conteudo')?.value || '';
+                        const foto = document.getElementById('dgp-noticia-foto')?.value || '';
+                        const file = noticiaFile && noticiaFile.files ? noticiaFile.files[0] : null;
+                        const uploadUrl = file ? await readFileAsDataUrl(file) : '';
+                        if (!titulo || !conteudo) return;
+                        const payload = {
+                            titulo: titulo,
+                            resumo: subtitulo || null,
+                            conteudo: conteudo,
+                            image_url: uploadUrl || foto || null,
+                            is_published: true
+                        };
+                        const result = editingNoticiaId
+                            ? await client.from('noticias').update(payload).eq('id', editingNoticiaId)
+                            : await client.from('noticias').insert(Object.assign(payload, {
+                                published_at: new Date().toISOString(),
+                                created_by: user.id
+                            }));
+                        if (!result.error) {
+                            editingNoticiaId = null;
+                            if (noticiaFile) noticiaFile.value = '';
+                            await loadNoticiasList();
+                            closeModal(noticiaModal);
+                        }
+                    });
+                }
+
+                if (diarioSave) {
+                    diarioSave.addEventListener('click', async function () {
+                        const texto = document.getElementById('dgp-diario-texto')?.value || '';
+                        const edicao = Number(document.getElementById('dgp-diario-edicao')?.value || 0);
+                        const secao = Number(document.getElementById('dgp-diario-secao')?.value || 0);
+                        const pagina = Number(document.getElementById('dgp-diario-pagina')?.value || 0);
+                        let decreto = Number(document.getElementById('dgp-diario-decreto')?.value || 0);
+                        if (!texto || !edicao || !secao || !pagina) return;
+                        if (!decreto) {
+                            const maxRes = await client
+                                .from('diarios_oficiais')
+                                .select('numero_decreto')
+                                .order('numero_decreto', { ascending: false })
+                                .limit(1)
+                                .maybeSingle();
+                            const max = maxRes && maxRes.data ? Number(maxRes.data.numero_decreto || 0) : 0;
+                            decreto = max + 1;
+                        }
+                        const payload = {
+                            texto: texto,
+                            edicao_num: edicao,
+                            secao_num: secao,
+                            pagina_num: pagina,
+                            numero_decreto: decreto
+                        };
+                        const result = editingDiarioId
+                            ? await client.from('diarios_oficiais').update(payload).eq('id', editingDiarioId)
+                            : await client.from('diarios_oficiais').insert(Object.assign(payload, { created_by: user.id }));
+                        if (!result.error) {
+                            editingDiarioId = null;
+                            await loadDiariosList();
+                            closeModal(diarioModal);
+                        }
+                    });
+                }
+
+                if (corSave) {
+                    corSave.addEventListener('click', async function () {
+                        const numero = document.getElementById('dgp-cor-numero')?.value || '';
+                        const tipo = document.getElementById('dgp-cor-tipo')?.value || '';
+                        const texto = document.getElementById('dgp-cor-texto')?.value || '';
+                        if (!numero || !tipo || !texto) return;
+                        const citados = corCitados
+                            ? Array.from(corCitados.querySelectorAll('input[type="checkbox"]'))
+                                .filter(function (input) { return input.checked; })
+                                .map(function (input) { return input.value; })
+                            : [];
+                        const authorProfile = profileMap.get(String(user.id)) || null;
+                        const result = await client.from('corregedoria_posts').insert({
+                            numero: numero,
+                            title: tipo,
+                            texto: texto,
+                            mentioned_user_ids: citados,
+                            user_id: user.id,
+                            author_name: authorProfile ? authorProfile.nome_guerra : null,
+                            author_cargo: authorProfile ? authorProfile.cargo : null,
+                            is_public: true
+                        });
+                        if (!result.error) {
+                            closeModal(corModal);
+                        }
+                    });
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('id,nome_guerra,cargo,rg,grupamento_principal,grupamento_secundario,foto_url,aprovado,cursos')
+                    .order('nome_guerra', { ascending: true });
+                profiles = profileResult && Array.isArray(profileResult.data) ? profileResult.data : [];
+                profileMap = new Map(profiles.map(function (p) { return [String(p.id), p]; }));
+                renderProfiles();
+                updateCounts();
+                loadAvisosList();
+                loadNoticiasList();
+                loadDiariosList();
+            })();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+

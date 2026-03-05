@@ -1,0 +1,1121 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Gerenciador de Equipes - PRF Jaguar&eacute;</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+
+        (async function enforceAuth() {
+            try {
+                if (!window.supabase || !window.supabase.createClient) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const result = await client.auth.getSession();
+                const session = result && result.data ? result.data.session : null;
+                const user = session ? session.user : null;
+                if (!user) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                const profileQuery = await client
+                    .from('profiles')
+                    .select('aprovado')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                const profile = profileQuery ? profileQuery.data : null;
+                const profileError = profileQuery ? profileQuery.error : null;
+
+                if (profileError || !profile || profile.aprovado !== true) {
+                    await client.auth.signOut();
+                    window.location.replace('../login.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('../login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="inicio-page">
+<div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
+    <div class="inicio-loader"></div>
+    <div class="inicio-loader-section section-left"></div>
+    <div class="inicio-loader-section section-right"></div>
+    <img class="inicio-loader-logo" src="assets/img/prf.png" alt="PRF">
+</div>
+    <div class="inicio-shell">
+        <header class="inicio-topbar" aria-label="Cabecalho">
+            <div class="inicio-topbar-controls" aria-label="Controles da janela">
+                <a class="mac-dot is-red" href="../index.html" title="Voltar ao site"></a>
+                <a class="mac-dot is-yellow" href="inicio.html" title="Inicio"></a>
+                <button class="mac-dot is-white" type="button" title="Recarregar" onclick="window.location.reload()"></button>
+            </div>
+            <div class="inicio-topbar-title">SIGA - Painel Interno</div>
+            <button class="inicio-topbar-logout" type="button" onclick="auth.logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                SAIR
+            </button>
+        </header>
+
+        <div class="inicio-body">
+        <div class="inicio-rail" aria-label="Menu e Plantao">
+            <aside class="inicio-menu" aria-label="Menu principal">
+                <div aria-hidden="true">
+                    <a href="inicio.html"><img src="assets/img/prf.png"></a>
+                </div>
+                <nav class="inicio-menu-items">
+                        <a class="inicio-menu-item" href="inicio.html">
+                            <i class="fas fa-house"></i>
+                            <span>Inicio</span>
+                        </a>
+                        <a class="inicio-menu-item" href="paineldgp.html" data-requires-admin="true">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Painel DGP</span>
+                            <i class="fas fa-lock inicio-menu-lock" aria-hidden="true"></i>
+                        </a>
+                        <a class="inicio-menu-item" href="meu-perfil.html">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatorios.html">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Relatorios</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatoriospublicados.html">
+                            <i class="fas fa-file-circle-check"></i>
+                            <span>Relatorios publicados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="regulamentos.html">
+                            <i class="fas fa-scale-balanced"></i>
+                            <span>Regulamentos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="avisos-internos.html">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Avisos internos</span>
+                        </a>
+                        <a class="inicio-menu-item is-active" href="equipe.html">
+                            <i class="fas fa-users"></i>
+                            <span>Equipe</span>
+                        </a>
+                        <a class="inicio-menu-item" href="diario-oficial.html">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Diario Oficial</span>
+                        </a>
+                </nav>
+
+                <div class="inicio-menu-footer">
+                    <a class="inicio-menu-avatar-link" href="meu-perfil.html">
+                        <img id="inicio-footer-avatar" class="inicio-menu-avatar" src="assets/img/prf.png" alt="Foto do usuario">
+                    </a>
+                    <span id="inicio-footer-name" class="inicio-menu-user">Operador</span>
+                </div>
+            </aside>
+
+            <section class="plantao-panel" aria-label="Plantao">
+                <header class="plantao-header">
+                    <div class="plantao-title">
+                        <h2>Plantão</h2>
+                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    </div>
+                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                        <i class="fas fa-user-clock"></i>
+                        Entrar em servico
+                    </button>
+                </header>
+                <div class="plantao-list" id="inicio-on-duty-list">
+                    <p class="plantao-empty">Carregando agentes...</p>
+                </div>
+            </section>
+        </div>
+
+        <main class="inicio-main">
+            <header class="inicio-header">
+                <div class="inicio-user-card">
+                    <div class="inicio-user-photo">
+                        <img id="inicio-user-photo" src="assets/img/prf.png" alt="Foto do usuario">
+                    </div>
+                    <div class="inicio-user-text">
+                        <h1 id="inicio-user-name" class="inicio-user-name">Usuario</h1>
+                        <div class="inicio-user-cargo">
+                            <img id="inicio-user-cargo-img" class="inicio-user-cargo-img is-hidden" alt="Imagem do cargo">
+                            <span id="inicio-user-cargo">Cargo do agente</span>
+                        </div>
+                        <span id="inicio-user-rg" class="inicio-user-rg">RG: -</span>
+                        <div id="inicio-user-medals" class="inicio-user-medals is-hidden" aria-label="Condecorações do Usuário"></div>
+                    </div>
+                </div>
+                <aside class="inicio-user-meta">
+                    <div id="inicio-user-grupamentos" class="inicio-user-meta-title">Grupamento</div>
+                    <div class="inicio-user-meta-row">
+                        <div class="inicio-user-meta-label">Cursos:</div>
+                        <div id="inicio-user-cursos" class="inicio-user-meta-value">-</div>
+                    </div>
+                </aside>
+            </header>
+
+            <section class="inicio-content-card" aria-label="Conteudo">
+                <nav class="relatorios-subnav" aria-label="Submenu equipe">
+                    <a class="relatorios-subnav-item" href="equipe.html"><i class="fas fa-users"></i>Equipe</a>
+                    <a class="relatorios-subnav-item is-active" href="gerenciador.html"><i class="fas fa-people-roof"></i>Gerenciador de Equipes</a>
+                </nav>
+                <div class="gerenciador-wrap">
+                    <header class="gerenciador-header">
+                        <div>
+                            <h2>Gerenciador de Equipes</h2>
+                            <p>Visão de desempenho dos agentes do seu grupamento.</p>
+                        </div>
+                        <span id="gerenciador-count" class="gerenciador-count">0 agentes</span>
+                    </header>
+                    <div id="gerenciador-status" class="gerenciador-status">Carregando informações...</div>
+                    <div id="gerenciador-grid" class="gerenciador-grid" aria-live="polite"></div>
+                </div>
+            </section>
+        </main>
+     </div>
+</div>
+    <script src="../app.js" defer></script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadGerenciador() {
+                const grid = document.getElementById('gerenciador-grid');
+                const statusNode = document.getElementById('gerenciador-status');
+                const countNode = document.getElementById('gerenciador-count');
+                if (!grid || !statusNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const safe = function (value, fallback) {
+                    const text = (value ?? '').toString().trim();
+                    return text || (fallback || '');
+                };
+
+                const escapeHtml = function (value) {
+                    return String(value || '').replace(/</g, '&lt;');
+                };
+
+                const normalize = function (value) {
+                    return safe(value, '').toLowerCase();
+                };
+
+                const formatDuration = function (minutes) {
+                    const total = Math.max(0, Math.floor(Number(minutes || 0)));
+                    const days = Math.floor(total / 1440);
+                    const hours = Math.floor((total % 1440) / 60);
+                    const mins = total % 60;
+                    return (
+                        days +
+                        'd:' +
+                        String(hours).padStart(2, '0') +
+                        'h:' +
+                        String(mins).padStart(2, '0') +
+                        'm'
+                    );
+                };
+
+                const resolveGroupName = function (item) {
+                    const gp = safe(item.grupamento_principal, '');
+                    const legacy = safe(item.grupamento, '');
+                    const fromLegacy = legacy.includes('||')
+                        ? legacy.split('||')[0].trim()
+                        : legacy;
+                    return gp || fromLegacy || 'Grupamento';
+                };
+
+                const resolveGroupLogo = function (groupName) {
+                    const key = normalize(groupName);
+                    if (key.includes('ronda prf')) return 'assets/img/rprf.png';
+                    if (key.includes('patrulhamento motorizado') || key.includes('gpm')) return 'assets/img/gpm.png';
+                    if (key.includes('universidade corporativa')) return 'assets/img/uniprf.jpg';
+                    if (key.includes('operações aéreas') || key.includes('operacoes aereas') || key.includes('doa')) return 'assets/img/doa.png';
+                    if (key.includes('patrulhamento tático') || key.includes('patrulhamento tatico') || key.includes('gpt')) return 'assets/img/gpt.png';
+                    if (key.includes('operações especiais') || key.includes('operacoes especiais') || key.includes('noe')) return 'assets/img/noe.png';
+                    return 'assets/img/prf.png';
+                };
+
+                const parseJsonSafe = function (value) {
+                    if (!value) return null;
+                    if (typeof value === 'object') return value;
+                    try { return JSON.parse(value); } catch (e) { return null; }
+                };
+
+                const isMentioned = function (raw, user) {
+                    const text = normalize(raw);
+                    if (!text) return false;
+                    if (user.nameLower && text.includes(user.nameLower)) return true;
+                    if (user.rgLower && text.includes(user.rgLower)) return true;
+                    return false;
+                };
+
+                const computeText = function (row) {
+                    if (!row) return '';
+                    if (row.conteudo_completo) return typeof row.conteudo_completo === 'string' ? row.conteudo_completo : JSON.stringify(row.conteudo_completo);
+                    if (row.texto) return row.texto;
+                    return '';
+                };
+
+                const now = new Date();
+                const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                const sinceIso = since.toISOString();
+
+                statusNode.textContent = 'Carregando informações...';
+                grid.innerHTML = '';
+
+                try {
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user) {
+                        statusNode.textContent = 'Faça login para acessar o gerenciador.';
+                        return;
+                    }
+
+                    const profileResult = await client
+                        .from('profiles')
+                        .select('id,cargo,grupamento,grupamento_principal,grupamento_secundario')
+                        .eq('id', user.id)
+                        .maybeSingle();
+                    const profile = profileResult ? profileResult.data : null;
+                    if (!profile) {
+                        statusNode.textContent = 'Perfil não encontrado.';
+                        return;
+                    }
+
+                    const cargoLower = normalize(profile.cargo);
+                    const gp = resolveGroupName(profile);
+                    const gpLower = normalize(gp);
+
+                    const isDirecao = cargoLower.includes('diretor-geral') || cargoLower.includes('superintendente');
+                    const isCoordenador = cargoLower.includes('coordenador');
+                    const allowedExec = [
+                        'ronda prf',
+                        'grupo de patrulhamento motorizado',
+                        'universidade corporativa da prf'
+                    ];
+                    const allowedOper = [
+                        'grupo de patrulhamento tático',
+                        'divisão de operações aéreas',
+                        'núcleo de operações especiais'
+                    ];
+
+                    let allowedGroups = null;
+                    if (isDirecao) {
+                        allowedGroups = null;
+                    } else if (isCoordenador && gpLower === 'diretoria executiva') {
+                        allowedGroups = allowedExec.map(function (g) { return g.toLowerCase(); });
+                    } else if (isCoordenador && gpLower === 'diretoria operacional') {
+                        allowedGroups = allowedOper.map(function (g) { return g.toLowerCase(); });
+                    } else {
+                        allowedGroups = [gpLower];
+                    }
+
+                    const profilesRes = await client
+                        .from('profiles')
+                        .select('id,nome_guerra,cargo,rg,foto_url,aprovado,grupamento,grupamento_principal,grupamento_secundario')
+                        .eq('aprovado', true)
+                        .order('nome_guerra', { ascending: true })
+                        .limit(500);
+
+                    if (profilesRes.error) {
+                        statusNode.textContent = 'Não foi possível carregar os perfis.';
+                        return;
+                    }
+
+                    const team = (profilesRes.data || []).filter(function (p) {
+                        const pGroup = normalize(resolveGroupName(p));
+                        if (!pGroup) return false;
+                        if (!allowedGroups) return true;
+                        return allowedGroups.indexOf(pGroup) >= 0;
+                    });
+
+                    if (!team.length) {
+                        statusNode.textContent = 'Nenhum agente encontrado para o grupamento selecionado.';
+                        return;
+                    }
+
+                    const ids = team.map(function (p) { return p.id; });
+
+                    const [bousResAll, bousRes7, aitsResAll, aitsRes7, ripatResAll, ripatRes7, aceResRawAll, aceResRaw7, ravopResAll, ravopRes7, pontosRes] = await Promise.all([
+                        client.from('bous').select('id,user_id,conteudo_completo,created_at'),
+                        client.from('bous').select('id,user_id,conteudo_completo,created_at').gte('created_at', sinceIso),
+                        client.from('aits').select('id,user_id,conteudo_completo,created_at'),
+                        client.from('aits').select('id,user_id,conteudo_completo,created_at').gte('created_at', sinceIso),
+                        client.from('patrulhas').select('id,user_id,conteudo_completo,created_at'),
+                        client.from('patrulhas').select('id,user_id,conteudo_completo,created_at').gte('created_at', sinceIso),
+                        client.from('relatorios_aluno').select('id,user_id,conteudo_completo,texto,created_at'),
+                        client.from('relatorios_aluno').select('id,user_id,conteudo_completo,texto,created_at').gte('created_at', sinceIso),
+                        client.from('relatorios_voo').select('id,user_id,conteudo,conteudo_completo,created_at'),
+                        client.from('relatorios_voo').select('id,user_id,conteudo,conteudo_completo,created_at').gte('created_at', sinceIso),
+                        client.from('agent_pontos').select('user_id,inicio_at,fim_at,duracao_min,created_at').in('user_id', ids)
+                    ]);
+
+                    let aceResAll = aceResRawAll;
+                    let aceRes7 = aceResRaw7;
+                    if (aceResAll.error || aceRes7.error) {
+                        const fallbackAll = await client
+                            .from('relatorio_aluno')
+                            .select('id,user_id,conteudo_completo,texto,created_at');
+                        const fallback7 = await client
+                            .from('relatorio_aluno')
+                            .select('id,user_id,conteudo_completo,texto,created_at')
+                            .gte('created_at', sinceIso);
+                        if (!aceResAll.error) {
+                            aceResAll = fallbackAll;
+                        }
+                        if (!aceRes7.error) {
+                            aceRes7 = fallback7;
+                        }
+                    }
+
+                    const bousAll = Array.isArray(bousResAll.data) ? bousResAll.data : [];
+                    const bous7 = Array.isArray(bousRes7.data) ? bousRes7.data : [];
+                    const aitsAll = Array.isArray(aitsResAll.data) ? aitsResAll.data : [];
+                    const aits7 = Array.isArray(aitsRes7.data) ? aitsRes7.data : [];
+                    const ripatsAll = Array.isArray(ripatResAll.data) ? ripatResAll.data : [];
+                    const ripats7 = Array.isArray(ripatRes7.data) ? ripatRes7.data : [];
+                    const acesAll = Array.isArray(aceResAll.data) ? aceResAll.data : [];
+                    const aces7 = Array.isArray(aceRes7.data) ? aceRes7.data : [];
+                    const ravopsAll = Array.isArray(ravopResAll.data) ? ravopResAll.data : [];
+                    const ravops7 = Array.isArray(ravopRes7.data) ? ravopRes7.data : [];
+                    const pontos = Array.isArray(pontosRes.data) ? pontosRes.data : [];
+
+                    const users = team.map(function (p) {
+                        return {
+                            id: p.id,
+                            nome: safe(p.nome_guerra, 'Agente'),
+                            cargo: safe(p.cargo, 'Cargo não definido'),
+                            rg: safe(p.rg, '-'),
+                            foto: safe(p.foto_url, 'assets/img/prf.png'),
+                            grupamento: resolveGroupName(p),
+                            nameLower: normalize(p.nome_guerra),
+                            rgLower: normalize(p.rg)
+                        };
+                    });
+
+                    const stats = users.map(function (user) {
+                        const bouRealAll = bousAll.filter(function (row) { return row.user_id === user.id; }).length;
+                        const bouCitAll = bousAll.filter(function (row) { return isMentioned(computeText(row), user); }).length;
+                        const bouReal7 = bous7.filter(function (row) { return row.user_id === user.id; }).length;
+                        const bouCit7 = bous7.filter(function (row) { return isMentioned(computeText(row), user); }).length;
+                        const bouTotalAll = bouRealAll + bouCitAll;
+                        const bouTotal7 = bouReal7 + bouCit7;
+
+                        const aitTotalAll = aitsAll.filter(function (row) {
+                            return row.user_id === user.id || isMentioned(computeText(row), user);
+                        }).length;
+                        const aitTotal7 = aits7.filter(function (row) {
+                            return row.user_id === user.id || isMentioned(computeText(row), user);
+                        }).length;
+
+                        const ripatTotalAll = ripatsAll.filter(function (row) {
+                            return row.user_id === user.id || isMentioned(computeText(row), user);
+                        }).length;
+                        const ripatTotal7 = ripats7.filter(function (row) {
+                            return row.user_id === user.id || isMentioned(computeText(row), user);
+                        }).length;
+
+                        const aceTotalAll = acesAll.filter(function (row) {
+                            if (row.user_id === user.id) return true;
+                            const json = parseJsonSafe(row.conteudo_completo);
+                            if (json && json.aluno_id && String(json.aluno_id) === String(user.id)) return true;
+                            return isMentioned(computeText(row), user);
+                        }).length;
+                        const aceTotal7 = aces7.filter(function (row) {
+                            if (row.user_id === user.id) return true;
+                            const json = parseJsonSafe(row.conteudo_completo);
+                            if (json && json.aluno_id && String(json.aluno_id) === String(user.id)) return true;
+                            return isMentioned(computeText(row), user);
+                        }).length;
+
+                        const ravopTotalAll = ravopsAll.filter(function (row) {
+                            return row.user_id === user.id || isMentioned(computeText(row), user);
+                        }).length;
+                        const ravopTotal7 = ravops7.filter(function (row) {
+                            return row.user_id === user.id || isMentioned(computeText(row), user);
+                        }).length;
+
+                        const totalMinutes = pontos
+                            .filter(function (row) { return row.user_id === user.id; })
+                            .reduce(function (acc, row) {
+                                if (row.duracao_min) return acc + Number(row.duracao_min || 0);
+                                if (row.inicio_at && row.fim_at) {
+                                    const start = new Date(row.inicio_at).getTime();
+                                    const end = new Date(row.fim_at).getTime();
+                                    if (!Number.isNaN(start) && !Number.isNaN(end)) {
+                                        return acc + Math.max(0, (end - start) / 60000);
+                                    }
+                                }
+                                if (row.inicio_at && !row.fim_at) {
+                                    const start = new Date(row.inicio_at).getTime();
+                                    if (!Number.isNaN(start)) {
+                                        return acc + Math.max(0, (Date.now() - start) / 60000);
+                                    }
+                                }
+                                return acc;
+                            }, 0);
+
+                        const last7Minutes = pontos
+                            .filter(function (row) {
+                                if (!row.inicio_at) return false;
+                                return new Date(row.inicio_at).getTime() >= since.getTime();
+                            })
+                            .filter(function (row) { return row.user_id === user.id; })
+                            .reduce(function (acc, row) {
+                                if (row.duracao_min) return acc + Number(row.duracao_min || 0);
+                                if (row.inicio_at && row.fim_at) {
+                                    const start = new Date(row.inicio_at).getTime();
+                                    const end = new Date(row.fim_at).getTime();
+                                    if (!Number.isNaN(start) && !Number.isNaN(end)) {
+                                        return acc + Math.max(0, (end - start) / 60000);
+                                    }
+                                }
+                                if (row.inicio_at && !row.fim_at) {
+                                    const start = new Date(row.inicio_at).getTime();
+                                    if (!Number.isNaN(start)) {
+                                        return acc + Math.max(0, (Date.now() - start) / 60000);
+                                    }
+                                }
+                                return acc;
+                            }, 0);
+
+                        return {
+                            user: user,
+                            bouTotalAll: bouTotalAll,
+                            bouTotal7: bouTotal7,
+                            aitTotalAll: aitTotalAll,
+                            aitTotal7: aitTotal7,
+                            ripatTotalAll: ripatTotalAll,
+                            ripatTotal7: ripatTotal7,
+                            aceTotalAll: aceTotalAll,
+                            aceTotal7: aceTotal7,
+                            ravopTotalAll: ravopTotalAll,
+                            ravopTotal7: ravopTotal7,
+                            totalMinutes: totalMinutes,
+                            last7Minutes: last7Minutes
+                        };
+                    });
+
+                    statusNode.textContent = '';
+                    if (countNode) countNode.textContent = stats.length + (stats.length === 1 ? ' agente' : ' agentes');
+
+                    const grouped = stats.reduce(function (acc, item) {
+                        const key = item.user.grupamento || 'Grupamento';
+                        if (!acc[key]) acc[key] = [];
+                        acc[key].push(item);
+                        return acc;
+                    }, {});
+
+                    const groupNames = Object.keys(grouped).sort(function (a, b) {
+                        return a.localeCompare(b, 'pt-BR');
+                    });
+
+                    grid.innerHTML = groupNames.map(function (groupName) {
+                        const crest = resolveGroupLogo(groupName);
+                        const groupLower = normalize(groupName);
+                        const showRavop = groupLower.includes('operações aéreas') || groupLower.includes('operacoes aereas') || groupLower.includes('doa');
+                        const cards = grouped[groupName].map(function (item) {
+                            const nome = escapeHtml(item.user.nome);
+                            const cargo = escapeHtml(item.user.cargo);
+                            const rg = escapeHtml(item.user.rg);
+                            const ravopRow = showRavop
+                                ? '<div class="gerenciador-stat"><span>RAVOP</span><strong>Total: ' + item.ravopTotalAll + '</strong><em>7d: ' + item.ravopTotal7 + '</em></div>'
+                                : '';
+                            return (
+                                '<article class="gerenciador-card">' +
+                                '<div class="gerenciador-card-top">' +
+                                '<img class="gerenciador-card-crest" src="' + crest + '" alt="' + escapeHtml(groupName) + '" onerror="this.src=\'assets/img/prf.png\'">' +
+                                '<div>' +
+                            '<div class="gerenciador-card-name-row">' +
+                            '<img class="gerenciador-card-avatar" src="' + escapeHtml(item.user.foto) + '" alt="' + nome + '" onerror="this.src=\'assets/img/prf.png\'">' +
+                            '<h3>' + nome + '</h3>' +
+                            '</div>' +
+                            '<p>' + cargo + '</p>' +
+                            '<span class="gerenciador-card-group">' + escapeHtml(groupName) + '</span>' +
+                            '</div>' +
+                            '<div class="gerenciador-card-rg">RG: ' + rg + '</div>' +
+                            '</div>' +
+                                '<div class="gerenciador-card-stats">' +
+                                '<div class="gerenciador-stat"><span>BOU</span><strong>Total: ' + item.bouTotalAll + '</strong><em>7d: ' + item.bouTotal7 + '</em></div>' +
+                                '<div class="gerenciador-stat"><span>AIT</span><strong>Total: ' + item.aitTotalAll + '</strong><em>7d: ' + item.aitTotal7 + '</em></div>' +
+                                '<div class="gerenciador-stat"><span>RIPAT</span><strong>Total: ' + item.ripatTotalAll + '</strong><em>7d: ' + item.ripatTotal7 + '</em></div>' +
+                                '<div class="gerenciador-stat"><span>ACE</span><strong>Total: ' + item.aceTotalAll + '</strong><em>7d: ' + item.aceTotal7 + '</em></div>' +
+                                ravopRow +
+                                '</div>' +
+                                '<div class="gerenciador-card-service">' +
+                                '<div><span>Total de serviço</span><strong>' + formatDuration(item.totalMinutes) + '</strong></div>' +
+                                '<div><span>Últimos 7 dias</span><strong>' + formatDuration(item.last7Minutes) + '</strong></div>' +
+                                '</div>' +
+                                '</article>'
+                            );
+                        }).join('');
+
+                        return (
+                            '<section class="gerenciador-group">' +
+                            '<header class="gerenciador-group-header">' +
+                            '<img class="gerenciador-group-crest" src="' + crest + '" alt="' + escapeHtml(groupName) + '" onerror="this.src=\'assets/img/prf.png\'">' +
+                            '<div>' +
+                            '<h3>' + escapeHtml(groupName) + '</h3>' +
+                            '<span>' + grouped[groupName].length + ' agente(s)</span>' +
+                            '</div>' +
+                            '</header>' +
+                            '<div class="gerenciador-group-grid">' + cards + '</div>' +
+                            '</section>'
+                        );
+                    }).join('');
+                } catch (e) {
+                    statusNode.textContent = 'Não foi possível carregar as informações.';
+                }
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupInicioShiftControl() {
+                if (window.__shiftControl && window.__shiftControlUserId) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+                window.__inicioSupabaseClient = client;
+                window.__inicioUserId = String(userId);
+
+                const listeners = [];
+                let currentState = { status: 'idle', startAt: null, shiftId: null, totalMs: null };
+
+                const formatHms = function (totalMs) {
+                    const safeMs = Math.max(0, Number(totalMs || 0));
+                    const totalSec = Math.floor(safeMs / 1000);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                };
+
+                const emit = function () {
+                    const payload = Object.assign({}, currentState);
+                    listeners.forEach(function (fn) {
+                        try { fn(payload); } catch (e) {}
+                    });
+                    try {
+                        window.dispatchEvent(new CustomEvent('shift-state-changed', { detail: payload }));
+                    } catch (e) {}
+                };
+
+                const setState = function (next) {
+                    currentState = Object.assign({}, currentState, next);
+                    emit();
+                };
+
+                const fetchOpen = async function () {
+                    const result = await client
+                        .from('agent_pontos')
+                        .select('id,inicio_at')
+                        .eq('user_id', userId)
+                        .is('fim_at', null)
+                        .order('inicio_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    return result && result.data ? result.data : null;
+                };
+
+                const refresh = async function () {
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const latestResult = await client
+                        .from('agent_pontos')
+                        .select('status,duracao_min')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    const latest = latestResult && latestResult.data ? latestResult.data : null;
+
+                    if (latest && String(latest.status || '') === 'encerrado') {
+                        setState({
+                            status: 'closed',
+                            shiftId: null,
+                            startAt: null,
+                            totalMs: Math.max(0, Number(latest.duracao_min || 0)) * 60000
+                        });
+                    } else {
+                        setState({ status: 'idle', shiftId: null, startAt: null, totalMs: null });
+                    }
+                    return Object.assign({}, currentState);
+                };
+
+                const start = async function () {
+                    if (currentState.status === 'active') return Object.assign({}, currentState);
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const nowIso = new Date().toISOString();
+                    const insert = await client
+                        .from('agent_pontos')
+                        .insert({ user_id: userId, inicio_at: nowIso, status: 'em_servico' })
+                        .select('id,inicio_at')
+                        .single();
+
+                    if (insert.error || !insert.data) return refresh();
+
+                    setState({
+                        status: 'active',
+                        shiftId: insert.data.id,
+                        startAt: insert.data.inicio_at ? new Date(insert.data.inicio_at).getTime() : Date.now(),
+                        totalMs: null
+                    });
+                    return Object.assign({}, currentState);
+                };
+
+                const stop = async function () {
+                    let shiftId = currentState.shiftId;
+                    let startAt = currentState.startAt;
+
+                    if (!shiftId || !startAt) {
+                        const openRow = await fetchOpen();
+                        if (!openRow) return refresh();
+                        shiftId = openRow.id;
+                        startAt = openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now();
+                    }
+
+                    const totalMs = Math.max(0, Date.now() - Number(startAt));
+                    await client
+                        .from('agent_pontos')
+                        .update({
+                            fim_at: new Date().toISOString(),
+                            duracao_min: Math.floor(totalMs / 60000),
+                            status: 'encerrado'
+                        })
+                        .eq('id', shiftId)
+                        .eq('user_id', userId);
+
+                    setState({ status: 'closed', shiftId: null, startAt: null, totalMs: totalMs });
+                    return Object.assign({}, currentState);
+                };
+
+                const toggle = async function () {
+                    return currentState.status === 'active' ? stop() : start();
+                };
+
+                const subscribe = function (fn) {
+                    if (typeof fn !== 'function') return function () {};
+                    listeners.push(fn);
+                    try { fn(Object.assign({}, currentState)); } catch (e) {}
+                    return function () {
+                        const idx = listeners.indexOf(fn);
+                        if (idx >= 0) listeners.splice(idx, 1);
+                    };
+                };
+
+                window.__shiftControl = {
+                    getState: function () { return Object.assign({}, currentState); },
+                    refresh: refresh,
+                    start: start,
+                    stop: stop,
+                    toggle: toggle,
+                    subscribe: subscribe,
+                    formatHms: formatHms
+                };
+                window.__shiftControlUserId = userId;
+                await refresh();
+            })();
+            (async function setupInicioShiftButton() {
+                function byId(id) { return document.getElementById(id); }
+                const btn = byId('inicio-shift-btn');
+                if (!btn) return;
+
+                const waitShiftControl = async () => {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__shiftControl && typeof window.__shiftControl.toggle === 'function') {
+                            return window.__shiftControl;
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                const shiftControl = await waitShiftControl();
+                if (!shiftControl) return;
+                let showClosedState = false;
+
+                const render = (state) => {
+                    const s = state || shiftControl.getState();
+                    btn.classList.remove('plantao-shift-btn--idle', 'plantao-shift-btn--active', 'plantao-shift-btn--closed');
+
+                    if (s.status === 'active' && s.startAt) {
+                        btn.classList.add('plantao-shift-btn--active');
+                        btn.textContent = 'Em serviço ' + shiftControl.formatHms(Date.now() - Number(s.startAt));
+                        return;
+                    }
+
+                    if (s.status === 'closed') {
+                        if (!showClosedState) {
+                            btn.classList.add('plantao-shift-btn--idle');
+                            btn.textContent = 'Entrar em serviço';
+                            return;
+                        }
+                        btn.classList.add('plantao-shift-btn--closed');
+                        btn.textContent = s.totalMs
+                            ? ('Serviço encerrado ' + shiftControl.formatHms(s.totalMs))
+                            : 'Serviço encerrado';
+                        return;
+                    }
+
+                    btn.classList.add('plantao-shift-btn--idle');
+                    btn.textContent = 'Entrar em serviço';
+                };
+
+                btn.addEventListener('click', async function () {
+                    const current = shiftControl.getState();
+                    showClosedState = current.status === 'active';
+                    await shiftControl.toggle();
+                });
+
+                shiftControl.subscribe((state) => render(state));
+                setInterval(() => render(shiftControl.getState()), 1000);
+                render(shiftControl.getState());
+            })();
+
+            (function setupInicioOnDutyList() {
+                function byId(id) { return document.getElementById(id); }
+                const listNode = byId('inicio-on-duty-list');
+                const countNode = byId('inicio-on-duty-count');
+                if (!listNode) return;
+
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                let refreshTimer = null;
+                let busy = false;
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const initials = function (name) {
+                    const parts = safe(name, '').split(' ').filter(Boolean);
+                    if (!parts.length) return 'PRF';
+                    const first = parts[0][0] || '';
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+                    return (first + last).toUpperCase();
+                };
+
+                const render = function (items) {
+                    const total = items.length;
+                    if (countNode) countNode.textContent = String(total);
+                    if (!total) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nenhum agente em serviço.</p>';
+                        return;
+                    }
+                    const selfId = window.__shiftControlUserId ? String(window.__shiftControlUserId) : '';
+                    const isSelfActive = !!(window.__shiftControl && window.__shiftControl.getState && window.__shiftControl.getState().status === 'active');
+                    listNode.innerHTML = items.map(function (agent) {
+                        const nome = safe(agent.nome_guerra, 'Agente');
+                        const cargo = safe(agent.cargo, 'Cargo não definido');
+                        const grupamentoRaw = safe(agent.grupamento, 'Grupamento não definido');
+                        const grupamento = grupamentoRaw.includes(' || ')
+                            ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                            : grupamentoRaw;
+                        const foto = safe(agent.foto_url, 'assets/img/prf.png');
+                        const isSelf = selfId && agent && String(agent.id || '') === selfId;
+                        const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
+                        const fallback = initials(nome);
+                        return (
+                            '<article class="plantao-item' + destaque + '">' +
+                            '<div class="plantao-avatar">' +
+                            '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
+                            '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
+                            '</div>' +
+                            '<div class="plantao-body">' +
+                            '<h3>' + nome + '</h3>' +
+                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+                };
+
+                const fetchList = async function () {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        const active = await client
+                            .from('agent_pontos')
+                            .select('user_id,inicio_at')
+                            .is('fim_at', null)
+                            .order('inicio_at', { ascending: true });
+
+                        if (active.error || !Array.isArray(active.data)) {
+                            listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                            if (countNode) countNode.textContent = '0';
+                            return;
+                        }
+
+                        const orderedIds = [];
+                        const seen = new Set();
+                        active.data.forEach(function (row) {
+                            const id = row && row.user_id ? String(row.user_id) : '';
+                            if (!id || seen.has(id)) return;
+                            seen.add(id);
+                            orderedIds.push(id);
+                        });
+
+                        if (!orderedIds.length) {
+                            render([]);
+                            return;
+                        }
+
+                        let profiles = await client
+    .from('profiles')
+    .select('id,nome_guerra,cargo,grupamento,foto_url')
+    .in('id', orderedIds);
+
+if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+    const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+    if (!fallback.error && Array.isArray(fallback.data)) {
+        profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+    }
+}
+
+const map = new Map();
+                        if (profiles && Array.isArray(profiles.data)) {
+                            profiles.data.forEach(function (p) {
+                                if (p && p.id) map.set(String(p.id), p);
+                            });
+                        }
+
+                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        render(items);
+                    } catch (e) {
+                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        if (countNode) countNode.textContent = '0';
+                    } finally {
+                        busy = false;
+                    }
+                };
+
+                const scheduleRefresh = function () {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(fetchList, 300);
+                };
+
+                fetchList();
+                try {
+                    client
+                        .channel('agent_pontos_live_inicio')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_pontos' }, scheduleRefresh)
+                        .subscribe();
+                } catch (e) {
+                    /* ignore */
+                }
+
+                window.addEventListener('shift-state-changed', scheduleRefresh);
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioProfile() {
+                const nameNode = document.getElementById('inicio-user-name');
+                const cargoNode = document.getElementById('inicio-user-cargo');
+                const photoNode = document.getElementById('inicio-user-photo');
+                const cargoImgNode = document.getElementById('inicio-user-cargo-img');
+                if (!nameNode || !cargoNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const profile = profileResult ? profileResult.data : null;
+                if (!profile) return;
+
+                const nome = (profile.nome_guerra || 'Usuario').toString();
+                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const rgNode = document.getElementById('inicio-user-rg');
+                const gruposNode = document.getElementById('inicio-user-grupamentos');
+                const cursosNode = document.getElementById('inicio-user-cursos');
+                nameNode.textContent = nome;
+                cargoNode.textContent = cargo;
+                if (rgNode) rgNode.textContent = 'RG: ' + (profile.rg || '-');
+                if (gruposNode) {
+                    const grupamentoRaw = String(profile.grupamento || '').trim();
+                    const grupos = grupamentoRaw
+                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                        : 'Grupamento';
+                    gruposNode.textContent = grupos;
+                }
+                if (cursosNode) {
+                    const rawCursos = String(profile.cursos || '').trim();
+                    if (!rawCursos) {
+                        cursosNode.textContent = '-';
+                    } else {
+                        const parts = rawCursos.split('||').map(function (p) { return p.trim(); }).filter(Boolean);
+                        cursosNode.innerHTML = parts.length ? parts.map(function (p) { return p.replace(/</g, '&lt;'); }).join('<br>') : '-';
+                    }
+                }
+
+                if (photoNode && profile.foto_url) {
+                    photoNode.src = profile.foto_url;
+                }
+                const footerAvatar = document.getElementById('inicio-footer-avatar');
+                const footerName = document.getElementById('inicio-footer-name');
+                if (footerAvatar && profile.foto_url) {
+                    footerAvatar.src = profile.foto_url;
+                }
+                if (footerName) {
+                    footerName.textContent = nome;
+                }
+
+                const cargoKey = cargo.toLowerCase().trim();
+                const cargoMap = {
+                    'diretor-geral': 'diretor.png',
+                    'superintendente': 'superintendente.png',
+                    'coordenador': 'coordenador.png',
+                    'chefe de divisão': 'chefededivisao.png',
+                    'chefe de servico': 'chefedeservico.png',
+                    'chefe de serviço': 'chefedeservico.png',
+                    'chefe de núcleo': 'chefedenucleo.png',
+                    'chefe de nucleo': 'chefedenucleo.png',
+                    'agente de classe especial': 'classeespecial.png',
+                    'agente de primeira classe': 'primeiraclasse.png',
+                    'agente de segunda classe': 'terceiraclasse.png',
+                    'agente aluno': 'aluno.png'
+                };
+                const cargoImg = cargoMap[cargoKey];
+                if (cargoImg && cargoImgNode) {
+                    cargoImgNode.src = 'assets/img/' + cargoImg;
+                    cargoImgNode.classList.remove('is-hidden');
+                }
+
+                const medalsNode = document.getElementById('inicio-user-medals');
+                const resolveMedalImage = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'assets/img/mencaoelogio.png';
+                    const lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) return raw;
+                    if (raw.startsWith('/') || raw.startsWith('assets/')) return raw;
+                    return 'assets/img/' + raw;
+                };
+
+                if (medalsNode) {
+                    try {
+                        const medalResult = await client
+                            .from('profile_medals')
+                            .select('medal_image, medal_name')
+                    .eq('user_id', userId)
+                            .order('awarded_at', { ascending: false })
+                            .limit(24);
+                        const medals = medalResult && Array.isArray(medalResult.data) ? medalResult.data : [];
+                        if (medals.length) {
+                            medalsNode.innerHTML = medals.map(function (medal) {
+                                const src = resolveMedalImage(medal.medal_image);
+                                const alt = medal.medal_name ? String(medal.medal_name) : 'condecoração do Usuário';
+                                return `<img src="${src}" alt="${alt}" class="inicio-user-medal" onerror="this.src='assets/img/mencaoelogio.png'">`;
+                            }).join('');
+                            medalsNode.classList.remove('is-hidden');
+                        } else {
+                            medalsNode.classList.add('is-hidden');
+                        }
+                    } catch (e) {
+                        medalsNode.classList.add('is-hidden');
+                    }
+                }
+            })();
+        });
+    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            document.body.classList.add('inicio-loaded');
+        }, 700);
+    });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
