@@ -1656,7 +1656,10 @@
         <i class="fas fa-bell"></i>
       </button>
       <div class="inicio-notify-panel is-hidden is-menu">
-        <h4>Notificações</h4>
+        <div class="inicio-notify-head">
+          <h4>Notificações</h4>
+          <button class="inicio-notify-clear" type="button">Limpar notificações</button>
+        </div>
         <div class="inicio-notify-section" data-section="bou"><strong>BOU citados</strong><div class="inicio-notify-list"></div></div>
         <div class="inicio-notify-section" data-section="ait"><strong>AIT citados</strong><div class="inicio-notify-list"></div></div>
         <div class="inicio-notify-section" data-section="ripat"><strong>RIPAT citados</strong><div class="inicio-notify-list"></div></div>
@@ -1668,11 +1671,19 @@
 
     const btn = wrapper.querySelector('.inicio-notify-btn');
     const panel = wrapper.querySelector('.inicio-notify-panel');
+    const clearBtn = wrapper.querySelector('.inicio-notify-clear');
     btn.addEventListener('click', (event) => {
       event.stopPropagation();
       panel.classList.toggle('is-hidden');
       btn.setAttribute('aria-expanded', panel.classList.contains('is-hidden') ? 'false' : 'true');
     });
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        btn.classList.remove('has-alert');
+      });
+    }
     panel.addEventListener('click', (event) => {
       event.stopPropagation();
     });
@@ -1707,29 +1718,41 @@
         || (email && hay.includes(email.toLowerCase()));
     };
 
-    const setList = (key, items) => {
+    const setList = (key, item) => {
       const section = wrapper.querySelector(`.inicio-notify-section[data-section="${key}"] .inicio-notify-list`);
       if (!section) return;
-      if (!items.length) {
+      if (!item) {
         section.innerHTML = '<span class="inicio-notify-empty">Nenhum registro.</span>';
         return;
       }
-      section.innerHTML = items.map((item) => {
-        return `<a class="inicio-notify-item" href="${item.href}">${item.title}</a>`;
-      }).join('');
+      section.innerHTML = `<a class="inicio-notify-item" href="${item.href}">${item.title}</a>`;
     };
+
+    const pickLatest = (items) => (Array.isArray(items) && items.length ? items[0] : null);
 
     // BOU
     const bousRes = await client.rpc('list_recent_bous_for_user', { p_days: 2 });
     const bous = Array.isArray(bousRes.data) ? bousRes.data : [];
-    setList('bou', bous.filter((b) => b.user_id !== user.id && matchText(b.conteudo_completo))
-      .map((b) => ({ title: b.titulo || `BOU #${b.id}`, href: `relatoriospublicados.html?highlight=${b.id}` })));
+    const bouItems = bous
+      .filter((b) => b.user_id !== user.id && matchText(b.conteudo_completo))
+      .map((b) => ({
+        id: `bou:${b.id}`,
+        title: b.titulo || `BOU #${b.id}`,
+        href: `relatoriospublicados.html?highlight=${b.id}`
+      }));
+    setList('bou', pickLatest(bouItems));
 
     // AIT
     const aitsRes = await client.rpc('list_recent_aits_for_user', { p_days: 2 });
     const aits = Array.isArray(aitsRes.data) ? aitsRes.data : [];
-    setList('ait', aits.filter((a) => a.user_id !== user.id && matchText(a.conteudo_completo))
-      .map((a) => ({ title: a.numero_ait || `AIT #${a.id}`, href: `aitpublicados.html?highlight=${a.id}` })));
+    const aitItems = aits
+      .filter((a) => a.user_id !== user.id && matchText(a.conteudo_completo))
+      .map((a) => ({
+        id: `ait:${a.id}`,
+        title: a.numero_ait || `AIT #${a.id}`,
+        href: `aitpublicados.html?highlight=${a.id}`
+      }));
+    setList('ait', pickLatest(aitItems));
 
     // RIPAT (best-effort: only own due to RLS)
     const ripatRes = await client
@@ -1738,8 +1761,10 @@
       .order('created_at', { ascending: false })
       .limit(50);
     const ripats = Array.isArray(ripatRes.data) ? ripatRes.data : [];
-    setList('ripat', ripats.filter((r) => r.user_id !== user.id && matchText(r.conteudo_completo))
-      .map((r) => ({ title: `RIPAT #${r.id}`, href: `ripatpublicados.html?highlight=${r.id}` })));
+    const ripatItems = ripats
+      .filter((r) => r.user_id !== user.id && matchText(r.conteudo_completo))
+      .map((r) => ({ id: `ripat:${r.id}`, title: `RIPAT #${r.id}`, href: `ripatpublicados.html?highlight=${r.id}` }));
+    setList('ripat', pickLatest(ripatItems));
 
     // Diario oficial cited (best-effort: name/rg/email in texto)
     const diariosRes = await client
@@ -1748,11 +1773,14 @@
       .order('created_at', { ascending: false })
       .limit(50);
     const diarios = Array.isArray(diariosRes.data) ? diariosRes.data : [];
-    setList('diario', diarios.filter((d) => matchText(d.texto))
+    const diarioItems = diarios
+      .filter((d) => matchText(d.texto))
       .map((d) => ({
+        id: `diario:${d.id}`,
         title: d.numero_decreto ? `Decreto Nº ${d.numero_decreto}` : `Diário #${d.id}`,
         href: `diario-oficial.html?highlight=${d.id}`
-      })));
+      }));
+    setList('diario', pickLatest(diarioItems));
 
     // Corregedoria
     const corRes = await client
@@ -1762,8 +1790,21 @@
       .order('created_at', { ascending: false })
       .limit(50);
     const cors = Array.isArray(corRes.data) ? corRes.data : [];
-    setList('corregedoria', cors.filter((c) => Array.isArray(c.mentioned_user_ids) && c.mentioned_user_ids.includes(user.id))
-      .map((c) => ({ title: c.title || `Corregedoria #${c.id}`, href: `corregedoria.html?highlight=${c.id}` })));
+    const corregedoriaItems = cors
+      .filter((c) => Array.isArray(c.mentioned_user_ids) && c.mentioned_user_ids.includes(user.id))
+      .map((c) => ({ id: `corregedoria:${c.id}`, title: c.title || `Corregedoria #${c.id}`, href: `corregedoria.html?highlight=${c.id}` }));
+    setList('corregedoria', pickLatest(corregedoriaItems));
+
+    const latestMap = {
+      bou: (pickLatest(bouItems) || {}).id || '',
+      ait: (pickLatest(aitItems) || {}).id || '',
+      ripat: (pickLatest(ripatItems) || {}).id || '',
+      diario: (pickLatest(diarioItems) || {}).id || '',
+      corregedoria: (pickLatest(corregedoriaItems) || {}).id || ''
+    };
+    // Estado global: bolinha baseada apenas nas citações atuais vindas do banco.
+    const hasUnread = Object.keys(latestMap).some((key) => Boolean(latestMap[key]));
+    btn.classList.toggle('has-alert', hasUnread);
   };
 
   const applyHighlightFromQuery = () => {
