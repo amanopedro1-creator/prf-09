@@ -544,7 +544,7 @@
                                 .order('inicio_at', { ascending: true });
 
                             if (active.error || !Array.isArray(active.data)) {
-                                listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                                listNode.innerHTML = '<p class="plantao-empty">Nao foi possivel carregar.</p>';
                                 if (countNode) countNode.textContent = '0';
                                 return;
                             }
@@ -589,20 +589,21 @@
                         const items = orderedIds.map(function (id) {
                             return map.get(id) || {
                                 id: id,
-                                nome_guerra: 'Agente em serviço',
-                                cargo: 'Em serviço',
-                                grupamento: 'Grupamento não disponível',
+                                nome_guerra: 'Agente em servico',
+                                cargo: 'Em servico',
+                                grupamento: 'Grupamento nao disponivel',
                                 foto_url: 'assets/img/prf.png'
                             };
                         });
                         render(items);
                     } catch (e) {
-                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        listNode.innerHTML = '<p class="plantao-empty">Nao foi possivel carregar.</p>';
                         if (countNode) countNode.textContent = '0';
                     } finally {
                         busy = false;
                     }
                 };
+
                 const scheduleRefresh = function () {
                     if (refreshTimer) clearTimeout(refreshTimer);
                     refreshTimer = setTimeout(fetchList, 300);

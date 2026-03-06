@@ -482,6 +482,7 @@
 
                 let rows = [];
 
+                // 1) Tentativa direta (pode ser limitada por RLS).
                 const aitsResult = await client
                     .from('aits')
                     .select('id,user_id,numero_ait,conteudo_completo,created_at,data_criacao')
@@ -493,6 +494,7 @@
                     rows = aitsResult.data;
                 }
 
+                // 2) RPCs de fallback (se existirem no banco).
                 if (!rows.length) {
                     const rpcCandidates = [
                         'list_all_aits_recent',
@@ -508,6 +510,30 @@
                         }
                     }
                 }
+
+                // 3) Garantia minima: carregar AITs do proprio usuario.
+                if (!rows.length) {
+                    const mineResult = await client
+                        .from('aits')
+                        .select('id,user_id,numero_ait,conteudo_completo,created_at,data_criacao')
+                        .eq('user_id', user.id)
+                        .order('data_criacao', { ascending: false })
+                        .order('created_at', { ascending: false })
+                        .limit(500);
+                    if (!mineResult.error && Array.isArray(mineResult.data)) {
+                        rows = mineResult.data;
+                    }
+                }
+
+                // Deduplicacao por id ao combinar fontes com formatos diferentes.
+                const byId = new Map();
+                rows.forEach(function (row) {
+                    if (!row) return;
+                    const key = String(row.id || '');
+                    if (!key) return;
+                    if (!byId.has(key)) byId.set(key, row);
+                });
+                rows = Array.from(byId.values());
 
                 const userIds = rows.map(function (row) { return row.user_id; }).filter(Boolean);
                 const uniqueUserIds = Array.from(new Set(userIds.map(String)));
@@ -527,18 +553,24 @@
                 }
 
                 state.items = rows.map(function (row) {
+                    const ownerId = String(
+                        row.user_id || row.userid || row.author_id || row.owner_id || ''
+                    );
                     const dataBase = row.data_criacao || row.created_at;
                     const normalizedConteudo = normalizeConteudo(row.conteudo_completo);
                     const titulo = row.numero_ait || (normalizedConteudo && getConteudoField(normalizedConteudo, 'numero_ait')) || ('AIT #' + row.id);
                     return Object.assign({}, row, {
+                        user_id: ownerId,
                         dataBase: dataBase,
                         titulo: titulo,
                         conteudo_completo: normalizedConteudo,
-                        isMine: String(row.user_id || '') === state.userId
+                        isMine: ownerId === state.userId
                     });
                 });
 
-                if (statusNode) statusNode.textContent = '';
+                if (statusNode) {
+                    statusNode.textContent = rows.length ? '' : 'Nenhum AIT visivel para este usuario.';
+                }
                 renderList();
             };
 
@@ -905,22 +937,36 @@
                     if (busy) return;
                     busy = true;
                     try {
-                        const active = await client
-                            .from('agent_pontos')
-                            .select('user_id,inicio_at')
-                            .is('fim_at', null)
-                            .order('inicio_at', { ascending: true });
+                        let activeRows = [];
 
-                        if (active.error || !Array.isArray(active.data)) {
-                            listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
-                            if (countNode) countNode.textContent = '0';
-                            return;
+                        // Prefer RPC sem filtro por grupamento (security definer no banco).
+                        const rpcActive = await client.rpc('list_all_on_duty');
+                        if (!rpcActive.error && Array.isArray(rpcActive.data)) {
+                            activeRows = rpcActive.data;
+                        }
+
+                        // Fallback: consulta direta (pode sofrer RLS e mostrar so o proprio).
+                        if (!activeRows.length) {
+                            const active = await client
+                                .from('agent_pontos')
+                                .select('user_id,inicio_at')
+                                .is('fim_at', null)
+                                .order('inicio_at', { ascending: true });
+
+                            if (active.error || !Array.isArray(active.data)) {
+                                listNode.innerHTML = '<p class="plantao-empty">Nao foi possivel carregar.</p>';
+                                if (countNode) countNode.textContent = '0';
+                                return;
+                            }
+                            activeRows = active.data;
                         }
 
                         const orderedIds = [];
                         const seen = new Set();
-                        active.data.forEach(function (row) {
-                            const id = row && row.user_id ? String(row.user_id) : '';
+                        activeRows.forEach(function (row) {
+                            const id = row && (row.user_id || row.id || row.profile_id)
+                                ? String(row.user_id || row.id || row.profile_id)
+                                : '';
                             if (!id || seen.has(id)) return;
                             seen.add(id);
                             orderedIds.push(id);
@@ -932,18 +978,18 @@
                         }
 
                         let profiles = await client
-    .from('profiles')
-    .select('id,nome_guerra,cargo,grupamento,foto_url')
-    .in('id', orderedIds);
+                            .from('profiles')
+                            .select('id,nome_guerra,cargo,grupamento,foto_url')
+                            .in('id', orderedIds);
 
-if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
-    const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
-    if (!fallback.error && Array.isArray(fallback.data)) {
-        profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
-    }
-}
+                        if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+                            const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+                            if (!fallback.error && Array.isArray(fallback.data)) {
+                                profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+                            }
+                        }
 
-const map = new Map();
+                        const map = new Map();
                         if (profiles && Array.isArray(profiles.data)) {
                             profiles.data.forEach(function (p) {
                                 if (p && p.id) map.set(String(p.id), p);
@@ -953,15 +999,15 @@ const map = new Map();
                         const items = orderedIds.map(function (id) {
                             return map.get(id) || {
                                 id: id,
-                                nome_guerra: 'Agente em serviço',
-                                cargo: 'Em serviço',
-                                grupamento: 'Grupamento não disponível',
+                                nome_guerra: 'Agente em servico',
+                                cargo: 'Em servico',
+                                grupamento: 'Grupamento nao disponivel',
                                 foto_url: 'assets/img/prf.png'
                             };
                         });
                         render(items);
                     } catch (e) {
-                        listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
+                        listNode.innerHTML = '<p class="plantao-empty">Nao foi possivel carregar.</p>';
                         if (countNode) countNode.textContent = '0';
                     } finally {
                         busy = false;
