@@ -1,8 +1,10 @@
 {
   "cleanUrls": false,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/interno/:page", "destination": "/interno/:page.html" }
+  ],
   "redirects": [
-    { "source": "/(.*)\\.html", "destination": "/$1", "permanent": true },
     { "source": "/index", "destination": "/", "permanent": true },
     { "source": "/index.html", "destination": "/", "permanent": true }
   ]
