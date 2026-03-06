@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -1039,7 +1039,15 @@ const map = new Map();
                             });
                         }
 
-                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        const items = orderedIds.map(function (id) {
+                            return map.get(id) || {
+                                id: id,
+                                nome_guerra: 'Agente em serviço',
+                                cargo: 'Em serviço',
+                                grupamento: 'Grupamento não disponível',
+                                foto_url: 'assets/img/prf.png'
+                            };
+                        });
                         render(items);
                     } catch (e) {
                         listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';

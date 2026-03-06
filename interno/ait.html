@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -677,7 +677,15 @@ const map = new Map();
                             });
                         }
 
-                        const items = orderedIds.map(function (id) { return map.get(id); }).filter(Boolean);
+                        const items = orderedIds.map(function (id) {
+                            return map.get(id) || {
+                                id: id,
+                                nome_guerra: 'Agente em serviço',
+                                cargo: 'Em serviço',
+                                grupamento: 'Grupamento não disponível',
+                                foto_url: 'assets/img/prf.png'
+                            };
+                        });
                         render(items);
                     } catch (e) {
                         listNode.innerHTML = '<p class="plantao-empty">Não foi possível carregar.</p>';
@@ -916,18 +924,76 @@ const map = new Map();
                         if (submitBtn) submitBtn.disabled = true;
                         setStatus('Enviando...', false);
 
+                        const numeroAit = document.getElementById('ait-numero')?.value || '';
+                        const policialResponsavel = responsavel ? responsavel.value : '';
+                        const infratorNome = document.getElementById('ait-infrator-nome')?.value || '';
+                        const infratorRg = document.getElementById('ait-infrator-rg')?.value || '';
+                        const infracoes = document.getElementById('ait-infracao')?.value || '';
+                        const valorMulta = document.getElementById('ait-multa')?.value || '';
+                        const apreensao = document.getElementById('ait-apreensao')?.value || '';
+                        const dataHora = document.getElementById('ait-datahora')?.value || '';
+                        const local = document.getElementById('ait-local')?.value || '';
+                        const veiculo = document.getElementById('ait-veiculo')?.value || '';
+                        const placa = document.getElementById('ait-placa')?.value || '';
+
+                        const textoOriginal = [
+                            'AUTO DE INFRACAO DE TRANSITO (AIT):',
+                            '',
+                            'Numero do AIT: ' + (numeroAit || '-'),
+                            'Responsavel: ' + (policialResponsavel || '-'),
+                            'Infrator: ' + (infratorNome || '-'),
+                            'RG: ' + (infratorRg || '-'),
+                            'Infracoes: ' + (infracoes || '-'),
+                            'Multa: ' + (valorMulta || '-'),
+                            'Apreensao do veiculo: ' + (apreensao || '-'),
+                            'Data e hora: ' + (dataHora || '-'),
+                            'Local: ' + (local || '-'),
+                            'Veiculo: ' + (veiculo || '-'),
+                            'Placa: ' + (placa || '-')
+                        ].join('\n');
+
+                        const campos = {
+                            numero_ait: numeroAit,
+                            policial_responsavel: policialResponsavel,
+                            infrator_nome: infratorNome,
+                            infrator_rg: infratorRg,
+                            infracoes: infracoes,
+                            valor_multa: valorMulta,
+                            apreensao_veiculo: apreensao,
+                            data_hora: dataHora,
+                            local: local,
+                            veiculo: veiculo,
+                            placa: placa
+                        };
+
                         const payload = {
-                            numero_ait: document.getElementById('ait-numero')?.value || '',
-                            policial_responsavel: responsavel ? responsavel.value : '',
-                            infrator_nome: document.getElementById('ait-infrator-nome')?.value || '',
-                            infrator_rg: document.getElementById('ait-infrator-rg')?.value || '',
-                            infracoes: document.getElementById('ait-infracao')?.value || '',
-                            valor_multa: document.getElementById('ait-multa')?.value || '',
-                            apreensao_veiculo: document.getElementById('ait-apreensao')?.value || '',
-                            data_hora: document.getElementById('ait-datahora')?.value || '',
-                            local: document.getElementById('ait-local')?.value || '',
-                            veiculo: document.getElementById('ait-veiculo')?.value || '',
-                            placa: document.getElementById('ait-placa')?.value || ''
+                            numero_ait: numeroAit,
+                            numeroAIT: numeroAit,
+                            policial_responsavel: policialResponsavel,
+                            responsavel: policialResponsavel,
+                            infrator_nome: infratorNome,
+                            nome_infrator: infratorNome,
+                            infrator: infratorNome,
+                            infrator_rg: infratorRg,
+                            rg_infrator: infratorRg,
+                            rg: infratorRg,
+                            infracoes: infracoes,
+                            infracao: infracoes,
+                            valor_multa: valorMulta,
+                            multa: valorMulta,
+                            apreensao_veiculo: apreensao,
+                            apreensao: apreensao,
+                            data_hora: dataHora,
+                            datahora: dataHora,
+                            local: local,
+                            veiculo: veiculo,
+                            marca_modelo: veiculo,
+                            modelo: veiculo,
+                            placa: placa,
+                            emplacamento: placa,
+                            texto_original: textoOriginal,
+                            texto: textoOriginal,
+                            campos: campos
                         };
 
                         try {
@@ -951,8 +1017,14 @@ const map = new Map();
 
                             const aitId = insertResult.data.id;
                             const rpcResult = await client.rpc('send_ait_to_discord', { p_ait_id: aitId });
-                            if (rpcResult.error) {
-                                setStatus('Salvo, mas falhou ao enviar ao Discord.', true);
+                            const rpcOk = !!(rpcResult && rpcResult.data && rpcResult.data.ok !== false);
+                            if (rpcResult.error || !rpcOk) {
+                                const reason = rpcResult && rpcResult.error
+                                    ? (rpcResult.error.message || rpcResult.error.details || rpcResult.error.hint || '')
+                                    : (rpcResult && rpcResult.data && (rpcResult.data.error || rpcResult.data.message) ? String(rpcResult.data.error || rpcResult.data.message) : '');
+                                const finalReason = reason ? (' Detalhe: ' + reason) : '';
+                                setStatus('Salvo, mas falhou ao enviar ao Discord.' + finalReason, true);
+                                try { console.error('send_ait_to_discord failed', rpcResult); } catch (err) {}
                             } else {
                                 setStatus('AIT enviado com sucesso.', false);
                                 form.reset();
