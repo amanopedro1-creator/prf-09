@@ -285,6 +285,47 @@
                 grid.innerHTML = '<div class="equipe-showcase-loading">Carregando equipe...</div>';
                 const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
                 try {
+                    const blockedCargos = [
+                        'agente de classe especial',
+                        'agente de primeira classe',
+                        'agente de segunda classe',
+                        'agente de terceira classe',
+                        'agente aluno'
+                    ];
+                    const lockGerenciadorAccess = function () {
+                        document.querySelectorAll('.relatorios-subnav-item[href="gerenciador.html"]').forEach(function (link) {
+                            link.classList.add('is-locked');
+                            if (!link.querySelector('.relatorios-subnav-lock')) {
+                                const lock = document.createElement('span');
+                                lock.className = 'relatorios-subnav-lock';
+                                lock.innerHTML = '<i class="fas fa-lock" aria-hidden="true"></i>';
+                                lock.setAttribute('aria-label', 'Acesso restrito');
+                                link.appendChild(lock);
+                            }
+                            if (link.dataset.lockBound === 'true') return;
+                            link.dataset.lockBound = 'true';
+                            link.addEventListener('click', function (event) {
+                                event.preventDefault();
+                            });
+                        });
+                    };
+
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (user && user.id) {
+                        const profileRes = await client
+                            .from('profiles')
+                            .select('cargo')
+                            .eq('id', user.id)
+                            .maybeSingle();
+                        const profile = profileRes && profileRes.data ? profileRes.data : null;
+                        const cargoLower = safe(profile && profile.cargo, '').toLowerCase();
+                        if (blockedCargos.indexOf(cargoLower) >= 0) {
+                            lockGerenciadorAccess();
+                        }
+                    }
+
                     let items = [];
                     const rpc = await client.rpc('list_visible_team_profiles_for_current_user');
                     if (!rpc.error && Array.isArray(rpc.data)) {

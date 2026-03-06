@@ -625,39 +625,50 @@
                     .maybeSingle();
                 state.profile = profileResult && profileResult.data ? profileResult.data : null;
 
-                const logsResult = await client
-                    .from('webhook_audit_logs')
-                    .select('bou_id,created_at,status,http_status')
-                    .order('created_at', { ascending: false })
-                    .limit(500);
+                let rows = [];
+                let logMap = {};
+                const rpcRecent = await client.rpc('list_all_bous_recent', { p_days: 3650 });
+                if (!rpcRecent.error && Array.isArray(rpcRecent.data) && rpcRecent.data.length) {
+                    rows = rpcRecent.data;
+                } else {
+                    const rpcPublished = await client.rpc('list_all_bous_published', { p_days: 3650 });
+                    if (!rpcPublished.error && Array.isArray(rpcPublished.data) && rpcPublished.data.length) {
+                        rows = rpcPublished.data;
+                    } else {
+                        const logsResult = await client
+                            .from('webhook_audit_logs')
+                            .select('bou_id,created_at,status,http_status')
+                            .in('status', ['success', 'queued'])
+                            .order('created_at', { ascending: false })
+                            .limit(500);
 
-                const logRows = Array.isArray(logsResult.data) ? logsResult.data : [];
-                const logMap = {};
-                const logIds = [];
-                logRows.forEach(function (row) {
-                    const id = row && row.bou_id ? String(row.bou_id) : '';
-                    if (!id) return;
-                    if (!logMap[id]) {
-                        logMap[id] = row.created_at;
-                        logIds.push(id);
-                    }
-                });
+                        const logRows = Array.isArray(logsResult.data) ? logsResult.data : [];
+                        const logIds = [];
+                        logRows.forEach(function (row) {
+                            const id = row && row.bou_id ? String(row.bou_id) : '';
+                            if (!id) return;
+                            if (!logMap[id]) {
+                                logMap[id] = row.created_at;
+                                logIds.push(id);
+                            }
+                        });
 
-                const bousResult = await client
-                    .from('bous')
-                    .select('id,user_id,titulo,conteudo_completo,created_at,data_criacao,sent_to_discord_at')
-                    .not('sent_to_discord_at', 'is', null)
-                    .order('sent_to_discord_at', { ascending: false })
-                    .limit(200);
+                        const bousResult = await client
+                            .from('bous')
+                            .select('id,user_id,titulo,conteudo_completo,created_at,data_criacao,sent_to_discord_at')
+                            .order('created_at', { ascending: false })
+                            .limit(200);
 
-                let rows = Array.isArray(bousResult.data) ? bousResult.data : [];
-                if (logIds.length) {
-                    const bousFromLogs = await client
-                        .from('bous')
-                        .select('id,user_id,titulo,conteudo_completo,created_at,data_criacao,sent_to_discord_at')
-                        .in('id', logIds);
-                    if (bousFromLogs && Array.isArray(bousFromLogs.data)) {
-                        rows = rows.concat(bousFromLogs.data);
+                        rows = Array.isArray(bousResult.data) ? bousResult.data : [];
+                        if (logIds.length) {
+                            const bousFromLogs = await client
+                                .from('bous')
+                                .select('id,user_id,titulo,conteudo_completo,created_at,data_criacao,sent_to_discord_at')
+                                .in('id', logIds);
+                            if (bousFromLogs && Array.isArray(bousFromLogs.data)) {
+                                rows = rows.concat(bousFromLogs.data);
+                            }
+                        }
                     }
                 }
 
@@ -666,6 +677,36 @@
                     if (row && row.id != null) uniq.set(String(row.id), row);
                 });
                 rows = Array.from(uniq.values());
+
+                // Garante que "BOU realizados" traga todos os registros do usuário (com paginação).
+                let ownRows = [];
+                const ownRpcResult = await client.rpc('list_my_bous_realizados', { p_days: 3650 });
+                if (!ownRpcResult.error && Array.isArray(ownRpcResult.data)) {
+                    ownRows = ownRpcResult.data;
+                } else {
+                    const pageSize = 1000;
+                    for (let start = 0; start < 50000; start += pageSize) {
+                        const end = start + pageSize - 1;
+                        const ownRowsResult = await client
+                            .from('bous')
+                            .select('id,user_id,titulo,conteudo_completo,created_at,data_criacao,sent_to_discord_at')
+                            .eq('user_id', state.userId)
+                            .order('created_at', { ascending: false })
+                            .range(start, end);
+                        const chunk = ownRowsResult && Array.isArray(ownRowsResult.data) ? ownRowsResult.data : [];
+                        ownRows.push.apply(ownRows, chunk);
+                        if (chunk.length < pageSize) break;
+                    }
+                }
+                ownRows.forEach(function (row) {
+                    if (row && row.id != null) uniq.set(String(row.id), row);
+                });
+                rows = Array.from(uniq.values());
+                const ownIdSet = new Set(
+                    ownRows
+                        .filter(function (row) { return row && row.id != null; })
+                        .map(function (row) { return String(row.id); })
+                );
                 const ids = new Set();
                 rows.forEach(function (row) {
                     if (row && row.user_id) ids.add(String(row.user_id));
@@ -692,11 +733,13 @@
 
                 state.items = rows.map(function (row) {
                     const logTime = logMap[String(row.id || '')];
-                    const dataBase = row.data_criacao || row.sent_to_discord_at || logTime || row.created_at;
+                    // Ordenação de publicados: prioriza data real de publicação no BOU.
+                    const dataBase = row.sent_to_discord_at || row.created_at || row.data_criacao || logTime;
                     const normalizedConteudo = normalizeConteudo(row.conteudo_completo);
+                    const rowId = row && row.id != null ? String(row.id) : '';
                     return Object.assign({}, row, {
                         dataBase: dataBase,
-                        isMine: String(row.user_id || '') === state.userId,
+                        isMine: ownIdSet.has(rowId) || (String(row.user_id || '').toLowerCase() === String(state.userId || '').toLowerCase()),
                         conteudo_completo: normalizedConteudo,
                         isMentioned: computeMentioned(normalizedConteudo, state.profile)
                     });

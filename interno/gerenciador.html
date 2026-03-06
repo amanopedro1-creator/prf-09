@@ -306,11 +306,26 @@
                     }
 
                     const cargoLower = normalize(profile.cargo);
+                    const blockedCargos = [
+                        'agente de classe especial',
+                        'agente de primeira classe',
+                        'agente de segunda classe',
+                        'agente de terceira classe',
+                        'agente aluno'
+                    ];
+                    if (blockedCargos.indexOf(cargoLower) >= 0) {
+                        window.location.replace('equipe.html');
+                        return;
+                    }
                     const gp = resolveGroupName(profile);
                     const gpLower = normalize(gp);
 
                     const isDirecao = cargoLower.includes('diretor-geral') || cargoLower.includes('superintendente');
                     const isCoordenador = cargoLower.includes('coordenador');
+                    const isChefia = cargoLower.includes('chefe de divisão')
+                        || cargoLower.includes('chefe de divisao')
+                        || cargoLower.includes('chefe de serviço')
+                        || cargoLower.includes('chefe de servico');
                     const allowedExec = [
                         'ronda prf',
                         'grupo de patrulhamento motorizado',
@@ -329,6 +344,8 @@
                         allowedGroups = allowedExec.map(function (g) { return g.toLowerCase(); });
                     } else if (isCoordenador && gpLower === 'diretoria operacional') {
                         allowedGroups = allowedOper.map(function (g) { return g.toLowerCase(); });
+                    } else if (isChefia) {
+                        allowedGroups = [gpLower];
                     } else {
                         allowedGroups = [gpLower];
                     }

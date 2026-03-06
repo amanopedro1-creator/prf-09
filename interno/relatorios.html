@@ -1175,42 +1175,30 @@ const map = new Map();
                         const last = lastRes && lastRes.data ? lastRes.data : null;
                         row = Array.isArray(last) ? last[0] : last;
 
-                        const fallback = await client
-                            .from('bous')
-                            .select('id,titulo,conteudo_completo,created_at,sent_to_discord_at,data_criacao')
-                            .order('sent_to_discord_at', { ascending: false, nullsFirst: false })
-                            .order('data_criacao', { ascending: false })
-                            .order('created_at', { ascending: false })
-                            .limit(1)
-                            .maybeSingle();
+                        if (!row || !row.bou_titulo) {
+                            const ownFallback = await client
+                                .from('bous')
+                                .select('id,titulo,conteudo_completo,created_at,sent_to_discord_at,data_criacao')
+                                .order('sent_to_discord_at', { ascending: false, nullsFirst: false })
+                                .order('data_criacao', { ascending: false })
+                                .order('created_at', { ascending: false })
+                                .limit(1)
+                                .maybeSingle();
 
-                        if (fallback && fallback.data) {
-                            const raw = fallback.data;
-                            let payload = raw.conteudo_completo || {};
-                            if (typeof payload === 'string') {
-                                try {
-                                    payload = JSON.parse(payload);
-                                } catch (e) {
-                                    payload = {};
+                            const raw = ownFallback && ownFallback.data ? ownFallback.data : null;
+                            if (raw) {
+                                let payload = raw.conteudo_completo || {};
+                                if (typeof payload === 'string') {
+                                    try {
+                                        payload = JSON.parse(payload);
+                                    } catch (e) {
+                                        payload = {};
+                                    }
                                 }
-                            }
-                            const derivedTitle =
-                                raw.titulo
-                                || payload.titulo
-                                || payload.bou_prf
-                                || `BOU #${raw.id}`;
-                            const stampBase = raw.sent_to_discord_at || raw.data_criacao || raw.created_at;
-                            const fallbackRow = {
-                                bou_titulo: derivedTitle,
-                                bou_sent_at: stampBase
-                            };
-
-                            const primaryDate = row && row.bou_sent_at ? new Date(row.bou_sent_at) : null;
-                            const fallbackDate = stampBase ? new Date(stampBase) : null;
-                            const useFallback = !row || !row.bou_titulo
-                                || (fallbackDate && (!primaryDate || fallbackDate > primaryDate));
-                            if (useFallback) {
-                                row = fallbackRow;
+                                row = {
+                                    bou_titulo: raw.titulo || payload.titulo || payload.bou_prf || `BOU #${raw.id}`,
+                                    bou_sent_at: raw.sent_to_discord_at || raw.data_criacao || raw.created_at
+                                };
                             }
                         }
 

@@ -179,20 +179,133 @@
             </header>
 
             <section class="inicio-content-card" aria-label="Conteudo">
-                <div class="publicados-header">
-                    <h2>Avisos internos</h2>
-                    <p>Comunicados oficiais publicados pela direção.</p>
+                <nav class="relatorios-subnav avisos-subnav" aria-label="Submenu avisos internos">
+                    <a href="#" class="relatorios-subnav-item is-active" data-avisos-tab="avisos"><i class="fas fa-bullhorn"></i>Avisos internos</a>
+                    <a href="#" class="relatorios-subnav-item" data-avisos-tab="concursos"><i class="fas fa-award"></i>Concursos internos</a>
+                </nav>
+
+                <div id="avisos-panel" class="avisos-tab-panel is-active">
+                    <div class="publicados-header">
+                        <h2>Avisos internos</h2>
+                        <p>Comunicados oficiais publicados pela direção.</p>
+                    </div>
+                    <div id="avisos-lista" class="avisos-lista" aria-live="polite"></div>
                 </div>
-                <div id="avisos-lista" class="avisos-lista" aria-live="polite"></div>
+
+                <div id="concursos-panel" class="avisos-tab-panel concursos-internos-section">
+                    <div class="publicados-header">
+                        <h2>Concursos internos</h2>
+                        <p>Veja abaixo os concursos internos e chamamentos disponíveis para os servidores da PRF, com oportunidades de crescimento e desenvolvimento dentro da instituição.</p>
+                    </div>
+                    <div class="ci-options" id="ci-options">
+                        <article class="ci-option active" data-ci-group="noe" style="--option-bg: linear-gradient(180deg, rgba(9, 18, 40, 0.22) 0%, rgba(9, 18, 40, 0.78) 100%), url('assets/img/noe_fundo.png');">
+                            <div class="ci-shadow"></div>
+                            <div class="ci-content">
+                                <div class="ci-label">
+                                    <span class="ci-icon"><img src="assets/img/noe.png" alt="NOE" class="ci-group-logo"></span>
+                                    <div class="ci-info">
+                                        <h3>Núcleo de Operações Especiais</h3>
+                                        <p>Chamamento interno para seleção operacional especializada.</p>
+                                    </div>
+                                </div>
+                                <div class="ci-details">
+                                    <span class="ci-chip">Inscrições: Abertas</span>
+                                    <button type="button" class="concurso-btn concurso-btn-primary ci-open-modal" data-ci-group="noe">Ver requisitos</button>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="ci-option" data-ci-group="gpm" style="--option-bg: linear-gradient(180deg, rgba(9, 18, 40, 0.22) 0%, rgba(9, 18, 40, 0.78) 100%), url('assets/img/gpm_fundo.png');">
+                            <div class="ci-shadow"></div>
+                            <div class="ci-content">
+                                <div class="ci-label">
+                                    <span class="ci-icon"><img src="assets/img/gpm.png" alt="GPM" class="ci-group-logo"></span>
+                                    <div class="ci-info">
+                                        <h3>Grupo de Patrulhamento Motorizado</h3>
+                                        <p>Seleção para atuação em patrulhamento com motocicletas.</p>
+                                    </div>
+                                </div>
+                                <div class="ci-details">
+                                    <span class="ci-chip">Inscrições: Abertas</span>
+                                    <button type="button" class="concurso-btn concurso-btn-primary ci-open-modal" data-ci-group="gpm">Ver requisitos</button>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="ci-option" data-ci-group="gpt" style="--option-bg: linear-gradient(180deg, rgba(9, 18, 40, 0.22) 0%, rgba(9, 18, 40, 0.78) 100%), url('assets/img/gpt_fundo.png');">
+                            <div class="ci-shadow"></div>
+                            <div class="ci-content">
+                                <div class="ci-label">
+                                    <span class="ci-icon"><img src="assets/img/gpt.png" alt="GPT" class="ci-group-logo"></span>
+                                    <div class="ci-info">
+                                        <h3>Grupo de Patrulhamento Tático</h3>
+                                        <p>Chamamento para atuação tática em operações de alto risco.</p>
+                                    </div>
+                                </div>
+                                <div class="ci-details">
+                                    <span class="ci-chip">Inscrições: Abertas</span>
+                                    <button type="button" class="concurso-btn concurso-btn-primary ci-open-modal" data-ci-group="gpt">Ver requisitos</button>
+                                </div>
+                            </div>
+                        </article>
+                        <article class="ci-option" data-ci-group="doa" style="--option-bg: linear-gradient(180deg, rgba(9, 18, 40, 0.22) 0%, rgba(9, 18, 40, 0.78) 100%), url('assets/img/doa_fundo.png');">
+                            <div class="ci-shadow"></div>
+                            <div class="ci-content">
+                                <div class="ci-label">
+                                    <span class="ci-icon"><img src="assets/img/doa.png" alt="DOA" class="ci-group-logo"></span>
+                                    <div class="ci-info">
+                                        <h3>Divisão de Operações Aéreas</h3>
+                                        <p>Seleção interna para formação e emprego nas operações aéreas.</p>
+                                    </div>
+                                </div>
+                                <div class="ci-details">
+                                    <span class="ci-chip">Inscrições: Abertas</span>
+                                    <button type="button" class="concurso-btn concurso-btn-primary ci-open-modal" data-ci-group="doa">Ver requisitos</button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
             </section>
         </main>
      </div>
 </div>
+    <div id="ci-modal" class="ci-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ci-modal-title">
+        <div class="ci-modal-card">
+            <button type="button" class="ci-modal-close" id="ci-modal-close" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <header class="ci-modal-header">
+                <img id="ci-modal-logo" class="ci-modal-logo" src="assets/img/prf.png" alt="Grupamento">
+                <span class="ci-modal-divider" aria-hidden="true"></span>
+                <h3 id="ci-modal-title">Concurso interno</h3>
+            </header>
+            <div class="ci-modal-body">
+                <p id="ci-modal-description"></p>
+                <h4>Requisitos</h4>
+                <div id="ci-modal-requisitos" class="ci-modal-requisitos"></div>
+            </div>
+            <footer class="ci-modal-footer">
+                <a id="ci-modal-link" class="concurso-btn concurso-btn-primary" href="#" target="_blank" rel="noopener">Inicie o concurso</a>
+            </footer>
+        </div>
+    </div>
     <script src="../app.js" defer></script>
     <script>
         window.addEventListener('load', function () {
             const listNode = document.getElementById('avisos-lista');
             if (!listNode || !window.supabase || !window.supabase.createClient) return;
+            const tabs = Array.from(document.querySelectorAll('[data-avisos-tab]'));
+            const panels = {
+                avisos: document.getElementById('avisos-panel'),
+                concursos: document.getElementById('concursos-panel')
+            };
+            const ciOptions = Array.from(document.querySelectorAll('.ci-option'));
+            const ciModal = document.getElementById('ci-modal');
+            const ciModalClose = document.getElementById('ci-modal-close');
+            const ciModalTitle = document.getElementById('ci-modal-title');
+            const ciModalLogo = document.getElementById('ci-modal-logo');
+            const ciModalDescription = document.getElementById('ci-modal-description');
+            const ciModalRequisitos = document.getElementById('ci-modal-requisitos');
+            const ciModalLink = document.getElementById('ci-modal-link');
 
             const safe = function (value, fallback) {
                 const text = (value ?? '').toString().trim();
@@ -206,6 +319,335 @@
             const resolveImage = function (item) {
                 return safe(item.midia_url, '');
             };
+
+            const concursosMap = {
+                noe: {
+                    titulo: 'Núcleo de Operações Especiais',
+                    logo: 'assets/img/noe.png',
+                    descricao: 'Processo interno voltado para seleção de policiais com perfil operacional especializado.',
+                    requisitos: `1. Objetivo
+O curso visa formar policiais Rodoviários Federais com habilidades avançadas em técnicas de patrulhamento tático, Técnicas de operações especiais como
+
+Resposta Rápida, Infiltração em locais conflagrados, incursão e patrulhamento em zona de alto risco, gerenciamento de crises, entre outros, gerando vivencia dentro da unidade e assim capacitando-os a atuar como Agente do NOE em operações de grande risco e complexidade, como ocorrências com reféns, combates em áreas de alto índice de criminalidade e operações contra facções criminosas.
+
+2. Conteúdo Programático
+Entre os temas abordados no curso, destacam-se:
+- Táticas de abordagem e combate urbano: Instruções sobre movimentação em áreas urbanas, ocupação de terrenos, entrada tática em edifícios, e abordagem a veículos.
+- Resgate de reféns: Invasão e extração segura de reféns em situações de sequestro ou cárcere privado.
+- Controle de distúrbios: Métodos de dispersão de multidões e controle de distúrbios civis.
+- Realização de Rondas Ostensivas.
+
+3. Perfil do Candidato
+Para ingressar no curso, os policiais precisam ser altamente qualificados, ter bom histórico de serviço e possuir características como:
+- Resistência física e mental;
+- Disciplina e autocontrole;
+- Capacidade de trabalhar sob pressão extrema.
+- Disponibilidade de horário e alta frequência.
+
+4. Duração
+O curso terá duração de 2 semanas.
+Durante esse período o candidato ficará a disposição do NOE, passando por instruções teóricas e práticas e pondo as mesmas em prática nas situações feitas pela equipe.
+
+5. Atuação
+Os policiais formados no COEsp. da PRF são designados para operações de combate ao crime de alta complexidade. Suas funções incluem tanto patrulhamento ostensivo em áreas críticas quanto missões especiais de resgate e combate ao crime organizado.
+
+Esse curso é altamente prestigiado e representa um passo importante na carreira de um policial interessado em atuar em operações de risco elevado.
+
+6. Disposições Finais
+Ao término do curso os 04 mais destacados candidatos que conseguirem concluir com maestria, estarão ingressando o Núcleo de Operações Especiais e recebendo o seu brevê, símbolo de eficiência e dedicação total.`,
+                    link: 'https://docs.google.com/forms/d/e/1FAIpQLSeC09VriBiJ5d4MLAiUg5AGfmnMhPgKAP9Gc_Y6Ebg1YT08Ng/viewform'
+                },
+                gpm: {
+                    titulo: 'Grupo de Patrulhamento Motorizado',
+                    logo: 'assets/img/gpm.png',
+                    descricao: 'Seleção para reforço de efetivo em patrulhamento com motocicletas.',
+                    requisitos: `1. Objetivo
+O curso visa formar policiais Rodoviários Federais com habilidades avançadas em técnicas de patrulhamento motorizado com motocicletas operacionais, capacitando-os para atuação rápida e eficiente em rodovias federais e áreas urbanas de difícil acesso para viaturas convencionais.
+
+Durante a formação, os candidatos desenvolverão competências em condução tática, deslocamento em alta mobilidade, escoltas operacionais, resposta rápida a ocorrências e apoio a operações policiais, adquirindo experiência prática para atuar como integrante do Grupo de Patrulhamento Motorizado da PRF.
+
+2. Conteúdo Programático
+Entre os temas abordados no curso, destacam-se:
+
+Pilotagem operacional avançada: Técnicas de condução de motocicletas em alta e baixa velocidade, frenagem de emergência, controle de derrapagem e condução em diferentes tipos de terreno.
+
+Deslocamento tático e resposta rápida: Procedimentos para deslocamentos emergenciais, formação de comboio e mobilidade em cenários operacionais.
+
+Abordagem policial com motocicleta: Técnicas de parada, posicionamento seguro e abordagem a veículos em rodovias.
+
+Escolta e apoio operacional: Procedimentos de escolta policial e apoio em operações especiais e ações de fiscalização.
+
+3. Perfil do Candidato
+Para ingressar no curso, os policiais precisam possuir bom histórico de serviço e apresentar características como:
+
+Resistência física e mental;
+
+Disciplina e autocontrole;
+
+Capacidade de tomada de decisão rápida;
+
+Habilidade na condução de motocicletas;
+
+Possuir Carteira Nacional de Habilitação (CNH) categoria A.
+
+4. Duração
+O curso terá duração de 1 dia de instrução intensiva, dividido em duas etapas:
+
+Fase teórica: instruções sobre doutrina, segurança operacional e técnicas de patrulhamento motorizado.
+
+Fase prática: aplicação das técnicas aprendidas em exercícios operacionais com motocicletas.
+
+Ambas as fases ocorrerão no mesmo dia, sob coordenação da equipe responsável pelo Grupo de Patrulhamento Motorizado.
+
+5. Atuação
+Os policiais formados no GPM da PRF são designados para atividades de patrulhamento motorizado em rodovias federais e áreas urbanas estratégicas.
+
+Suas funções incluem deslocamento rápido para atendimento de ocorrências, apoio a operações policiais, escoltas, reforço em fiscalizações e atuação em locais de difícil acesso para viaturas convencionais, garantindo maior mobilidade e agilidade às ações da Polícia Rodoviária Federal.
+
+6. Processo de Seleção e Normas do Curso
+Os candidatos serão avaliados a partir do momento de sua inscrição no processo seletivo.
+
+Caso seja aprovado na etapa inicial realizada via Forms, o candidato receberá uma senha de confirmação, a qual deverá ser guardada para participação no curso.
+
+Somente participará do curso o policial que for aprovado no edital por meio do formulário eletrônico. Além disso, não poderá participar do curso o candidato que não possuir CNH categoria A.
+
+O candidato poderá ser desclassificado a qualquer momento do curso caso cometa qualquer uma das seguintes infrações:
+
+– Descumprimento de normas de segurança operacional ou uso inadequado de EPI;
+– Conduta incompatível com disciplina, hierarquia e ética profissional;
+– Desobediência a ordens legais de instrutores ou da coordenação;
+– Negligência, imprudência ou imperícia nas atividades do curso;
+– Colocar em risco a própria segurança ou a de terceiros;
+– Baixo rendimento técnico-operacional ou reprovação em avaliações;
+– Faltas injustificadas;
+– Mal uso ou porte de equipamento não autorizado;
+– Falta de respeito a instrutores, colegas ou à instituição;
+– Uso de álcool, drogas ou substâncias ilícitas;
+– Recusa injustificada em participar das atividades do curso;
+– Prática de atos que comprometam a imagem institucional.
+
+7. Disposições Finais
+Ao término do curso, os candidatos aprovados estarão aptos a integrar o Grupo de Patrulhamento Motorizado, passando a atuar em missões de patrulhamento especializado com motocicletas, contribuindo para o aumento da mobilidade operacional e da capacidade de resposta da Polícia Rodoviária Federal nas rodovias federais.`,
+                    link: 'https://docs.google.com/forms/d/e/1FAIpQLScdQo8ngCHknI1QdZlTvF_-_EejvvF8bX2v8NfjS6crdD_mLA/viewform'
+                },
+                doa: {
+                    titulo: 'Divisão de Operações Aéreas',
+                    logo: 'assets/img/doa.png',
+                    descricao: 'Chamamento interno para composição de efetivo da unidade aérea.',
+                    requisitos: `1. Objetivo
+O curso visa formar policiais Rodoviários Federais com conhecimentos básicos em operações aéreas e apoio aerotático, capacitando-os para atuar em missões realizadas com aeronaves da Polícia Rodoviária Federal.
+
+Durante a formação, os candidatos desenvolverão competências relacionadas à coordenação de operações aéreas, apoio a equipes terrestres, observação aérea e gerenciamento de ocorrências com suporte de aeronaves, adquirindo experiência para atuar como integrante da Divisão de Operações Aéreas.
+
+2. Conteúdo Programático
+Entre os temas abordados no curso, destacam-se:
+
+Fundamentos de operações aéreas: Introdução à doutrina e funcionamento das operações aerotáticas no contexto da PRF.
+
+Coordenação ar-solo: Procedimentos de comunicação e integração entre aeronaves e equipes terrestres.
+
+Observação e monitoramento aéreo: Técnicas de vigilância, acompanhamento de veículos e apoio em operações policiais.
+
+Segurança em operações aéreas: Normas de segurança, procedimentos de embarque e desembarque e atuação em ambiente aeronáutico.
+
+3. Perfil do Candidato
+Para ingressar no curso, os policiais precisam possuir bom histórico de serviço e apresentar características como:
+
+Disciplina e responsabilidade operacional;
+
+Capacidade de atuação em ambiente de risco controlado;
+
+Boa comunicação e coordenação com equipes;
+
+Equilíbrio emocional e tomada de decisão rápida;
+
+Comprometimento com os padrões operacionais da PRF.
+
+4. Duração
+O curso terá duração de 1 dia de instrução intensiva, dividido em duas etapas:
+
+Fase teórica: instruções sobre doutrina de operações aéreas, comunicação e segurança aeronáutica.
+
+Fase prática: exercícios de simulação de apoio aéreo e coordenação com equipes terrestres.
+
+Ambas as fases ocorrerão no mesmo dia, sob coordenação da equipe responsável pela Divisão de Operações Aéreas.
+
+5. Atuação
+Os policiais formados na DOA da PRF são designados para atuar em missões de apoio aéreo às operações policiais em rodovias federais e áreas estratégicas.
+
+Suas funções incluem monitoramento aéreo de ocorrências, apoio a perseguições, coordenação de equipes terrestres, reconhecimento de áreas e suporte em operações de grande porte, ampliando a capacidade de vigilância e resposta da Polícia Rodoviária Federal.
+
+6. Processo de Seleção e Normas do Curso
+Os candidatos serão avaliados a partir do momento de sua inscrição no processo seletivo.
+
+Caso seja aprovado na etapa inicial realizada via Forms, o candidato receberá uma senha de confirmação, a qual deverá ser guardada para participação no curso.
+
+Somente participará do curso o policial que for aprovado no edital por meio do formulário eletrônico.
+
+O candidato poderá ser desclassificado a qualquer momento do curso caso cometa qualquer uma das seguintes infrações:
+
+– Descumprimento de normas de segurança operacional ou uso inadequado de EPI;
+– Conduta incompatível com disciplina, hierarquia e ética profissional;
+– Desobediência a ordens legais de instrutores ou da coordenação;
+– Negligência, imprudência ou imperícia nas atividades do curso;
+– Colocar em risco a própria segurança ou a de terceiros;
+– Baixo rendimento técnico-operacional ou reprovação em avaliações;
+– Faltas injustificadas;
+– Mal uso ou porte de equipamento não autorizado;
+– Falta de respeito a instrutores, colegas ou à instituição;
+– Uso de álcool, drogas ou substâncias ilícitas;
+– Recusa injustificada em participar das atividades do curso;
+– Prática de atos que comprometam a imagem institucional.
+
+7. Disposições Finais
+Ao término do curso, os candidatos aprovados estarão aptos a integrar a Divisão de Operações Aéreas, passando a atuar em missões de apoio aerotático e monitoramento operacional, fortalecendo a capacidade de vigilância, mobilidade e resposta da Polícia Rodoviária Federal.`,
+                    link: 'https://docs.google.com/forms/d/e/1FAIpQLSd8U4u3JO1RTlUiFzeoZZkXRqOlPnvWgyOBsgnumByBuDBfJg/viewform'
+                },
+                gpt: {
+                    titulo: 'Grupo de Patrulhamento Tático',
+                    logo: 'assets/img/gpt.png',
+                    descricao: 'Seleção para atuação em ações táticas e operações de pronta resposta.',
+                    requisitos: `1. Objetivo
+O curso visa formar policiais Rodoviários Federais com habilidades avançadas em técnicas de patrulhamento tático e enfrentamento ao crime em rodovias federais e áreas de interesse operacional.
+
+Durante a formação, os candidatos desenvolverão competências em abordagens de alto risco, progressão tática, controle de ameaças e atuação coordenada em situações críticas, adquirindo experiência prática para atuar como integrante do Grupo de Patrulhamento Tático da PRF em ocorrências de maior complexidade.
+
+2. Conteúdo Programático
+Entre os temas abordados no curso, destacam-se:
+
+Abordagens de alto risco: Técnicas de abordagem a veículos e suspeitos em situações potencialmente perigosas.
+
+Progressão tática e movimentação operacional: Procedimentos de deslocamento seguro em áreas urbanas e rodoviárias durante operações policiais.
+
+Gerenciamento de ocorrências críticas: Atuação em cenários de maior risco, como confrontos armados, bloqueios policiais e apoio a operações especiais.
+
+Controle e neutralização de ameaças: Técnicas de reação policial, cobertura tática e atuação coordenada em equipe.
+
+3. Perfil do Candidato
+Para ingressar no curso, os policiais precisam possuir bom histórico de serviço e apresentar características como:
+
+Resistência física e mental;
+
+Disciplina e autocontrole;
+
+Capacidade de atuação sob pressão;
+
+Espírito de equipe e coordenação tática;
+
+Comprometimento com os padrões operacionais da PRF.
+
+4. Duração
+O curso terá duração de 1 dia de instrução intensiva, dividido em duas etapas:
+
+Fase teórica: instruções sobre doutrina, fundamentos de patrulhamento tático e segurança operacional.
+
+Fase prática: exercícios operacionais voltados à aplicação das técnicas ensinadas durante o curso.
+
+Ambas as fases ocorrerão no mesmo dia, sob coordenação da equipe responsável pelo Grupo de Patrulhamento Tático.
+
+5. Atuação
+Os policiais formados no GPT da PRF são designados para atividades de patrulhamento tático e apoio operacional em rodovias federais e regiões estratégicas.
+
+Suas funções incluem atuação em abordagens de alto risco, apoio a operações contra o crime organizado, reforço em fiscalizações de grande porte e suporte a equipes operacionais em ocorrências de maior complexidade, contribuindo para o aumento da capacidade de resposta da Polícia Rodoviária Federal.
+
+6. Processo de Seleção e Normas do Curso
+Os candidatos serão avaliados a partir do momento de sua inscrição no processo seletivo.
+
+Caso seja aprovado na etapa inicial realizada via Forms, o candidato receberá uma senha de confirmação, a qual deverá ser guardada para participação no curso.
+
+Somente participará do curso o policial que for aprovado no edital por meio do formulário eletrônico.
+
+O candidato poderá ser desclassificado a qualquer momento do curso caso cometa qualquer uma das seguintes infrações:
+
+– Descumprimento de normas de segurança operacional ou uso inadequado de EPI;
+– Conduta incompatível com disciplina, hierarquia e ética profissional;
+– Desobediência a ordens legais de instrutores ou da coordenação;
+– Negligência, imprudência ou imperícia nas atividades do curso;
+– Colocar em risco a própria segurança ou a de terceiros;
+– Baixo rendimento técnico-operacional ou reprovação em avaliações;
+– Faltas injustificadas;
+– Mal uso ou porte de equipamento não autorizado;
+– Falta de respeito a instrutores, colegas ou à instituição;
+– Uso de álcool, drogas ou substâncias ilícitas;
+– Recusa injustificada em participar das atividades do curso;
+– Prática de atos que comprometam a imagem institucional.
+
+7. Disposições Finais
+Ao término do curso, os candidatos aprovados estarão aptos a integrar o Grupo de Patrulhamento Tático, passando a atuar em operações de maior complexidade e risco, reforçando a capacidade operacional da Polícia Rodoviária Federal no enfrentamento ao crime nas rodovias federais.`,
+                    link: 'https://docs.google.com/forms/d/e/1FAIpQLSffbbEApVDInEmP80EmqKYfe3gxXAA4IOEgEgpt0N7owPDf0g/viewform'
+                }
+            };
+
+            const setActiveTab = function (tabName) {
+                tabs.forEach(function (tab) {
+                    tab.classList.toggle('is-active', tab.getAttribute('data-avisos-tab') === tabName);
+                });
+                Object.keys(panels).forEach(function (key) {
+                    if (!panels[key]) return;
+                    panels[key].classList.toggle('is-active', key === tabName);
+                });
+            };
+
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const tabName = tab.getAttribute('data-avisos-tab');
+                    setActiveTab(tabName);
+                });
+            });
+
+            const setActiveCiOption = function (groupKey) {
+                ciOptions.forEach(function (option) {
+                    option.classList.toggle('active', option.getAttribute('data-ci-group') === groupKey);
+                });
+            };
+
+            const openCiModal = function (groupKey) {
+                const data = concursosMap[groupKey];
+                if (!data || !ciModal) return;
+                setActiveCiOption(groupKey);
+                if (ciModalTitle) ciModalTitle.textContent = data.titulo;
+                if (ciModalDescription) ciModalDescription.textContent = data.descricao;
+                if (ciModalRequisitos) ciModalRequisitos.textContent = data.requisitos;
+                if (ciModalLogo) {
+                    ciModalLogo.src = data.logo;
+                    ciModalLogo.alt = data.titulo;
+                }
+                if (ciModalLink) ciModalLink.href = data.link;
+                ciModal.classList.add('is-active');
+                ciModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('ci-modal-open');
+            };
+
+            const closeCiModal = function () {
+                if (!ciModal) return;
+                ciModal.classList.remove('is-active');
+                ciModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('ci-modal-open');
+            };
+
+            ciOptions.forEach(function (option) {
+                option.addEventListener('click', function (event) {
+                    const key = option.getAttribute('data-ci-group');
+                    setActiveCiOption(key);
+                    const button = event.target.closest('.ci-open-modal');
+                    if (button) {
+                        openCiModal(button.getAttribute('data-ci-group'));
+                    }
+                });
+            });
+
+            if (ciModalClose) {
+                ciModalClose.addEventListener('click', closeCiModal);
+            }
+            if (ciModal) {
+                ciModal.addEventListener('click', function (event) {
+                    if (event.target === ciModal) closeCiModal();
+                });
+            }
+            window.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') closeCiModal();
+            });
 
             (async function loadAvisos() {
                 listNode.innerHTML = '<p class="inicio-aviso-meta">Carregando avisos...</p>';
