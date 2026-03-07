@@ -235,6 +235,15 @@
                     return gp || fromLegacy || gs || 'Grupamento';
                 };
 
+                const resolvePrimaryGroup = function (item) {
+                    const gp = safe(item.grupamento_principal, '');
+                    if (gp) return gp;
+                    const legacy = safe(item.grupamento, '');
+                    if (legacy) return legacy.includes('||') ? legacy.split('||')[0].trim() : legacy;
+                    const gs = safe(item.grupamento_secundario, '');
+                    return gs || 'Sem grupamento';
+                };
+
                 const resolveGroupLogo = function (groupName) {
                     const key = safe(groupName, '').toLowerCase();
                     if (key.includes('ronda prf')) return 'assets/img/rprf.png';
@@ -246,6 +255,33 @@
                     return 'assets/img/prf.png';
                 };
 
+                const renderCard = function (item) {
+                    const nome = escapeHtml(safe(item.nome_guerra, 'Agente'));
+                    const cargo = escapeHtml(safe(item.cargo, 'Cargo nao definido'));
+                    const rg = escapeHtml(safe(item.rg, '-'));
+                    const groupRaw = resolveGroupName(item);
+                    const groupName = escapeHtml(groupRaw);
+                    const crest = resolveGroupLogo(groupRaw);
+                    const foto = safe(item.foto_url, 'assets/img/prf.png');
+                    const fallback = initials(nome);
+                    return (
+                        '<article class="equipe-showcase-card">' +
+                        '<div class="equipe-showcase-top">' +
+                        '<img class="equipe-showcase-crest" src="' + crest + '" alt="' + groupName + '" onerror="this.src=\'assets/img/prf.png\'">' +
+                        '<span class="equipe-showcase-divider"></span>' +
+                        '</div>' +
+                        '<div class="equipe-showcase-photo">' +
+                        '<img src="' + foto + '" alt="' + nome + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\'">' +
+                        '<span class="equipe-showcase-photo-fallback">' + fallback + '</span>' +
+                        '</div>' +
+                        '<h3 class="equipe-showcase-name">' + nome + '</h3>' +
+                        '<p class="equipe-showcase-role">' + cargo + '</p>' +
+                        '<div class="equipe-showcase-group">' + groupName + '</div>' +
+                        '<div class="equipe-showcase-rg">RG: ' + rg + '</div>' +
+                        '</article>'
+                    );
+                };
+
                 const render = function (items) {
                     const total = items.length;
                     if (countNode) countNode.textContent = total + (total === 1 ? ' agente' : ' agentes');
@@ -254,30 +290,32 @@
                         return;
                     }
 
-                    grid.innerHTML = items.map(function (item) {
-                        const nome = escapeHtml(safe(item.nome_guerra, 'Agente'));
-                        const cargo = escapeHtml(safe(item.cargo, 'Cargo não definido'));
-                        const rg = escapeHtml(safe(item.rg, '-'));
-                        const groupRaw = resolveGroupName(item);
-                        const groupName = escapeHtml(groupRaw);
-                        const crest = resolveGroupLogo(groupRaw);
-                        const foto = safe(item.foto_url, 'assets/img/prf.png');
-                        const fallback = initials(nome);
+                    const grouped = new Map();
+                    items.forEach(function (item) {
+                        const key = resolvePrimaryGroup(item);
+                        if (!grouped.has(key)) grouped.set(key, []);
+                        grouped.get(key).push(item);
+                    });
+
+                    const groupNames = Array.from(grouped.keys()).sort(function (a, b) {
+                        return String(a).localeCompare(String(b), 'pt-BR');
+                    });
+
+                    grid.innerHTML = groupNames.map(function (groupName) {
+                        const members = grouped.get(groupName) || [];
+                        members.sort(function (a, b) {
+                            return safe(a.nome_guerra, '').localeCompare(safe(b.nome_guerra, ''), 'pt-BR');
+                        });
                         return (
-                            '<article class="equipe-showcase-card">' +
-                            '<div class="equipe-showcase-top">' +
-                            '<img class="equipe-showcase-crest" src="' + crest + '" alt="' + groupName + '" onerror="this.src=\'assets/img/prf.png\'">' +
-                            '<span class="equipe-showcase-divider"></span>' +
+                            '<section class="equipe-showcase-section">' +
+                            '<header class="equipe-showcase-section-header">' +
+                            '<h3>' + escapeHtml(groupName) + '</h3>' +
+                            '<span>' + members.length + (members.length === 1 ? ' agente' : ' agentes') + '</span>' +
+                            '</header>' +
+                            '<div class="equipe-showcase-grid equipe-showcase-grid--section">' +
+                            members.map(renderCard).join('') +
                             '</div>' +
-                            '<div class="equipe-showcase-photo">' +
-                            '<img src="' + foto + '" alt="' + nome + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\'">' +
-                            '<span class="equipe-showcase-photo-fallback">' + fallback + '</span>' +
-                            '</div>' +
-                            '<h3 class="equipe-showcase-name">' + nome + '</h3>' +
-                            '<p class="equipe-showcase-role">' + cargo + '</p>' +
-                            '<div class="equipe-showcase-group">' + groupName + '</div>' +
-                            '<div class="equipe-showcase-rg">RG: ' + rg + '</div>' +
-                            '</article>'
+                            '</section>'
                         );
                     }).join('');
                 };
@@ -327,16 +365,21 @@
                     }
 
                     let items = [];
-                    const rpc = await client.rpc('list_visible_team_profiles_for_current_user');
-                    if (!rpc.error && Array.isArray(rpc.data)) {
-                        items = rpc.data;
-                    } else {
+
+                    // Equipe: mostrar todos os aprovados da PRF.
+                    const rpcAll = await client.rpc('list_all_approved_profiles');
+                    if (!rpcAll.error && Array.isArray(rpcAll.data)) {
+                        items = rpcAll.data;
+                    }
+
+                    if (!items.length) {
                         const res = await client
                             .from('profiles')
                             .select('id,nome_guerra,cargo,rg,foto_url,aprovado,grupamento,grupamento_principal,grupamento_secundario')
                             .eq('aprovado', true)
+                            .order('grupamento_principal', { ascending: true })
                             .order('nome_guerra', { ascending: true })
-                            .limit(500);
+                            .limit(2000);
                         if (!res.error && Array.isArray(res.data)) {
                             items = res.data;
                         }

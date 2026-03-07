@@ -202,19 +202,19 @@
                         <div class="inicio-stats-grid">
                             <div class="inicio-stat-card">
                                 <span class="inicio-stat-label">BOU feitos</span>
-                                <strong class="inicio-stat-value">12</strong>
+                                <strong id="inicio-stat-bou-feitos" class="inicio-stat-value">0</strong>
                             </div>
                             <div class="inicio-stat-card">
                                 <span class="inicio-stat-label">BOU citado</span>
-                                <strong class="inicio-stat-value">7</strong>
+                                <strong id="inicio-stat-bou-citado" class="inicio-stat-value">0</strong>
                             </div>
                             <div class="inicio-stat-card">
                                 <span class="inicio-stat-label">Multas AIT</span>
-                                <strong class="inicio-stat-value">R$ 18.450</strong>
+                                <strong id="inicio-stat-multas-ait" class="inicio-stat-value">R$ 0,00</strong>
                             </div>
                             <div class="inicio-stat-card">
                                 <span class="inicio-stat-label">RIPATs feitos</span>
-                                <strong class="inicio-stat-value">5</strong>
+                                <strong id="inicio-stat-ripat-feitos" class="inicio-stat-value">0</strong>
                             </div>
                         </div>
 
@@ -898,6 +898,134 @@
                     diarioTitle.textContent = 'Sem publicacoes recentes';
                     diarioResumo.textContent = 'Nao foi possivel carregar o diario.';
                     diarioMeta.textContent = '-';
+                }
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioStats() {
+                const bouFeitosNode = document.getElementById('inicio-stat-bou-feitos');
+                const bouCitadoNode = document.getElementById('inicio-stat-bou-citado');
+                const multasNode = document.getElementById('inicio-stat-multas-ait');
+                const ripatFeitosNode = document.getElementById('inicio-stat-ripat-feitos');
+                if (!bouFeitosNode || !bouCitadoNode || !multasNode || !ripatFeitosNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const parseMoney = function (value) {
+                    if (value === null || value === undefined) return 0;
+                    if (typeof value === 'number') return value;
+                    const raw = String(value);
+                    const normalized = raw.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+                    const parsed = Number(normalized);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                };
+
+                const normalizeConteudo = function (conteudo) {
+                    if (!conteudo) return null;
+                    if (typeof conteudo === 'string') {
+                        try { return JSON.parse(conteudo); } catch (e) { return conteudo; }
+                    }
+                    return conteudo;
+                };
+
+                const sumMultasFromConteudo = function (conteudo) {
+                    if (!conteudo) return 0;
+                    const parsed = normalizeConteudo(conteudo);
+                    if (!parsed || typeof parsed !== 'object') return 0;
+                    let total = 0;
+                    const keys = ['valor_multa', 'valor', 'multa', 'valor_total', 'valorMulta', 'valor_ait', 'total_multa'];
+                    keys.forEach(function (key) {
+                        if (Object.prototype.hasOwnProperty.call(parsed, key)) total += parseMoney(parsed[key]);
+                    });
+                    if (parsed.campos && typeof parsed.campos === 'object') {
+                        keys.forEach(function (key) {
+                            if (Object.prototype.hasOwnProperty.call(parsed.campos, key)) total += parseMoney(parsed.campos[key]);
+                        });
+                    }
+                    return total;
+                };
+
+                const toSafeLower = function (value) {
+                    return String(value || '').toLowerCase();
+                };
+
+                const setFallback = function () {
+                    bouFeitosNode.textContent = '0';
+                    bouCitadoNode.textContent = '0';
+                    multasNode.textContent = 'R$ 0,00';
+                    ripatFeitosNode.textContent = '0';
+                };
+
+                try {
+                    const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) {
+                        setFallback();
+                        return;
+                    }
+
+                    const userId = String(user.id);
+                    const now = new Date();
+                    const since = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString();
+
+                    const profileResult = await client
+                        .from('profiles')
+                        .select('nome_guerra,rg,email')
+                        .eq('id', userId)
+                        .maybeSingle();
+                    const profile = profileResult && profileResult.data ? profileResult.data : {};
+                    const nome = toSafeLower(profile.nome_guerra);
+                    const rg = toSafeLower(profile.rg);
+                    const email = toSafeLower(profile.email || (user.email || ''));
+
+                    const matchText = function (text) {
+                        const hay = toSafeLower(text);
+                        return (nome && hay.includes(nome))
+                            || (rg && hay.includes(rg))
+                            || (email && hay.includes(email));
+                    };
+
+                    const [bousOwnResult, aitsOwnResult, ripatOwnResult, bousCitedResult] = await Promise.all([
+                        client
+                            .from('bous')
+                            .select('id')
+                            .eq('user_id', userId)
+                            .or('created_at.gte.' + since + ',data_criacao.gte.' + since),
+                        client
+                            .from('aits')
+                            .select('id,conteudo_completo')
+                            .eq('user_id', userId)
+                            .or('created_at.gte.' + since + ',data_criacao.gte.' + since),
+                        client
+                            .from('patrulhas')
+                            .select('id')
+                            .eq('user_id', userId)
+                            .gte('created_at', since),
+                        client.rpc('list_recent_bous_for_user', { p_days: 30 })
+                    ]);
+
+                    const bousOwn = Array.isArray(bousOwnResult && bousOwnResult.data) ? bousOwnResult.data : [];
+                    const aitsOwn = Array.isArray(aitsOwnResult && aitsOwnResult.data) ? aitsOwnResult.data : [];
+                    const ripatsOwn = Array.isArray(ripatOwnResult && ripatOwnResult.data) ? ripatOwnResult.data : [];
+                    const bousCited = Array.isArray(bousCitedResult && bousCitedResult.data)
+                        ? bousCitedResult.data.filter(function (b) {
+                            return String(b.user_id || '') !== userId && matchText(b.conteudo_completo);
+                        })
+                        : [];
+
+                    const totalMultas = aitsOwn.reduce(function (acc, item) {
+                        return acc + sumMultasFromConteudo(item && item.conteudo_completo ? item.conteudo_completo : null);
+                    }, 0);
+
+                    bouFeitosNode.textContent = String(bousOwn.length);
+                    bouCitadoNode.textContent = String(bousCited.length);
+                    multasNode.textContent = 'R$ ' + totalMultas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    ripatFeitosNode.textContent = String(ripatsOwn.length);
+                } catch (e) {
+                    setFallback();
                 }
             })();
         });
