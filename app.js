@@ -1657,14 +1657,14 @@
       </button>
       <div class="inicio-notify-panel is-hidden is-menu">
         <div class="inicio-notify-head">
-          <h4>Notificaes</h4>
+          <h4>Notificações</h4>
           <button class="inicio-notify-clear" type="button">Limpar notificaes</button>
         </div>
-        <div class="inicio-notify-section" data-section="bou"><strong>BOU citados</strong><div class="inicio-notify-list"></div></div>
-        <div class="inicio-notify-section" data-section="ait"><strong>AIT citados</strong><div class="inicio-notify-list"></div></div>
-        <div class="inicio-notify-section" data-section="ripat"><strong>RIPAT citados</strong><div class="inicio-notify-list"></div></div>
-        <div class="inicio-notify-section" data-section="diario"><strong>Dirio oficial citados</strong><div class="inicio-notify-list"></div></div>
-        <div class="inicio-notify-section" data-section="corregedoria"><strong>Corregedoria citados</strong><div class="inicio-notify-list"></div></div>
+        <div class="inicio-notify-section" data-section="bou"><strong>BOU - citações</strong><div class="inicio-notify-list"></div></div>
+        <div class="inicio-notify-section" data-section="ait"><strong>AIT - citações</strong><div class="inicio-notify-list"></div></div>
+        <div class="inicio-notify-section" data-section="ripat"><strong>RIPAT - citações</strong><div class="inicio-notify-list"></div></div>
+        <div class="inicio-notify-section" data-section="diario"><strong>Diário Oficial - citações</strong><div class="inicio-notify-list"></div></div>
+        <div class="inicio-notify-section" data-section="corregedoria"><strong>Corregedoria - citações</strong><div class="inicio-notify-list"></div></div>
       </div>
     `;
     controls.appendChild(wrapper);
