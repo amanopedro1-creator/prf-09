@@ -5632,12 +5632,12 @@ body.ci-modal-open {
     }
 }
 
-/* Transi??es suaves para modo escuro */
+/* Transi?es suaves para modo escuro */
 * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-/* Centraliza o conjunto inteiro (3 páginas + info + 3 páginas) */
+/* Centraliza o conjunto inteiro (3 pginas + info + 3 pginas) */
 .header-row {
   display: flex;
   align-items: center;
@@ -5648,14 +5648,14 @@ body.ci-modal-open {
 
 /* Centro N?O deve esticar (remover flex:1) */
 .header-row .main-header-top {
-  flex: 0 0 auto;            /* <-- não cresce */
+  flex: 0 0 auto;            /* <-- no cresce */
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Navs laterais não esticam */
+/* Navs laterais no esticam */
 .mini-nav {
   flex: 0 0 auto;
   display: flex;
@@ -5690,7 +5690,7 @@ body.ci-modal-open {
   justify-content: flex-start;
 }
 
-/* Responsivo: empilha para não esmagar tudo */
+/* Responsivo: empilha para no esmagar tudo */
 @media (max-width: 900px) {
   .header-row{
     flex-direction: column;

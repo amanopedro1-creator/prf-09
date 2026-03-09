@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Relat&oacute;rios - PRF Jaguar&eacute;</title>
+    <title>Relat&oacute;rios - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -1178,22 +1178,25 @@
                 }
 
                 try {
-                    const rpcUsers = await client.rpc('list_visible_team_profiles_for_current_user');
-                    if (!rpcUsers.error && Array.isArray(rpcUsers.data)) {
-                        users = rpcUsers.data;
-                    } else {
-                        const usersResult = await client
-                            .from('profiles')
-                            .select('id,nome_guerra,cargo,foto_url')
-                            .order('nome_guerra', { ascending: true });
-                        users = Array.isArray(usersResult.data) ? usersResult.data : [];
-                    }
-                } catch (e) {
                     const usersResult = await client
                         .from('profiles')
-                        .select('id,nome_guerra,cargo,foto_url')
-                        .order('nome_guerra', { ascending: true });
+                        .select('id,nome_guerra,cargo,foto_url,aprovado')
+                        .eq('aprovado', true)
+                        .order('nome_guerra', { ascending: true })
+                        .limit(2000);
+
                     users = Array.isArray(usersResult.data) ? usersResult.data : [];
+
+                    if (!users.length) {
+                        const usersFallback = await client
+                            .from('profiles')
+                            .select('id,nome_guerra,cargo,foto_url')
+                            .order('nome_guerra', { ascending: true })
+                            .limit(2000);
+                        users = Array.isArray(usersFallback.data) ? usersFallback.data : [];
+                    }
+                } catch (e) {
+                    users = [];
                 }
 
                 userSelectWrappers.forEach(setupUserSelect);
@@ -1297,10 +1300,10 @@
                                 .insert({
                                     user_id: userId,
                                     titulo: payload.titulo || payload.bou_prf,
-                                    conteudo_completo: payload,
+                                    conteudo_completo: JSON.stringify(payload),
                                     data_criacao: new Date().toISOString()
                                 })
-                                .select('id')
+                                .select('id,user_id')
                                 .single();
 
                             if (insertResult.error || !insertResult.data) {
@@ -1310,6 +1313,19 @@
                             }
 
                             const bouId = insertResult.data.id;
+                            const savedCheck = await client
+                                .from('bous')
+                                .select('id')
+                                .eq('id', bouId)
+                                .eq('user_id', userId)
+                                .maybeSingle();
+
+                            if (savedCheck.error || !savedCheck.data) {
+                                setStatus('Falha ao confirmar gravacao no banco. Nao enviado ao Discord.', true);
+                                if (submitBtn) submitBtn.disabled = false;
+                                return;
+                            }
+
                             const rpcResult = await client.rpc('send_bou_to_discord', { p_bou_id: bouId });
                             if (rpcResult.error) {
                                 setStatus('Salvo, mas falhou ao enviar ao Discord.', true);
@@ -1433,6 +1449,7 @@
 </script>
 </body>
 </html>
+
 
 
 

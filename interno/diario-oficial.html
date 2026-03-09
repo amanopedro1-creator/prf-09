@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Di&aacute;rio Oficial - PRF Jaguar&eacute;</title>
+    <title>Di&aacute;rio Oficial - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -255,13 +255,13 @@
                     const month = createdAt ? monthNames[createdAt.getMonth()] : '';
                     const year = createdAt ? createdAt.getFullYear() : '';
                     const publishDate = createdAt ? createdAt.toLocaleDateString('pt-BR') : '';
-                    const title = 'DIÁRIO OFICIAL DA UNIÃO';
+                    const title = 'DIÁRIO OFICIAL DA UNIO';
                     const meta = 'Publicado em: ' + publishDate +
                         ' | Edição: ' + (row.edicao_num || '-') +
                         ' | Seção: ' + (row.secao_num || '-') +
                         ' | Página: ' + (row.pagina_num || '-');
                     const decretoNumero = row.numero_decreto ? String(row.numero_decreto) : '-';
-                    const decretoTitle = 'DECRETO NÚMERO ' + decretoNumero + (publishDate ? ', DE ' + publishDate : '');
+                    const decretoTitle = 'DECRETO NMERO ' + decretoNumero + (publishDate ? ', DE ' + publishDate : '');
                     const profile = row.profiles || authorsById.get(row.created_by) || null;
                     const authorName = profile && profile.nome_guerra ? profile.nome_guerra : 'Autor';
                     const authorCargo = profile && profile.cargo ? profile.cargo : 'Cargo';
@@ -275,7 +275,7 @@
                         '<div class="diario-oficial-seal"><img src="assets/img/brasao_gov.jpg" alt="Brasão do Governo"></div>' +
                         '<h3 class="diario-oficial-title">' + title + '</h3>' +
                         '<div class="diario-oficial-meta">' + meta + '</div>' +
-                        '<div class="diario-oficial-orgao">Órgão: Atos do Poder Executivo</div>' +
+                        '<div class="diario-oficial-orgao">rgão: Atos do Poder Executivo</div>' +
                         '<div class="diario-oficial-decreto">' + decretoTitle + '</div>' +
                         '<div class="diario-oficial-text">' +
                         '<p>' + headerLine + '.</p>' +
@@ -824,6 +824,7 @@
 </script>
 </body>
 </html>
+
 
 
 

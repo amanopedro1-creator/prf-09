@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>AIT Publicados - PRF Jaguar&eacute;</title>
+    <title>AIT Publicados - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -240,7 +240,7 @@
             };
 
             const safe = function (value, fallback) {
-                const text = (value ?? '').toString().trim();
+                const text = (value ? '').toString().trim();
                 return text || (fallback || '-');
             };
 
@@ -402,9 +402,9 @@
                     ]), '');
                     const infrator = infratorNome && infratorRg
                         ? infratorNome + ' - ' + infratorRg
-                        : (infratorNome || infratorRg || '—');
-                    const modelo = safe(getFirstField(conteudo, ['marca_modelo', 'marcaModelo', 'veiculo', 'modelo']), '—');
-                    const placa = safe(getFirstField(conteudo, ['placa', 'emplacamento']), '—');
+                        : (infratorNome || infratorRg || '');
+                    const modelo = safe(getFirstField(conteudo, ['marca_modelo', 'marcaModelo', 'veiculo', 'modelo']), '');
+                    const placa = safe(getFirstField(conteudo, ['placa', 'emplacamento']), '');
                     const author = state.authors[item.user_id] || {};
                     const authorName = safe(author.nome_guerra, 'Autor');
                     const authorPhoto = safe(author.foto_url, 'assets/img/prf.png');
@@ -1183,6 +1183,7 @@
 </script>
 </body>
 </html>
+
 
 
 

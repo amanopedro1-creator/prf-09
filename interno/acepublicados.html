@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>ACE Publicados - PRF Jaguar&eacute;</title>
+    <title>ACE Publicados - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -251,7 +251,7 @@
             };
 
             const safe = function (value, fallback) {
-                const text = (value ?? '').toString().trim();
+                const text = (value ? '').toString().trim();
                 return text || (fallback || '-');
             };
 
@@ -461,9 +461,9 @@
                     const authorName = safe(author.nome_guerra, 'Autor');
                     const authorCargo = safe(author.cargo, '');
                     const responsavel = authorCargo ? (authorName + ' - ' + authorCargo) : authorName;
-                    const unidade = safe(getConteudoField(conteudo, 'unidade'), '—');
+                    const unidade = safe(getConteudoField(conteudo, 'unidade'), '');
                     const avaliacaoRaw = getConteudoField(conteudo, 'avaliacoes');
-                    const avaliacao = safe(avaliacaoRaw && typeof avaliacaoRaw === 'object' ? avaliacaoRaw.geral : '', '—');
+                    const avaliacao = safe(avaliacaoRaw && typeof avaliacaoRaw === 'object' ? avaliacaoRaw.geral : '', '');
                     const authorPhoto = safe(author.foto_url, 'assets/img/prf.png');
                     return (
                         '<article class="publicados-card">' +
@@ -474,7 +474,7 @@
                         '<div><span>Aluno</span><strong>' + aluno.replace(/</g, '&lt;') + '</strong></div>' +
                         '<div><span>Responsável</span><strong>' + responsavel.replace(/</g, '&lt;') + '</strong></div>' +
                         '<div><span>Unidade</span><strong>' + unidade.replace(/</g, '&lt;') + '</strong></div>' +
-                        '<div><span>Avaliação geral</span><strong>' + safe(avaliacao, '—').toString().replace(/</g, '&lt;') + '</strong></div>' +
+                        '<div><span>Avaliação geral</span><strong>' + safe(avaliacao, '').toString().replace(/</g, '&lt;') + '</strong></div>' +
                         '</div>' +
                         '<div class="publicados-card-author-row">' +
                         '<span>Autor</span>' +
@@ -1452,6 +1452,7 @@
 </script>
 </body>
 </html>
+
 
 
 

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Gerenciador de Equipes - PRF Jaguar&eacute;</title>
+    <title>Gerenciador de Equipes - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -210,7 +210,7 @@
 
                 const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
                 const safe = function (value, fallback) {
-                    const text = (value ?? '').toString().trim();
+                    const text = (value ? '').toString().trim();
                     return text || (fallback || '');
                 };
 
@@ -584,7 +584,7 @@
                                 '</div>' +
                                 '<div class="gerenciador-card-service">' +
                                 '<div><span>Total de serviço</span><strong>' + formatDuration(item.totalMinutes) + '</strong></div>' +
-                                '<div><span>Últimos 7 dias</span><strong>' + formatDuration(item.last7Minutes) + '</strong></div>' +
+                                '<div><span>ltimos 7 dias</span><strong>' + formatDuration(item.last7Minutes) + '</strong></div>' +
                                 '</div>' +
                                 '</article>'
                             );
@@ -1146,6 +1146,7 @@
 </script>
 </body>
 </html>
+
 
 
 

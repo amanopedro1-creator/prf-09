@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Relat&oacute;rios Publicados - PRF Jaguar&eacute;</title>
+    <title>Relat&oacute;rios Publicados - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -244,7 +244,7 @@
             };
 
             const safe = function (value, fallback) {
-                const text = (value ?? '').toString().trim();
+                const text = (value ? '').toString().trim();
                 return text || (fallback || '-');
             };
 
@@ -318,7 +318,7 @@
                 ]));
                 if (terceiro) aux.push(terceiro);
                 if (quarto) aux.push(quarto);
-                return aux.length ? aux.join(' | ') : '—';
+                return aux.length ? aux.join(' | ') : '';
             };
 
             const normalizeConteudo = function (conteudo) {
@@ -528,11 +528,11 @@
                     ]), '');
                     const custodiado = acusadoNome && acusadoRg
                         ? acusadoNome + ' - ' + acusadoRg
-                        : (acusadoNome || acusadoRg || '—');
+                        : (acusadoNome || acusadoRg || '');
                     const motorista = safe(resolvePerson(getFirstField(conteudo, [
                         'motorista',
                         'motorista_id'
-                    ])), '—');
+                    ])), '');
                     const chefe = safe(resolvePerson(getFirstField(conteudo, [
                         'chefe_viatura',
                         'chefe_viatura_id',
@@ -540,7 +540,7 @@
                         'chefe_da_viatura',
                         'chefeEquipe',
                         'chefe_equipe'
-                    ])), '—');
+                    ])), '');
                     const auxiliares = buildAuxiliares(conteudo);
                     return (
                         '<article class="publicados-card">' +
@@ -1362,6 +1362,7 @@
 </script>
 </body>
 </html>
+
 
 
 
