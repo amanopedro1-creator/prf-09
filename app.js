@@ -6,8 +6,8 @@
     news: [],
     numbers: [
       { value: '2.810', label: 'ABORDAGENS REALIZADAS', icon: 'assets/img/car.png' },
-      { value: '940', label: 'OCORRÊNCIAS ATENDIDAS', icon: 'assets/img/shield.png' },
-      { value: '386', label: 'PRISÕES REALIZADAS', icon: 'assets/img/aim.png' },
+      { value: '940', label: 'OCORRNCIAS ATENDIDAS', icon: 'assets/img/shield.png' },
+      { value: '386', label: 'PRISES REALIZADAS', icon: 'assets/img/aim.png' },
       { value: '268.509', label: 'REAIS EM MULTAS APLICADAS', icon: 'assets/img/cash.png' },
       { value: '49.911', label: 'KM PATRULHADOS', icon: 'assets/img/road.png' },      
     ],
@@ -138,7 +138,7 @@
         const label = escapeHtml(item.label);
         const description = escapeHtml(item.description);
         const icon = item.icon
-          ? `<div class="number-icon"><img src="${escapeHtml(item.icon)}" alt="${label || 'ícone'}" loading="lazy"></div>`
+          ? `<div class="number-icon"><img src="${escapeHtml(item.icon)}" alt="${label || 'cone'}" loading="lazy"></div>`
           : '';
         return `
           <div class="number-item scroll-fade">
@@ -250,9 +250,9 @@
   };
 
   const MULTAS_LABEL = 'REAIS EM MULTAS APLICADAS';
-  const OCORRENCIAS_LABEL = 'OCORRÊNCIAS ATENDIDAS';
+  const OCORRENCIAS_LABEL = 'OCORRNCIAS ATENDIDAS';
   const ABORDAGENS_LABEL = 'ABORDAGENS REALIZADAS';
-  const PRISOES_LABEL = 'PRISÕES REALIZADAS';
+  const PRISOES_LABEL = 'PRISES REALIZADAS';
   const KM_LABEL = 'KM PATRULHADOS';
 
   const parsePtBrNumber = (value) => {
@@ -834,7 +834,7 @@
       badge.type = 'button';
       badge.className = 'user-shift-header user-shift-header--idle';
       badge.title = 'Alternar ponto';
-      badge.textContent = 'Fora de serviço';
+      badge.textContent = 'Fora de servio';
       badge.addEventListener('click', async (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -847,16 +847,16 @@
         const s = state || shiftControl.getState();
         if (s.status === 'active' && s.startAt) {
           badge.className = 'user-shift-header user-shift-header--active';
-          badge.textContent = `Em serviço ${formatHms(Date.now() - Number(s.startAt))}`;
+          badge.textContent = `Em servio ${formatHms(Date.now() - Number(s.startAt))}`;
           return;
         }
         if (s.status === 'closed') {
           badge.className = 'user-shift-header user-shift-header--closed';
-          badge.textContent = s.totalMs ? `Serviço encerrado ${formatHms(s.totalMs)}` : 'Serviço encerrado';
+          badge.textContent = s.totalMs ? `Servio encerrado ${formatHms(s.totalMs)}` : 'Servio encerrado';
           return;
         }
         badge.className = 'user-shift-header user-shift-header--idle';
-        badge.textContent = 'Fora de serviço';
+        badge.textContent = 'Fora de servio';
       };
 
       shiftControl.subscribe((state) => render(state));
@@ -990,7 +990,7 @@
           }
         });
         if (!client) {
-          setFeedback('Falha ao inicializar cliente de autenticação.', true);
+          setFeedback('Falha ao inicializar cliente de autenticao.', true);
           return;
         }
 
@@ -1163,7 +1163,7 @@
           }
         });
         if (!client) {
-          setFeedback('Falha ao inicializar cliente de autenticação.', true);
+          setFeedback('Falha ao inicializar cliente de autenticao.', true);
           return;
         }
         const { data: signUpData, error } = await client.auth.signUp({
@@ -1259,7 +1259,7 @@
               photoUploadWarning = ' Conta criada, mas ocorreu erro ao enviar a foto.';
             }
             await client.auth.signOut();
-            setFeedback(`Solicitação enviada. Sua conta está pendente de aprovação do administrador.${photoUploadWarning}`);
+            setFeedback(`Solicitao enviada. Sua conta est pendente de aprovao do administrador.${photoUploadWarning}`);
             registerForm.reset();
             clearPhotoSelection();
             return;
@@ -1267,11 +1267,11 @@
         }
 
         await client.auth.signOut();
-        setFeedback('Solicitação enviada. Sua conta está pendente de aprovação do administrador.');
+        setFeedback('Solicitao enviada. Sua conta est pendente de aprovao do administrador.');
         registerForm.reset();
         clearPhotoSelection();
       } catch (err) {
-        setFeedback('Falha ao enviar solicitação de acesso. Tente novamente.', true);
+        setFeedback('Falha ao enviar solicitao de acesso. Tente novamente.', true);
       } finally {
         setLoading(false);
       }
@@ -1346,7 +1346,7 @@
     window.goToCommunityPage = (page) => setPage('community', page);
 
     window.openTicketsWidget = () => window.alert('Fale conosco: atendimento em horario comercial.');
-    window.openCorregedoriaWidget = () => window.alert('Corregedoria: canal em manutenção.');
+    window.openCorregedoriaWidget = () => window.alert('Corregedoria: canal em manuteno.');
 
     window.cacheManager = {
       clearAndReload: () => {
@@ -1361,7 +1361,7 @@
     };
 
     window.userProfile = window.userProfile || {
-      openModal: () => window.alert('Perfil do usu?rio indispon?vel no modo estático.')
+      openModal: () => window.alert('Perfil do usu?rio indispon?vel no modo esttico.')
     };
 
     window.auth = window.auth || {
@@ -1652,18 +1652,18 @@
     const wrapper = document.createElement('div');
     wrapper.className = 'inicio-notify is-menu';
     wrapper.innerHTML = `
-      <button class="inicio-notify-btn" type="button" aria-label="Notificações">
+      <button class="inicio-notify-btn" type="button" aria-label="Notificaes">
         <i class="fas fa-bell"></i>
       </button>
       <div class="inicio-notify-panel is-hidden is-menu">
         <div class="inicio-notify-head">
-          <h4>Notificações</h4>
-          <button class="inicio-notify-clear" type="button">Limpar notificações</button>
+          <h4>Notificaes</h4>
+          <button class="inicio-notify-clear" type="button">Limpar notificaes</button>
         </div>
         <div class="inicio-notify-section" data-section="bou"><strong>BOU citados</strong><div class="inicio-notify-list"></div></div>
         <div class="inicio-notify-section" data-section="ait"><strong>AIT citados</strong><div class="inicio-notify-list"></div></div>
         <div class="inicio-notify-section" data-section="ripat"><strong>RIPAT citados</strong><div class="inicio-notify-list"></div></div>
-        <div class="inicio-notify-section" data-section="diario"><strong>Diário oficial citados</strong><div class="inicio-notify-list"></div></div>
+        <div class="inicio-notify-section" data-section="diario"><strong>Dirio oficial citados</strong><div class="inicio-notify-list"></div></div>
         <div class="inicio-notify-section" data-section="corregedoria"><strong>Corregedoria citados</strong><div class="inicio-notify-list"></div></div>
       </div>
     `;
@@ -1777,7 +1777,7 @@
       .filter((d) => matchText(d.texto))
       .map((d) => ({
         id: `diario:${d.id}`,
-        title: d.numero_decreto ? `Decreto Nº ${d.numero_decreto}` : `Diário #${d.id}`,
+        title: d.numero_decreto ? `Decreto N ${d.numero_decreto}` : `Dirio #${d.id}`,
         href: `diario-oficial.html?highlight=${d.id}`
       }));
     setList('diario', pickLatest(diarioItems));
@@ -1802,7 +1802,7 @@
       diario: (pickLatest(diarioItems) || {}).id || '',
       corregedoria: (pickLatest(corregedoriaItems) || {}).id || ''
     };
-    // Estado global: bolinha baseada apenas nas citações atuais vindas do banco.
+    // Estado global: bolinha baseada apenas nas citaes atuais vindas do banco.
     const hasUnread = Object.keys(latestMap).some((key) => Boolean(latestMap[key]));
     btn.classList.toggle('has-alert', hasUnread);
   };
