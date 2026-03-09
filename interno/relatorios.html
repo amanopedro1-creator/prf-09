@@ -733,16 +733,8 @@
 
                         // Prefer RPC sem filtro por grupamento (security definer no banco).
                         const rpcActive = await client.rpc('list_all_on_duty');
-                        if (!rpcUsers.error && Array.isArray(rpcUsers.data) && rpcUsers.data.length) {
-                            users = rpcUsers.data;
-                        } else {
-                            const usersResult = await client
-                            .from('profiles')
-                            .select('id,nome_guerra,cargo,foto_url')
-                            .eq('aprovado', true)
-                            .order('nome_guerra', { ascending: true });
-
-                            users = Array.isArray(usersResult.data) ? usersResult.data : [];
+                        if (!rpcActive.error && Array.isArray(rpcActive.data)) {
+                            activeRows = rpcActive.data;
                         }
 
                         // Fallback: consulta direta (pode sofrer RLS e mostrar so o proprio).
@@ -1449,7 +1441,6 @@
 </script>
 </body>
 </html>
-
 
 
 

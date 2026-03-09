@@ -717,6 +717,11 @@
                 }
                 if (cursosNode || perfilCursos) {
                     const rawCursos = String(profile.cursos || '').trim();
+                    const courseCodeAliases = {
+                        'CAFIT': 'CAFIT-TRANSITO',
+                        'CAFIT-TRNSITO': 'CAFIT-TRANSITO',
+                        'CAFIT-TRÂNSITO': 'CAFIT-TRANSITO'
+                    };
                     const courseImageMap = {
                         'CAD': 'CAD.png',
                         'CDT': 'CDT.png',
@@ -738,7 +743,7 @@
                         'CCP': 'CCP.png',
                         'CHOQUE': 'CHOQUE.png',
                         'CPPAR': 'CPPAR.png',
-                        'CAFIT-TRNSITO': 'CAFIT-TRNSITO.png',
+                        'CAFIT-TRANSITO': 'CAFIT.png',
                         'APH': 'APH.png'
                     };
                     if (!rawCursos) {
@@ -754,10 +759,14 @@
                             } else {
                                 const html = parts.map(function (p) {
                                     const safe = p.replace(/</g, '&lt;');
-                                    const code = p.split('|')[0].trim().toUpperCase();
-                                    const img = courseImageMap[code];
+                                    const rawCode = p.split('|')[0].trim().toUpperCase();
+                                    const normalizedCode = rawCode
+                                        .normalize('NFD')
+                                        .replace(/[\u0300-\u036f]/g, '');
+                                    const canonicalCode = courseCodeAliases[normalizedCode] || normalizedCode;
+                                    const img = courseImageMap[canonicalCode];
                                     const imgTag = img
-                                        ? '<img class="perfil-course-icon" src="assets/img/' + img + '" alt="' + code + '">'
+                                        ? '<img class="perfil-course-icon" src="assets/img/' + img + '" alt="' + canonicalCode + '" onerror="this.style.display=\'none\'">'
                                         : '';
                                     return '<div class="perfil-course-item">' + imgTag + '<span>' + safe + '</span></div>';
                                 }).join('');
@@ -1075,7 +1084,6 @@
 </script>
 </body>
 </html>
-
 
 
 
