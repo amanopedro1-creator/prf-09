@@ -239,7 +239,7 @@
             };
 
             const safe = function (value, fallback) {
-                const text = (value ? '').toString().trim();
+                const text = (value ? value : '').toString().trim();
                 return text || (fallback || '-');
             };
 

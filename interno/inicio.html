@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Painel Interno - PRF So Pauloé</title>
+    <title>Painel Interno - PRF São Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -60,6 +60,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 </head>
 <body class="inicio-page">
     <div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
@@ -178,6 +179,25 @@
                 </aside>
             </header>
 
+            <section class="inicio-general-stats-card" aria-label="Estatisticas Gerais">
+                <div class="inicio-general-stats-header">
+                    <div>
+                        <h2>Estatísticas Gerais</h2>
+                        <span class="inicio-section-note">Mês de <span id="inicio-month-display">carregando...</span></span>
+                    </div>
+                </div>
+                <div class="inicio-general-stats-grid">
+                    <div class="inicio-chart-container">
+                        <div class="inicio-chart-title">Relatórios por Tipo</div>
+                        <canvas id="inicio-reports-chart" height="60"></canvas>
+                    </div>
+                    <div class="inicio-chart-container">
+                        <div class="inicio-chart-title">Métricas do Mês</div>
+                        <canvas id="inicio-metrics-chart" height="60"></canvas>
+                    </div>
+                </div>
+            </section>
+
             <section class="inicio-content-card" aria-label="Conteudo">
                 <div class="inicio-content-grid">
                     <section class="inicio-avisos" aria-label="Ultimos avisos">
@@ -196,20 +216,20 @@
 
                     <aside class="inicio-stats" aria-label="Estatisticas e Diario">
                         <header class="inicio-section-header">
-                            <h2>Estatísticas do usuario</h2>
-                            <span class="inicio-section-note">ltimos 30 dias</span>
+                            <h2>Minha contribuição</h2>
+                            <span class="inicio-section-note">Últimos 30 dias</span>
                         </header>
                         <div class="inicio-stats-grid">
                             <div class="inicio-stat-card">
-                                <span class="inicio-stat-label">BOU feitos</span>
+                                <span class="inicio-stat-label">BOU realizados</span>
                                 <strong id="inicio-stat-bou-feitos" class="inicio-stat-value">0</strong>
                             </div>
                             <div class="inicio-stat-card">
-                                <span class="inicio-stat-label">BOU citado</span>
+                                <span class="inicio-stat-label">BOU citados</span>
                                 <strong id="inicio-stat-bou-citado" class="inicio-stat-value">0</strong>
                             </div>
                             <div class="inicio-stat-card">
-                                <span class="inicio-stat-label">Multas AIT</span>
+                                <span class="inicio-stat-label">Valor em multas aplicadas</span>
                                 <strong id="inicio-stat-multas-ait" class="inicio-stat-value">R$ 0,00</strong>
                             </div>
                             <div class="inicio-stat-card">
@@ -1026,6 +1046,352 @@
                     ripatFeitosNode.textContent = String(ripatsOwn.length);
                 } catch (e) {
                     setFallback();
+                }
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupGeneralStats() {
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+
+                try {
+                    // Obter mês e ano atual
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const monthStart = new Date(year, month, 1);
+                    const monthEnd = new Date(year, month + 1, 0);
+                    
+                    // Atualizar exibição do mês
+                    const monthNames = [
+                        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                    ];
+                    const monthDisplay = document.getElementById('inicio-month-display');
+                    if (monthDisplay) {
+                        monthDisplay.textContent = monthNames[month] + ' de ' + year;
+                    }
+
+                    // Buscar todos os BOUs do mês
+                    const bouResult = await client
+                        .from('bous')
+                        .select('id,titulo,conteudo_completo')
+                        .gte('created_at', monthStart.toISOString())
+                        .lte('created_at', monthEnd.toISOString());
+                    const bous = bouResult && bouResult.data ? bouResult.data : [];
+
+                    // Buscar todos os RIPATs do mês
+                    const ripatResult = await client
+                        .from('patrulhas')
+                        .select('id,conteudo_completo')
+                        .gte('created_at', monthStart.toISOString())
+                        .lte('created_at', monthEnd.toISOString());
+                    const ripats = ripatResult && ripatResult.data ? ripatResult.data : [];
+
+                    // Buscar todos os AITs do mês
+                    const aitResult = await client
+                        .from('aits')
+                        .select('id,conteudo_completo')
+                        .gte('created_at', monthStart.toISOString())
+                        .lte('created_at', monthEnd.toISOString());
+                    const aits = aitResult && aitResult.data ? aitResult.data : [];
+
+                    // Buscar todos os RAVOPs do mês
+                    const ravopResult = await client
+                        .from('relatorios_voo')
+                        .select('id')
+                        .gte('created_at', monthStart.toISOString())
+                        .lte('created_at', monthEnd.toISOString());
+                    const ravops = ravopResult && ravopResult.data ? ravopResult.data : [];
+
+                    // Buscar todos os ACEs do mês
+                    const aceResult = await client
+                        .from('relatorio_aluno')
+                        .select('id')
+                        .gte('created_at', monthStart.toISOString())
+                        .lte('created_at', monthEnd.toISOString());
+                    const aces = aceResult && aceResult.data ? aceResult.data : [];
+
+                    // Contar por tipo de relatório
+                    const bouCounts = {
+                        BOU: bous.length,
+                        RIPAT: ripats.length,
+                        AIT: aits.length,
+                        RAVOP: ravops.length,
+                        ACE: aces.length
+                    };
+
+                    // Extrair dados para métricas
+                    let totalMultas = 0;
+                    let totalOcorrencias = 0;
+                    let totalPresos = 0;
+
+                    // Contar presos: número de BOUs realizados
+                    totalPresos = bous.length;
+
+                    // Adicionar +1 para cada BOU que tem acusado2_nome
+                    bous.forEach(function(bou) {
+                        let conteudo = bou.conteudo_completo;
+                        let conteudoObj = null;
+                        
+                        // Parse JSON se for string
+                        if (typeof conteudo === 'string') {
+                            try {
+                                conteudoObj = JSON.parse(conteudo);
+                            } catch (e) {
+                                // Se não for JSON válido, tentar extrair dados do texto
+                                conteudoObj = null;
+                            }
+                        } else if (typeof conteudo === 'object') {
+                            conteudoObj = conteudo;
+                        }
+                        
+                        if (conteudoObj && typeof conteudoObj === 'object') {
+                            const acusado2Nome = conteudoObj.acusado2_nome || conteudoObj.acusado_2_nome || '';
+                            if (acusado2Nome && acusado2Nome.toString().trim()) {
+                                totalPresos += 1;
+                            }
+                        } else if (typeof conteudo === 'string') {
+                            // Tentar extrair dados diretamente do texto
+                            const text = conteudo.toLowerCase();
+                            
+                            // Procurar por acusado secundário no texto
+                            const acusado2Match = text.match(/acusado\s*2|segundo\s*acusado|acusado\s*secundário/i);
+                            if (acusado2Match) {
+                                totalPresos += 1;
+                            }
+                        }
+                    });
+
+                    // Somar multas dos RIPATs
+                    ripats.forEach(function(ripat) {
+                        let conteudo = ripat.conteudo_completo;
+                        let conteudoObj = null;
+                        
+                        // Parse JSON se for string
+                        if (typeof conteudo === 'string') {
+                            try {
+                                conteudoObj = JSON.parse(conteudo);
+                            } catch (e) {
+                                // Se não for JSON válido, tentar extrair dados do texto
+                                conteudoObj = null;
+                            }
+                        } else if (typeof conteudo === 'object') {
+                            conteudoObj = conteudo;
+                        }
+                        
+                        if (conteudoObj && typeof conteudoObj === 'object') {
+                            // Extrair multas do RIPAT
+                            const multasText = conteudoObj.multa || conteudoObj.valor_multa || '';
+                            const multaMatch = multasText.toString().match(/R\$\s*([\d.,]+)/);
+                            if (multaMatch) {
+                                const multaStr = multaMatch[1].replace(/\./g, '').replace(',', '.');
+                                totalMultas += parseFloat(multaStr) || 0;
+                            }
+
+                            // Extrair ocorrências do RIPAT - procurar em diferentes locais
+                            let ocorrenciasValue = 0;
+                            if (conteudoObj.dados_patrulhamento && conteudoObj.dados_patrulhamento.ocorrencias) {
+                                ocorrenciasValue = conteudoObj.dados_patrulhamento.ocorrencias;
+                            } else if (conteudoObj.ocorrencias) {
+                                ocorrenciasValue = conteudoObj.ocorrencias;
+                            } else if (conteudoObj.ocorrencia) {
+                                ocorrenciasValue = conteudoObj.ocorrencia;
+                            }
+                            totalOcorrencias += parseInt(ocorrenciasValue) || 0;
+
+                            // Extrair presos do RIPAT
+                            let presosValue = 0;
+                            if (conteudoObj.dados_patrulhamento && conteudoObj.dados_patrulhamento.prisoes) {
+                                presosValue = conteudoObj.dados_patrulhamento.prisoes;
+                            } else if (conteudoObj.prisoes) {
+                                presosValue = conteudoObj.prisoes;
+                            } else if (conteudoObj.presos) {
+                                presosValue = conteudoObj.presos;
+                            }
+                            totalPresos += parseInt(presosValue) || 0;
+                        } else if (typeof conteudo === 'string') {
+                            // Tentar extrair dados diretamente do texto
+                            const text = conteudo.toLowerCase();
+                            
+                            // Procurar por ocorrências no texto
+                            const ocorrenciasMatch = text.match(/ocorrências?\s*[:=]\s*(\d+)/i) || 
+                                                    text.match(/(\d+)\s*ocorrências?/i);
+                            if (ocorrenciasMatch) {
+                                totalOcorrencias += parseInt(ocorrenciasMatch[1]) || 0;
+                            }
+                            
+                            // Procurar por presos no texto
+                            const presosMatch = text.match(/prisões?\s*[:=]\s*(\d+)/i) || 
+                                              text.match(/presos?\s*[:=]\s*(\d+)/i) ||
+                                              text.match(/(\d+)\s*prisões?/i) ||
+                                              text.match(/(\d+)\s*presos?/i);
+                            if (presosMatch) {
+                                totalPresos += parseInt(presosMatch[1]) || 0;
+                            }
+                            
+                            // Procurar por multas no texto
+                            const multaMatch = text.match(/multa\s*[:=]\s*R\$\s*([\d.,]+)/i) ||
+                                             text.match(/R\$\s*([\d.,]+)\s*multa/i) ||
+                                             text.match(/valor\s*[:=]\s*R\$\s*([\d.,]+)/i);
+                            if (multaMatch) {
+                                const multaStr = multaMatch[1].replace(/\./g, '').replace(',', '.');
+                                totalMultas += parseFloat(multaStr) || 0;
+                            }
+                        }
+                    });
+
+                    // Somar multas dos AITs
+                    aits.forEach(function(ait) {
+                        let conteudo = ait.conteudo_completo;
+                        
+                        // Parse JSON se for string
+                        if (typeof conteudo === 'string') {
+                            try {
+                                conteudo = JSON.parse(conteudo);
+                            } catch (e) {
+                                conteudo = null;
+                            }
+                        }
+                        
+                        if (conteudo && typeof conteudo === 'object') {
+                            // Extrair multas do AIT - procurar por "valor_multa" ou "multa"
+                            let multasText = '';
+                            if (conteudo.campos && conteudo.campos.valor_multa) {
+                                multasText = conteudo.campos.valor_multa;
+                            } else if (conteudo.campos && conteudo.campos.multa) {
+                                multasText = conteudo.campos.multa;
+                            } else if (conteudo.valor_multa) {
+                                multasText = conteudo.valor_multa;
+                            } else if (conteudo.multa) {
+                                multasText = conteudo.multa;
+                            }
+                            
+                            const multaMatch = multasText.toString().match(/R\$\s*([\d.,]+)/);
+                            if (multaMatch) {
+                                const multaStr = multaMatch[1].replace(/\./g, '').replace(',', '.');
+                                totalMultas += parseFloat(multaStr) || 0;
+                            }
+                        }
+                    });
+
+                    // Preparar dados para gráfico de relatórios (donut)
+                    const reportLabels = [];
+                    const reportData = [];
+                    const reportColors = ['#0c166b', '#3b82f6', '#fbbf24', '#dc2626', '#10b981'];
+                    
+                    if (bouCounts.BOU > 0) { reportLabels.push('BOU'); reportData.push(bouCounts.BOU); }
+                    if (bouCounts.RIPAT > 0) { reportLabels.push('RIPAT'); reportData.push(bouCounts.RIPAT); }
+                    if (bouCounts.AIT > 0) { reportLabels.push('AIT'); reportData.push(bouCounts.AIT); }
+                    if (bouCounts.RAVOP > 0) { reportLabels.push('RAVOP'); reportData.push(bouCounts.RAVOP); }
+                    if (bouCounts.ACE > 0) { reportLabels.push('ACE'); reportData.push(bouCounts.ACE); }
+
+                    // Se nenhum dado, mostrar mensagem
+                    if (reportLabels.length === 0) {
+                        reportLabels.push('Sem dados');
+                        reportData.push(1);
+                    }
+
+                    // Renderizar gráfico de relatórios
+                    const reportCtx = document.getElementById('inicio-reports-chart');
+                    if (reportCtx && window.Chart) {
+                        new Chart(reportCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: reportLabels,
+                                datasets: [{
+                                    data: reportData,
+                                    backgroundColor: reportColors.slice(0, reportLabels.length),
+                                    borderColor: 'rgba(255, 255, 255, 0.8)',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            font: { family: '"Montserrat", sans-serif', size: 12 },
+                                            color: '#1f2937',
+                                            padding: 12
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Renderizar gráfico de métricas (barras)
+                    const metricsCtx = document.getElementById('inicio-metrics-chart');
+                    if (metricsCtx && window.Chart) {
+                        new Chart(metricsCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Multas em mil reais', 'Ocorrências', 'Presos'],
+                                datasets: [{
+                                    label: 'Neste mês:',
+                                    data: [
+                                        totalMultas / 1000,
+                                        totalOcorrencias,
+                                        totalPresos
+                                    ],
+                                    backgroundColor: ['#fbbf24', '#3b82f6', '#0c166b'],
+                                    borderColor: ['#fbbf24', '#3b82f6', '#0c166b'],
+                                    borderWidth: 1,
+                                    borderRadius: 6,
+                                    barThickness: 40,
+                                    maxBarThickness: 50
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'x',
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                aspectRatio: 1.5,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        ticks: {
+                                            font: { family: '"Montserrat", sans-serif', size: 12 },
+                                            color: '#1f2937'
+                                        },
+                                        grid: { display: false }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            font: { family: '"Montserrat", sans-serif', size: 12 },
+                                            color: '#1f2937',
+                                            callback: function(value) {
+                                                return value.toLocaleString('pt-BR');
+                                            }
+                                        }
+                                    }
+                                },
+                                layout: {
+                                    padding: {
+                                        top: 20,
+                                        bottom: 20
+                                    }
+                                }
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Erro ao carregar estatísticas gerais:', e);
                 }
             })();
         });

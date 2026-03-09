@@ -242,7 +242,7 @@
             };
 
             const safe = function (value, fallback) {
-                const text = (value ? '').toString().trim();
+                const text = (value ? value : '').toString().trim();
                 return text || (fallback || '-');
             };
 
@@ -289,7 +289,7 @@
                     if (!current || typeof current !== 'object') return '';
                     current = current[parts[i]];
                 }
-                return current ? '';
+                return current ? current : '';
             };
 
             const isUuid = function (value) {
