@@ -4779,6 +4779,20 @@ p {
     animation: fadeIn 720ms ease, slideUp 720ms ease;
 }
 
+.organograma-page .organograma-section .container {
+    max-width: min(98vw, 2200px);
+}
+
+.organograma-sheet-wrapper {
+    margin: 20px auto 0;
+}
+
+.organograma-sheet-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
 /* Transicoes suaves para modo escuro */
 * {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
