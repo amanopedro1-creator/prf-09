@@ -255,7 +255,7 @@
                     const year = createdAt ? createdAt.getFullYear() : '';
                     const authorName = row.author_name ? row.author_name : 'Autor';
                     const authorCargo = row.author_cargo ? row.author_cargo : 'Cargo';
-                    const decretoTitle = 'DECRETO DE NMERO ' + (row.numero || '-');
+                    const decretoTitle = 'DECRETO DE NÚMERO ' + (row.numero || '-');
                     const tipo = row.title || '';
                     const texto = (row.texto || '').toString()
                         .replace(/&/g, '&amp;')
@@ -827,6 +827,7 @@
 </script>
 </body>
 </html>
+
 
 
 
