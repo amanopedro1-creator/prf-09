@@ -222,7 +222,8 @@
                         </label>
                         <label class="bou-form-field">
                             <span>Valor da multa em R$</span>
-                            <input id="ait-multa" type="text" placeholder="0,00" required>
+                            <input id="ait-multa" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente numeros" required>
+                            <span id="ait-multa-hint" class="bou-field-hint is-hidden" aria-live="polite">Use apenas numeros inteiros.</span>
                         </label>
                     </div>
                     <div class="bou-form-row">
@@ -768,12 +769,14 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -887,12 +890,36 @@
                 const responsavel = document.getElementById('ait-responsavel');
                 const datahora = document.getElementById('ait-datahora');
                 const lastTitle = document.getElementById('ait-last-title');
+                const multaInput = document.getElementById('ait-multa');
+                const multaHint = document.getElementById('ait-multa-hint');
 
                 const setStatus = function (text, isError) {
                     if (!statusNode) return;
                     statusNode.textContent = text;
                     statusNode.style.color = isError ? '#b91c1c' : '#111827';
                 };
+
+                const validateMultaField = function () {
+                    if (!multaInput) return true;
+                    const rawValue = multaInput.value || '';
+                    const sanitizedValue = rawValue.replace(/\D/g, '');
+                    const hadInvalidChars = sanitizedValue !== rawValue;
+                    if (hadInvalidChars) {
+                        multaInput.value = sanitizedValue;
+                    }
+                    if (multaHint) {
+                        multaHint.textContent = hadInvalidChars ? 'Use apenas numeros inteiros.' : '';
+                        multaHint.classList.toggle('is-hidden', !hadInvalidChars);
+                    }
+                    const isValid = /^\d+$/.test(sanitizedValue);
+                    multaInput.setCustomValidity(isValid ? '' : 'Use apenas numeros inteiros.');
+                    return isValid;
+                };
+
+                if (multaInput) {
+                    multaInput.addEventListener('input', validateMultaField);
+                    multaInput.addEventListener('blur', validateMultaField);
+                }
 
                 const now = new Date();
                 if (datahora) {
@@ -943,7 +970,12 @@
                         const infratorNome = document.getElementById('ait-infrator-nome')?.value || '';
                         const infratorRg = document.getElementById('ait-infrator-rg')?.value || '';
                         const infracoes = document.getElementById('ait-infracao')?.value || '';
-                        const valorMulta = document.getElementById('ait-multa')?.value || '';
+                        if (!validateMultaField()) {
+                            setStatus('O valor da multa deve conter apenas numeros inteiros.', true);
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
+                        const valorMulta = multaInput?.value || '';
                         const apreensao = document.getElementById('ait-apreensao')?.value || '';
                         const dataHora = document.getElementById('ait-datahora')?.value || '';
                         const local = document.getElementById('ait-local')?.value || '';
@@ -1117,8 +1149,6 @@
 </script>
 </body>
 </html>
-
-
 
 
 

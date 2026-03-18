@@ -688,12 +688,14 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -858,7 +860,7 @@
                         avisosList.innerHTML = avisos.map(function (item) {
                             const titulo = escapeHtml(item.titulo || 'Aviso');
                             const resumoBase = item.texto || item.subtitulo || '';
-                            const resumo = escapeHtml(truncate(resumoBase, 140)) || 'Sem resumo disponivel.';
+                            const resumo = escapeHtml(String(resumoBase || '').trim()) || 'Sem resumo disponivel.';
                             const stamp = item.created_at;
                             const meta = 'Publicado em ' + formatDateTime(stamp);
                             const link = 'avisos-internos.html?id=' + encodeURIComponent(item.id || '');
@@ -934,11 +936,33 @@
 
                 const parseMoney = function (value) {
                     if (value === null || value === undefined) return 0;
-                    if (typeof value === 'number') return value;
-                    const raw = String(value);
-                    const normalized = raw.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+                    if (typeof value === 'number') {
+                        return Number.isFinite(value) ? Math.max(0, value) : 0;
+                    }
+                    const raw = String(value).trim();
+                    if (!raw) return 0;
+                    const cleaned = raw.replace(/[^\d,.-]/g, '');
+                    if (!cleaned) return 0;
+
+                    const lastComma = cleaned.lastIndexOf(',');
+                    const lastDot = cleaned.lastIndexOf('.');
+                    let normalized = cleaned;
+
+                    if (lastComma > -1 && lastDot > -1) {
+                        if (lastComma > lastDot) {
+                            normalized = cleaned.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            normalized = cleaned.replace(/,/g, '');
+                        }
+                    } else if (lastComma > -1) {
+                        normalized = cleaned.replace(/\./g, '').replace(',', '.');
+                    } else {
+                        const dotCount = (cleaned.match(/\./g) || []).length;
+                        if (dotCount > 1) normalized = cleaned.replace(/\./g, '');
+                    }
+
                     const parsed = Number(normalized);
-                    return Number.isFinite(parsed) ? parsed : 0;
+                    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
                 };
 
                 const normalizeConteudo = function (conteudo) {
@@ -953,17 +977,24 @@
                     if (!conteudo) return 0;
                     const parsed = normalizeConteudo(conteudo);
                     if (!parsed || typeof parsed !== 'object') return 0;
-                    let total = 0;
                     const keys = ['valor_multa', 'valor', 'multa', 'valor_total', 'valorMulta', 'valor_ait', 'total_multa'];
-                    keys.forEach(function (key) {
-                        if (Object.prototype.hasOwnProperty.call(parsed, key)) total += parseMoney(parsed[key]);
-                    });
-                    if (parsed.campos && typeof parsed.campos === 'object') {
-                        keys.forEach(function (key) {
-                            if (Object.prototype.hasOwnProperty.call(parsed.campos, key)) total += parseMoney(parsed.campos[key]);
-                        });
+                    for (let i = 0; i < keys.length; i += 1) {
+                        const key = keys[i];
+                        if (Object.prototype.hasOwnProperty.call(parsed, key)) {
+                            const amount = parseMoney(parsed[key]);
+                            if (amount > 0) return amount;
+                        }
                     }
-                    return total;
+                    if (parsed.campos && typeof parsed.campos === 'object') {
+                        for (let i = 0; i < keys.length; i += 1) {
+                            const key = keys[i];
+                            if (Object.prototype.hasOwnProperty.call(parsed.campos, key)) {
+                                const amount = parseMoney(parsed.campos[key]);
+                                if (amount > 0) return amount;
+                            }
+                        }
+                    }
+                    return 0;
                 };
 
                 const toSafeLower = function (value) {
@@ -1062,6 +1093,37 @@
                 if (!userId) return;
 
                 try {
+                    const parseMoney = function (value) {
+                        if (value === null || value === undefined) return 0;
+                        if (typeof value === 'number') {
+                            return Number.isFinite(value) ? Math.max(0, value) : 0;
+                        }
+                        const raw = String(value).trim();
+                        if (!raw) return 0;
+                        const cleaned = raw.replace(/[^\d,.-]/g, '');
+                        if (!cleaned) return 0;
+
+                        const lastComma = cleaned.lastIndexOf(',');
+                        const lastDot = cleaned.lastIndexOf('.');
+                        let normalized = cleaned;
+
+                        if (lastComma > -1 && lastDot > -1) {
+                            if (lastComma > lastDot) {
+                                normalized = cleaned.replace(/\./g, '').replace(',', '.');
+                            } else {
+                                normalized = cleaned.replace(/,/g, '');
+                            }
+                        } else if (lastComma > -1) {
+                            normalized = cleaned.replace(/\./g, '').replace(',', '.');
+                        } else {
+                            const dotCount = (cleaned.match(/\./g) || []).length;
+                            if (dotCount > 1) normalized = cleaned.replace(/\./g, '');
+                        }
+
+                        const parsed = Number(normalized);
+                        return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+                    };
+
                     // Obter mês e ano atual
                     const now = new Date();
                     const year = now.getFullYear();
@@ -1170,6 +1232,24 @@
                         }
                     });
 
+                    const parseSingleMultaFromObject = function (conteudoObj) {
+                        if (!conteudoObj || typeof conteudoObj !== 'object') return 0;
+                        const candidates = [
+                            conteudoObj.valor_multa,
+                            conteudoObj.multa,
+                            conteudoObj.valor,
+                            conteudoObj.valor_total,
+                            conteudoObj.campos && conteudoObj.campos.valor_multa,
+                            conteudoObj.campos && conteudoObj.campos.multa,
+                            conteudoObj.campos && conteudoObj.campos.valor
+                        ];
+                        for (let i = 0; i < candidates.length; i += 1) {
+                            const amount = parseMoney(candidates[i]);
+                            if (amount > 0) return amount;
+                        }
+                        return 0;
+                    };
+
                     // Somar multas dos RIPATs
                     ripats.forEach(function(ripat) {
                         let conteudo = ripat.conteudo_completo;
@@ -1189,12 +1269,7 @@
                         
                         if (conteudoObj && typeof conteudoObj === 'object') {
                             // Extrair multas do RIPAT
-                            const multasText = conteudoObj.multa || conteudoObj.valor_multa || '';
-                            const multaMatch = multasText.toString().match(/R\$\s*([\d.,]+)/);
-                            if (multaMatch) {
-                                const multaStr = multaMatch[1].replace(/\./g, '').replace(',', '.');
-                                totalMultas += parseFloat(multaStr) || 0;
-                            }
+                            totalMultas += parseSingleMultaFromObject(conteudoObj);
 
                             // Extrair ocorrências do RIPAT - procurar em diferentes locais
                             let ocorrenciasValue = 0;
@@ -1242,8 +1317,7 @@
                                              text.match(/R\$\s*([\d.,]+)\s*multa/i) ||
                                              text.match(/valor\s*[:=]\s*R\$\s*([\d.,]+)/i);
                             if (multaMatch) {
-                                const multaStr = multaMatch[1].replace(/\./g, '').replace(',', '.');
-                                totalMultas += parseFloat(multaStr) || 0;
+                                totalMultas += parseMoney(multaMatch[1]);
                             }
                         }
                     });
@@ -1262,23 +1336,7 @@
                         }
                         
                         if (conteudo && typeof conteudo === 'object') {
-                            // Extrair multas do AIT - procurar por "valor_multa" ou "multa"
-                            let multasText = '';
-                            if (conteudo.campos && conteudo.campos.valor_multa) {
-                                multasText = conteudo.campos.valor_multa;
-                            } else if (conteudo.campos && conteudo.campos.multa) {
-                                multasText = conteudo.campos.multa;
-                            } else if (conteudo.valor_multa) {
-                                multasText = conteudo.valor_multa;
-                            } else if (conteudo.multa) {
-                                multasText = conteudo.multa;
-                            }
-                            
-                            const multaMatch = multasText.toString().match(/R\$\s*([\d.,]+)/);
-                            if (multaMatch) {
-                                const multaStr = multaMatch[1].replace(/\./g, '').replace(',', '.');
-                                totalMultas += parseFloat(multaStr) || 0;
-                            }
+                            totalMultas += parseSingleMultaFromObject(conteudo);
                         }
                     });
 
@@ -1338,7 +1396,7 @@
                             data: {
                                 labels: ['Multas em mil reais', 'Ocorrências', 'Presos'],
                                 datasets: [{
-                                    label: 'Neste mês:',
+                                    label: 'Neste mês',
                                     data: [
                                         totalMultas / 1000,
                                         totalOcorrencias,
@@ -1398,10 +1456,6 @@
     </script>
 </body>
 </html>
-
-
-
-
 
 
 

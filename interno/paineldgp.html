@@ -923,12 +923,14 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -1117,7 +1119,7 @@
                     { code: 'EP', label: 'Estágio Probatório', image: 'EP.png' },
                     { code: 'CFP', label: 'Curso de Formação Policial', image: 'CFP.png' },
                     { code: 'ERC', label: 'Especialização em Rádio Comunicação', image: 'ERC.png' },
-                    { code: 'OP', label: 'Habilitação Operacional', image: 'OP.png' },
+                    { code: 'OP', label: 'Habilitação Operacional', image: 'EP.png' },
                     { code: 'CDP', label: 'Curso de Direito Penal', image: 'CDP.png' },
                     { code: 'CGO', label: 'Curso Avançado em Gestão Operacional', image: 'CGO.png' },
                     { code: 'COTEM', label: 'Curso de Operações Temáticas de Combate ao Crime', image: 'COTEM.png' },
@@ -1812,6 +1814,7 @@
                 if (cursosSave) {
                     cursosSave.addEventListener('click', async function () {
                         if (!activeCursosUser) return;
+                        cursosSave.disabled = true;
                         const selected = Array.from(cursosBody.querySelectorAll('input[type="checkbox"]'))
                             .filter(function (input) { return input.checked; })
                             .map(function (input) { return input.getAttribute('data-code'); })
@@ -1820,12 +1823,22 @@
                         const result = await client
                             .from('profiles')
                             .update({ cursos: next })
-                            .eq('id', activeCursosUser.id);
-                        if (!result.error) {
-                            activeCursosUser.cursos = next;
-                            renderProfiles();
-                            closeModal(cursosModal);
+                            .eq('id', activeCursosUser.id)
+                            .select('cursos')
+                            .maybeSingle();
+                        if (result.error) {
+                            try { window.alert('Falha ao salvar cursos: ' + (result.error.message || 'erro desconhecido')); } catch (e) {}
+                            cursosSave.disabled = false;
+                            return;
                         }
+
+                        const persistedCursos = result && result.data ? (result.data.cursos || '') : next;
+                        activeCursosUser.cursos = persistedCursos;
+                        const mappedProfile = profileMap.get(String(activeCursosUser.id));
+                        if (mappedProfile) mappedProfile.cursos = persistedCursos;
+                        renderProfiles();
+                        closeModal(cursosModal);
+                        cursosSave.disabled = false;
                     });
                 }
 
@@ -2382,5 +2395,3 @@
     </script>
 </body>
 </html>
-
-

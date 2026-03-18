@@ -820,12 +820,14 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -930,7 +932,6 @@
 </script>
 </body>
 </html>
-
 
 
 

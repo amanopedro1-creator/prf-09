@@ -286,17 +286,20 @@
                         </label>
                         <label class="bou-form-field">
                             <span>Ocorrências atendidas</span>
-                            <input id="ripat-ocorrencias" type="text" placeholder="Quantidade/descrição">
+                            <input id="ripat-ocorrencias" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Quantidade em Numeros">
+                            <span id="ripat-ocorrencias-hint" class="bou-field-hint is-hidden" aria-live="polite">Use apenas numeros inteiros.</span>
                         </label>
                     </div>
                     <div class="bou-form-row">
                         <label class="bou-form-field">
                             <span>Abordagens realizadas</span>
-                            <input id="ripat-abordagens" type="text" placeholder="Quantidade/descrição">
+                            <input id="ripat-abordagens" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Quantidade em Numeros">
+                            <span id="ripat-abordagens-hint" class="bou-field-hint is-hidden" aria-live="polite">Use apenas numeros inteiros.</span>
                         </label>
                         <label class="bou-form-field">
                             <span>Prisões efetuadas</span>
-                            <input id="ripat-prisoes" type="text" placeholder="Quantidade/descrição">
+                            <input id="ripat-prisoes" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Quantidade em Numeros">
+                            <span id="ripat-prisoes-hint" class="bou-field-hint is-hidden" aria-live="polite">Use apenas numeros inteiros.</span>
                         </label>
                     </div>
 
@@ -857,12 +860,14 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -972,12 +977,50 @@
             const form = document.getElementById('ripat-form');
             const statusNode = document.getElementById('ripat-status');
             const submitBtn = document.getElementById('ripat-submit');
+            const ocorrenciasInput = document.getElementById('ripat-ocorrencias');
+            const abordagensInput = document.getElementById('ripat-abordagens');
+            const prisoesInput = document.getElementById('ripat-prisoes');
 
             const setStatus = function (text, isError) {
                 if (!statusNode) return;
                 statusNode.textContent = text;
                 statusNode.style.color = isError ? '#b91c1c' : '#111827';
             };
+
+            const setupIntegerOnlyField = function (input, hint) {
+                if (!input) return function () { return true; };
+                const validate = function () {
+                    const rawValue = input.value || '';
+                    const sanitizedValue = rawValue.replace(/\D/g, '');
+                    const hadInvalidChars = sanitizedValue !== rawValue;
+                    if (hadInvalidChars) {
+                        input.value = sanitizedValue;
+                    }
+                    if (hint) {
+                        hint.textContent = hadInvalidChars ? 'Use apenas numeros inteiros.' : '';
+                        hint.classList.toggle('is-hidden', !hadInvalidChars);
+                    }
+                    const isValid = sanitizedValue === '' || /^\d+$/.test(sanitizedValue);
+                    input.setCustomValidity(isValid ? '' : 'Use apenas numeros inteiros.');
+                    return isValid;
+                };
+                input.addEventListener('input', validate);
+                input.addEventListener('blur', validate);
+                return validate;
+            };
+
+            const validateOcorrencias = setupIntegerOnlyField(
+                ocorrenciasInput,
+                document.getElementById('ripat-ocorrencias-hint')
+            );
+            const validateAbordagens = setupIntegerOnlyField(
+                abordagensInput,
+                document.getElementById('ripat-abordagens-hint')
+            );
+            const validatePrisoes = setupIntegerOnlyField(
+                prisoesInput,
+                document.getElementById('ripat-prisoes-hint')
+            );
 
             const pad = (n) => String(n).padStart(2, '0');
             const now = new Date();
@@ -1509,6 +1552,12 @@
                     if (submitBtn) submitBtn.disabled = true;
                     setStatus('Enviando...', false);
 
+                    if (!validateOcorrencias() || !validateAbordagens() || !validatePrisoes()) {
+                        setStatus('Ocorrencias, abordagens e prisoes devem conter apenas numeros inteiros.', true);
+                        if (submitBtn) submitBtn.disabled = false;
+                        return;
+                    }
+
                     const unidadeManual = document.getElementById('ripat-unidade-manual')?.value || '';
                     const unidadeSelecionada = document.getElementById('ripat-unidade')?.value || '';
                     const unidadeFinal = unidadeManual.trim() ? unidadeManual.trim() : unidadeSelecionada;
@@ -1622,9 +1671,6 @@
 </script>
 </body>
 </html>
-
-
-
 
 
 

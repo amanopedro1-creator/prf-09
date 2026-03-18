@@ -243,6 +243,22 @@
                 }
             };
 
+            const renderCopyablePre = function (text) {
+                const safeText = String(text || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                return (
+                    '<div class="publicados-copy-block">' +
+                    '<button class="publicados-inline-copy" type="button">' +
+                    '<i class="fas fa-copy"></i>' +
+                    '<span>Copiar texto</span>' +
+                    '</button>' +
+                    '<pre class="publicados-pre">' + safeText + '</pre>' +
+                    '</div>'
+                );
+            };
+
             const safe = function (value, fallback) {
                 const text = (value ? value : '').toString().trim();
                 return text || (fallback || '-');
@@ -354,10 +370,10 @@
                 const normalized = normalizeConteudo(conteudo);
                 if (!modalContent) return;
                 if (normalized && typeof normalized === 'object' && (normalized.texto_original || (normalized.campos && normalized.campos.texto_original))) {
-                    modalContent.innerHTML = '<pre class="publicados-pre"></pre>';
                     const rawText = normalized.texto_original || (normalized.campos ? normalized.campos.texto_original : '');
-                    modalContent.querySelector('pre').textContent = String(rawText).replace(/\\n/g, '\n');
-                    modalContent.setAttribute('data-copy-text', String(rawText).replace(/\\n/g, '\n'));
+                    const formattedText = String(rawText).replace(/\\n/g, '\n');
+                    modalContent.innerHTML = renderCopyablePre(formattedText);
+                    modalContent.setAttribute('data-copy-text', formattedText);
                     return;
                 }
                 const labels = [
@@ -389,58 +405,88 @@
                     ['assinatura', 'Assinatura']
                 ];
                 if (!normalized || typeof normalized !== 'object') {
-                    modalContent.innerHTML = '<pre class="publicados-pre"></pre>';
-                    modalContent.querySelector('pre').textContent = String(normalized || '');
-                    modalContent.setAttribute('data-copy-text', String(normalized || ''));
+                    const fallbackText = String(normalized || '');
+                    modalContent.innerHTML = renderCopyablePre(fallbackText);
+                    modalContent.setAttribute('data-copy-text', fallbackText);
                     return;
                 }
-                const usedLabels = new Set();
-                const rows = labels
-                    .map(function (item) {
-                        const key = item[0];
-                        const label = item[1];
-                        if (key.endsWith('_id')) {
-                            const baseKey = key.slice(0, -3);
-                            const baseValue = safe(getConteudoField(normalized, baseKey), '');
-                            if (baseValue) return '';
-                        }
-                        if (usedLabels.has(label)) return '';
-                        let value = safe(getConteudoField(normalized, key), '');
-                        if (key.includes('motorista') || key.includes('chefe_viatura') || key.includes('terceiro_homem') || key.includes('quarto_homem')) {
-                            value = resolvePerson(value);
-                        }
-                        if (!value) return '';
-                        usedLabels.add(label);
-                        return (
-                            '<div class="publicados-detail-row">' +
-                            '<span>' + label + '</span>' +
-                            '<strong>' + value.replace(/</g, '&lt;') + '</strong>' +
-                            '</div>'
-                        );
+                const detailMap = {};
+                labels.forEach(function (item) {
+                    const key = item[0];
+                    const label = item[1];
+                    if (detailMap[label]) return;
+                    if (key.endsWith('_id')) {
+                        const baseKey = key.slice(0, -3);
+                        const baseValue = safe(getConteudoField(normalized, baseKey), '');
+                        if (baseValue) return;
+                    }
+                    let value = safe(getConteudoField(normalized, key), '');
+                    if (key.includes('motorista') || key.includes('chefe_viatura') || key.includes('terceiro_homem') || key.includes('quarto_homem')) {
+                        value = resolvePerson(value);
+                    }
+                    if (!value) return;
+                    detailMap[label] = value;
+                });
+
+                const textSections = [
+                    {
+                        title: 'BOLETIM DE OCORRENCIA UNIFICADO (BOU):',
+                        rows: [
+                            ['Titulo', detailMap['Título']],
+                            ['Unidade', detailMap['Unidade']],
+                            ['Equipe', detailMap['Equipe']],
+                            ['Motorista', detailMap['Motorista']],
+                            ['Chefe da viatura', detailMap['Chefe da viatura']],
+                            ['Auxiliar 1', detailMap['Auxiliar 1']],
+                            ['Auxiliar 2', detailMap['Auxiliar 2']]
+                        ]
+                    },
+                    {
+                        title: 'DADOS DO CUSTODIADO:',
+                        rows: [
+                            ['Custodiado', detailMap['Custodiado']],
+                            ['RG custodiado', detailMap['RG custodiado']],
+                            ['Natureza', detailMap['Natureza']],
+                            ['Segundo custodiado', detailMap['Segundo custodiado']],
+                            ['RG 2º custodiado', detailMap['RG 2º custodiado']],
+                            ['Natureza 2º', detailMap['Natureza 2º']]
+                        ]
+                    },
+                    {
+                        title: 'DADOS DA OCORRENCIA:',
+                        rows: [
+                            ['Relato', detailMap['Relato']],
+                            ['Data e hora', detailMap['Data e hora']],
+                            ['Local', detailMap['Local']],
+                            ['Envolvidos', detailMap['Envolvidos']],
+                            ['Resultado', detailMap['Resultado']],
+                            ['Material apreendido', detailMap['Material apreendido']],
+                            ['Veiculo', detailMap['Veículo']],
+                            ['Coloracao', detailMap['Coloração']],
+                            ['Assinatura', detailMap['Assinatura']]
+                        ]
+                    }
+                ];
+
+                const copyText = textSections
+                    .map(function (section) {
+                        const lines = section.rows
+                            .filter(function (row) { return row[1]; })
+                            .map(function (row) { return row[0] + ': ' + row[1]; });
+                        if (!lines.length) return '';
+                        return section.title + '\n\n' + lines.join('\n');
                     })
                     .filter(Boolean)
-                    .join('');
-                modalContent.innerHTML = rows || '<p class="publicados-empty">Nenhum detalhe disponível.</p>';
-                const copyLines = labels
-                    .map(function (item) {
-                        const key = item[0];
-                        const label = item[1];
-                        if (key.endsWith('_id')) {
-                            const baseKey = key.slice(0, -3);
-                            const baseValue = safe(getConteudoField(normalized, baseKey), '');
-                            if (baseValue) return '';
-                        }
-                        if (usedLabels.has(label)) return '';
-                        let value = safe(getConteudoField(normalized, key), '');
-                        if (key.includes('motorista') || key.includes('chefe_viatura') || key.includes('terceiro_homem') || key.includes('quarto_homem')) {
-                            value = resolvePerson(value);
-                        }
-                        if (!value) return '';
-                        usedLabels.add(label);
-                        return label + ': ' + value;
-                    })
-                    .filter(Boolean);
-                modalContent.setAttribute('data-copy-text', copyLines.length ? copyLines.join('\n') : '');
+                    .join('\n\n');
+
+                if (!copyText) {
+                    modalContent.innerHTML = '<p class="publicados-empty">Nenhum detalhe disponível.</p>';
+                    modalContent.setAttribute('data-copy-text', '');
+                    return;
+                }
+
+                modalContent.innerHTML = renderCopyablePre(copyText);
+                modalContent.setAttribute('data-copy-text', copyText);
             };
 
             const openModal = function (item) {
@@ -472,6 +518,23 @@
                         copyBtn.textContent = 'Copiado';
                         setTimeout(function () {
                             copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                        }, 1200);
+                    } catch (e) {
+                        /* ignore */
+                    }
+                });
+            }
+            if (modalContent) {
+                modalContent.addEventListener('click', async function (event) {
+                    const inlineCopy = event.target.closest('.publicados-inline-copy');
+                    if (!inlineCopy) return;
+                    const text = modalContent.getAttribute('data-copy-text') || '';
+                    if (!text) return;
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        inlineCopy.innerHTML = '<i class="fas fa-check"></i><span>Copiado</span>';
+                        setTimeout(function () {
+                            inlineCopy.innerHTML = '<i class="fas fa-copy"></i><span>Copiar texto</span>';
                         }, 1200);
                     } catch (e) {
                         /* ignore */
@@ -1252,12 +1315,14 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -1362,9 +1427,6 @@
 </script>
 </body>
 </html>
-
-
-
 
 
 
