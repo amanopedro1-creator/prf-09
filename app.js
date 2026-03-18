@@ -5,11 +5,11 @@
     period: 'JANEIRO A DEZEMBRO DE 2026',
     news: [],
     numbers: [
-      { value: '2.810', label: 'ABORDAGENS REALIZADAS', icon: 'assets/img/car.png' },
-      { value: '940', label: 'OCORRÊNCIAS ATENDIDAS', icon: 'assets/img/shield.png' },
-      { value: '386', label: 'PRISÕES REALIZADAS', icon: 'assets/img/aim.png' },
-      { value: '268.509', label: 'REAIS EM MULTAS APLICADAS', icon: 'assets/img/cash.png' },
-      { value: '49.911', label: 'KM PATRULHADOS', icon: 'assets/img/road.png' },      
+      { value: '0', label: 'ABORDAGENS REALIZADAS', iconClass: 'fas fa-car-side' },
+      { value: '0', label: 'OCORRÊNCIAS ATENDIDAS', iconClass: 'fas fa-shield-halved' },
+      { value: '0', label: 'PRISÕES REALIZADAS', iconClass: 'fas fa-bullseye' },
+      { value: '0', label: 'REAIS EM MULTAS APLICADAS', iconClass: 'fas fa-circle-dollar-to-slot' },
+      { value: '0', label: 'KM PATRULHADOS', iconClass: 'fas fa-road' },
     ],
 
     
@@ -137,8 +137,10 @@
         const value = escapeHtml(item.value);
         const label = escapeHtml(item.label);
         const description = escapeHtml(item.description);
-        const icon = item.icon
-          ? `<div class="number-icon"><img src="${escapeHtml(item.icon)}" alt="${label || 'cone'}" loading="lazy"></div>`
+        const icon = item.iconClass
+          ? `<div class="number-icon" aria-hidden="true"><i class="${escapeHtml(item.iconClass)}"></i></div>`
+          : item.icon
+          ? `<div class="number-icon"><img src="${escapeHtml(item.icon)}" alt="${label || 'icone'}" loading="lazy"></div>`
           : '';
         return `
           <div class="number-item scroll-fade">
@@ -249,26 +251,22 @@
     grid.innerHTML = items.map(newsCard).join('');
   };
 
-  const MULTAS_LABEL = 'REAIS EM MULTAS APLICADAS';
-  const OCORRENCIAS_LABEL = 'OCORRNCIAS ATENDIDAS';
-  const ABORDAGENS_LABEL = 'ABORDAGENS REALIZADAS';
-  const PRISOES_LABEL = 'PRISES REALIZADAS';
-  const KM_LABEL = 'KM PATRULHADOS';
+  const normalizeLabel = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase();
 
-  const parsePtBrNumber = (value) => {
-    if (value === null || value === undefined) return 0;
-    const raw = String(value).trim();
-    if (!raw) return 0;
-    const normalized = raw
-      .replace(/\s/g, '')
-      .replace(/\./g, '')
-      .replace(',', '.')
-      .replace(/[^0-9.-]/g, '');
-    const num = Number(normalized);
-    return Number.isFinite(num) ? num : 0;
+  const MULTAS_LABEL = normalizeLabel('REAIS EM MULTAS APLICADAS');
+  const OCORRENCIAS_LABEL = normalizeLabel('OCORRÊNCIAS ATENDIDAS');
+  const ABORDAGENS_LABEL = normalizeLabel('ABORDAGENS REALIZADAS');
+  const PRISOES_LABEL = normalizeLabel('PRISÕES REALIZADAS');
+  const KM_LABEL = normalizeLabel('KM PATRULHADOS');
+
+  const getCounterItem = (label) => {
+    const safeLabel = normalizeLabel(label);
+    return data.numbers.find((item) => normalizeLabel(item.label) === safeLabel);
   };
-
-  const getCounterItem = (label) => data.numbers.find((item) => item.label === label);
 
   const applyCounterValue = (label, value) => {
     const item = getCounterItem(label);
@@ -284,17 +282,6 @@
     if (kpis.prisoes !== undefined) applyCounterValue(PRISOES_LABEL, kpis.prisoes);
     if (kpis.multas !== undefined) applyCounterValue(MULTAS_LABEL, kpis.multas);
     if (kpis.km !== undefined) applyCounterValue(KM_LABEL, kpis.km);
-  };
-
-  const applyKpisDeltaLocal = (deltas = {}) => {
-    const next = {
-      abordagens: parsePtBrNumber(getCounterItem(ABORDAGENS_LABEL)?.value || 0) + (Number(deltas.abordagens) || 0),
-      ocorrencias: parsePtBrNumber(getCounterItem(OCORRENCIAS_LABEL)?.value || 0) + (Number(deltas.ocorrencias) || 0),
-      prisoes: parsePtBrNumber(getCounterItem(PRISOES_LABEL)?.value || 0) + (Number(deltas.prisoes) || 0),
-      multas: parsePtBrNumber(getCounterItem(MULTAS_LABEL)?.value || 0) + (Number(deltas.multas) || 0),
-      km: parsePtBrNumber(getCounterItem(KM_LABEL)?.value || 0) + (Number(deltas.km) || 0)
-    };
-    applyKpisToNumbers(next);
   };
 
   const syncKpisFromServer = async () => {
@@ -313,29 +300,13 @@
     }
   };
 
-  const incrementKpisRemote = async (deltas = {}) => {
-    try {
-      const client = await createSupabaseClient();
-      if (!client) return;
-      const rpc = await client.rpc('increment_kpis', { p_delta: deltas });
-      if (rpc && rpc.data) {
-        applyKpisToNumbers(rpc.data);
-      }
-    } catch (err) {
-      /* ignore */
-    }
-  };
-
   const incrementMultasTotal = (delta) => {
-    const deltas = { multas: Number(delta) || 0 };
-    applyKpisDeltaLocal(deltas);
-    incrementKpisRemote(deltas);
+    if (Number(delta) || 0) syncKpisFromServer();
   };
 
   window.incrementMultasTotal = incrementMultasTotal;
   window.incrementPatrulhaTotals = (deltas = {}) => {
-    applyKpisDeltaLocal(deltas);
-    incrementKpisRemote(deltas);
+    if (deltas && typeof deltas === 'object') syncKpisFromServer();
   };
 
   const renderVideos = () => {
@@ -1870,4 +1841,3 @@
     window.addEventListener('resize', updateNumbersGridLayout);
   });
 })();
-
