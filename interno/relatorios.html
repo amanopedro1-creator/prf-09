@@ -110,9 +110,9 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="regulamentos.html">
+                        <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
-                            <span>Regulamentos</span>
+                            <span>Documentos</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -1148,15 +1148,60 @@
                     statusNode.style.color = isError ? '#b91c1c' : '#111827';
                 };
 
+                const formatDateTime24 = function (date) {
+                    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+                    const pad = function (n) { return String(n).padStart(2, '0'); };
+                    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                };
+
+                const normalizeDateTimeTo24h = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return '';
+                    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) return raw;
+
+                    const amPmMatch = raw.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})\s*([AP]M)$/i);
+                    if (amPmMatch) {
+                        let hour = Number(amPmMatch[2]);
+                        const minute = amPmMatch[3];
+                        const period = amPmMatch[4].toUpperCase();
+                        if (period === 'AM' && hour === 12) hour = 0;
+                        if (period === 'PM' && hour < 12) hour += 12;
+                        return `${amPmMatch[1]}T${String(hour).padStart(2, '0')}:${minute}`;
+                    }
+
+                    const parsed = new Date(raw);
+                    return Number.isNaN(parsed.getTime()) ? raw : formatDateTime24(parsed);
+                };
+
+                const formatDateTimeDisplay = function (value) {
+                    const normalized = normalizeDateTimeTo24h(value);
+                    const match = String(normalized || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+                    if (!match) return normalized || '';
+                    return `${match[3]}/${match[2]}/${match[1]} - ${match[4]}:${match[5]}`;
+                };
+
+                const formatUserOutputLabel = function (name, cargoText) {
+                    const safeName = String(name || '').trim();
+                    const safeCargo = String(cargoText || '').trim();
+                    if (!safeName || safeName === 'Selecionar policial...' || safeName === 'N/A') return '';
+                    return safeCargo && safeCargo !== '-'
+                        ? `${safeCargo} ${safeName}`
+                        : safeName;
+                };
+
                 const now = new Date();
                 if (numero) {
                     const year = now.getFullYear();
                     numero.value = 'BOU PRF xxx/' + year;
                 }
                 if (datahora) {
-                    const pad = (n) => String(n).padStart(2, '0');
-                    const value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-                    datahora.value = value;
+                    datahora.value = formatDateTime24(now);
+                    datahora.addEventListener('change', function () {
+                        datahora.value = normalizeDateTimeTo24h(datahora.value);
+                    });
+                    datahora.addEventListener('blur', function () {
+                        datahora.value = normalizeDateTimeTo24h(datahora.value);
+                    });
                 }
 
                 const profileResult = await client
@@ -1253,10 +1298,14 @@
                         const hidden = document.getElementById(id);
                         const wrapper = hidden ? hidden.closest('.bou-form-field') : null;
                         const nameNode = wrapper ? wrapper.querySelector('.bou-user-name') : null;
+                        const cargoNode = wrapper ? wrapper.querySelector('.bou-user-cargo') : null;
                         const name = nameNode ? nameNode.textContent.trim() : '';
-                        if (!name || name === 'Selecionar policial...' || name === 'N/A') return '';
-                        return name;
+                        const cargoText = cargoNode ? cargoNode.textContent.trim() : '';
+                        return formatUserOutputLabel(name, cargoText);
                     };
+
+                    const dataHoraRaw = normalizeDateTimeTo24h(document.getElementById('bou-datahora')?.value || '');
+                    const dataHoraFormatada = formatDateTimeDisplay(dataHoraRaw);
 
                     const payload = {
                         titulo: document.getElementById('bou-titulo')?.value || '',
@@ -1278,7 +1327,7 @@
                             acusado2_rg: document.getElementById('bou-acusado2-rg')?.value || '',
                             acusado2_natureza: document.getElementById('bou-acusado2-natureza')?.value || '',
                             relato: document.getElementById('bou-relato')?.value || '',
-                            data_hora: document.getElementById('bou-datahora')?.value || '',
+                            data_hora: dataHoraFormatada,
                             local: document.getElementById('bou-local')?.value || '',
                             envolvidos: document.getElementById('bou-envolvidos')?.value || '',
                             resultado: document.getElementById('bou-resultado')?.value || '',
@@ -1330,6 +1379,9 @@
                                     const year = new Date().getFullYear();
                                     numero.value = 'BOU PRF xxx/' + year;
                                 }
+                                if (datahora) {
+                                    datahora.value = formatDateTime24(new Date());
+                                }
                                 if (assinatura) {
                                     assinatura.value = `Assinado digitalmente por ${nome}${cargo ? ' - ' + cargo : ''}`;
                                 }
@@ -1356,13 +1408,13 @@
                             const labelUser = (id) => {
                                 const hidden = document.getElementById(id);
                                 const wrapper = hidden ? hidden.closest('.bou-form-field') : null;
-                                const nameNode = wrapper ? wrapper.querySelector('.bou-user-name') : null;
-                                const cargoNode = wrapper ? wrapper.querySelector('.bou-user-cargo') : null;
-                                const name = nameNode ? nameNode.textContent.trim() : '';
-                                const cargo = cargoNode ? cargoNode.textContent.trim() : '';
-                                if (!name || name === 'Selecionar policial...' || name === 'N/A') return name || 'N/A';
-                                return cargo && cargo !== '-' ? `${name} (${cargo})` : name;
-                            };
+                            const nameNode = wrapper ? wrapper.querySelector('.bou-user-name') : null;
+                            const cargoNode = wrapper ? wrapper.querySelector('.bou-user-cargo') : null;
+                            const name = nameNode ? nameNode.textContent.trim() : '';
+                            const cargo = cargoNode ? cargoNode.textContent.trim() : '';
+                            const label = formatUserOutputLabel(name, cargo);
+                            return label || 'N/A';
+                        };
 
                             const titulo = valueOf('bou-titulo');
                             const unidade = valueOf('bou-unidade');
@@ -1378,7 +1430,7 @@
                             const acusado2Rg = valueOf('bou-acusado2-rg');
                             const acusado2Natureza = valueOf('bou-acusado2-natureza');
                             const relato = valueOf('bou-relato');
-                            const dataHora = valueOf('bou-datahora');
+                            const dataHora = formatDateTimeDisplay(valueOf('bou-datahora'));
                             const local = valueOf('bou-local');
                             const envolvidos = valueOf('bou-envolvidos');
                             const resultado = valueOf('bou-resultado');

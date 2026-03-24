@@ -110,9 +110,9 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="regulamentos.html">
+                        <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
-                            <span>Regulamentos</span>
+                            <span>Documentos</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -248,7 +248,14 @@
                 if (!value) return '-';
                 const date = new Date(value);
                 if (Number.isNaN(date.getTime())) return '-';
-                return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                return date.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
             };
 
             const normalizeConteudo = function (conteudo) {
@@ -275,6 +282,13 @@
                     if (value !== undefined && value !== null && String(value).trim() !== '') return value;
                 }
                 return '';
+            };
+
+            const formatDocumentDateTime = function (value) {
+                const text = String(value || '').trim();
+                const match = text.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+                if (!match) return text;
+                return `${match[3]}/${match[2]}/${match[1]} - ${match[4]}:${match[5]}`;
             };
 
             const renderModalContent = function (conteudo) {
@@ -310,7 +324,8 @@
                     .map(function (item) {
                         const key = item[0];
                         const label = item[1];
-                        const value = safe(getConteudoField(normalized, key), '');
+                        let value = safe(getConteudoField(normalized, key), '');
+                        if (key === 'data_hora') value = formatDocumentDateTime(value);
                         if (!value) return '';
                         return (
                             '<div class="publicados-detail-row">' +
@@ -326,7 +341,8 @@
                     .map(function (item) {
                         const key = item[0];
                         const label = item[1];
-                        const value = safe(getConteudoField(normalized, key), '');
+                        let value = safe(getConteudoField(normalized, key), '');
+                        if (key === 'data_hora') value = formatDocumentDateTime(value);
                         if (!value) return '';
                         return label + ': ' + value;
                     })

@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
-    <title>Equipe - PRF S&atilde;o Paulo</title>
+    <title>Documentos - PRF S&atilde;o Paulo</title>
     <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
     <script>
         (function() {
@@ -60,6 +60,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body class="inicio-page">
 <div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
@@ -110,7 +111,7 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="documentos.html">
+                        <a class="inicio-menu-item is-active" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
                             <span>Documentos</span>
                         </a>
@@ -118,7 +119,7 @@
                             <i class="fas fa-bullhorn"></i>
                             <span>Avisos internos</span>
                         </a>
-                        <a class="inicio-menu-item is-active" href="equipe.html">
+                        <a class="inicio-menu-item" href="equipe.html">
                             <i class="fas fa-users"></i>
                             <span>Equipe</span>
                         </a>
@@ -179,218 +180,198 @@
             </header>
 
             <section class="inicio-content-card" aria-label="Conteudo">
-                <nav class="relatorios-subnav" aria-label="Submenu equipe">
-                    <a class="relatorios-subnav-item is-active" href="equipe.html"><i class="fas fa-users"></i>Equipe</a>
-                    <a class="relatorios-subnav-item" href="gerenciador.html"><i class="fas fa-people-roof"></i>Gerenciador de Equipes</a>
-                </nav>
-                <div class="equipe-showcase">
-                    <header class="equipe-showcase-header">
-                        <div>
-                            <h2>Equipe</h2>
-                            <p>Todos os agentes ativos e aprovados no sistema.</p>
-                        </div>
-                        <span id="equipe-showcase-count" class="equipe-showcase-count">0 agentes</span>
-                    </header>
-                    <div id="equipe-showcase-grid" class="equipe-showcase-grid" aria-live="polite">
-                        <div class="equipe-showcase-loading">Carregando equipe...</div>
+                <div class="regulamentos-section">
+                    <div class="regulamentos-header">
+                        <h2>Legislação</h2>
+                        <p>Documentos oficiais e códigos aplicáveis.</p>
                     </div>
+                    <div class="regulamentos-grid">
+                        <a class="regulamentos-card is-external" href="https://sao-paulo-rp.gitbook.io/codigo-penal" target="_blank" rel="noopener">
+                            <div class="regulamentos-card-icon"><i class="fas fa-gavel"></i></div>
+                            <div class="regulamentos-card-body">
+                                <h3>Código Penal</h3>
+                                <span>Abrir em nova aba</span>
+                            </div>
+                            <div class="regulamentos-card-action"><i class="fas fa-arrow-up-right-from-square"></i></div>
+                        </a>
+                        <button class="regulamentos-card" type="button" data-title="Código de Trânsito" data-link="https://docs.google.com/spreadsheets/d/1ysSkZjzHLhCYbEYdWCY8BPKnfQ6NvZs1Bu-TthDqgrk/edit?gid=2008439081#gid=2008439081">
+                            <div class="regulamentos-card-icon"><i class="fas fa-road"></i></div>
+                            <div class="regulamentos-card-body">
+                                <h3>Código de Trânsito</h3>
+                                <span>Planilha oficial</span>
+                            </div>
+                            <div class="regulamentos-card-action"><i class="fas fa-up-right-from-square"></i></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="regulamentos-section">
+                    <div class="regulamentos-header">
+                        <h2>Interno</h2>
+                        <p>Normas e diretrizes internas da PRF.</p>
+                    </div>
+                    <div class="regulamentos-grid">
+                        <button class="regulamentos-card" type="button" data-title="Regulamento Disciplinar" data-link="https://docs.google.com/document/d/15VyNPcd7FLcnPPAgikZe_VPWCk1li0S0aE47i_EXH90/edit?tab=t.0#heading=h.558rzib2r5xc">
+                            <div class="regulamentos-card-icon"><i class="fas fa-scale-balanced"></i></div>
+                            <div class="regulamentos-card-body">
+                                <h3>Regulamento Disciplinar</h3>
+                                <span>Diretrizes e condutas</span>
+                            </div>
+                            <div class="regulamentos-card-action"><i class="fas fa-up-right-from-square"></i></div>
+                        </button>
+                        <button class="regulamentos-card" type="button" data-title="Estatuto da Corregedoria" data-link="https://docs.google.com/document/d/10L_qv_I_ng2WY029jInKc7bmM-VGKkEogByrpbASS4Q/edit?tab=t.0#heading=h.558rzib2r5xc">
+                            <div class="regulamentos-card-icon"><i class="fas fa-landmark"></i></div>
+                            <div class="regulamentos-card-body">
+                                <h3>Estatuto da Corregedoria</h3>
+                                <span>Base normativa</span>
+                            </div>
+                            <div class="regulamentos-card-action"><i class="fas fa-up-right-from-square"></i></div>
+                        </button>
+                        <button class="regulamentos-card" type="button" data-title="Regulamento da Corregedoria" data-link="https://docs.google.com/document/d/1M2wLrcy2dMwmOzRri-jkarx7l0TWBk0Ehyl9YDVZhJs/edit?tab=t.0#heading=h.558rzib2r5xc">
+                            <div class="regulamentos-card-icon"><i class="fas fa-clipboard-check"></i></div>
+                            <div class="regulamentos-card-body">
+                                <h3>Regulamento da Corregedoria</h3>
+                                <span>Procedimentos internos</span>
+                            </div>
+                            <div class="regulamentos-card-action"><i class="fas fa-up-right-from-square"></i></div>
+                        </button>
+                        <button class="regulamentos-card" type="button" data-title="Padronização de Uniformes" data-link="https://docs.google.com/document/d/1i4M0SuHjl3hygdDxjdrNIes3jMYzx67hYyB7ZC3XwJk/edit?tab=t.0">
+                            <div class="regulamentos-card-icon"><i class="fas fa-shirt"></i></div>
+                            <div class="regulamentos-card-body">
+                                <h3>Padronização de Uniformes</h3>
+                                <span>Guia de apresentação</span>
+                            </div>
+                            <div class="regulamentos-card-action"><i class="fas fa-up-right-from-square"></i></div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="regulamentos-divider" aria-hidden="true"></div>
+                <div class="regulamentos-header regulamentos-map-header">
+                    <h2>Mapa Setorial</h2>
+                    <p>Use o mouse ou o toque para arrastar e aproximar.</p>
+                </div>
+                <div class="regulamentos-map-wrap" aria-label="Mapa">
+                    <div id="regulamentos-map" class="regulamentos-map-canvas" aria-label="Mapa Setorial interativo"></div>
                 </div>
             </section>
         </main>
      </div>
 </div>
+    <div id="regulamentos-modal" class="publicados-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="publicados-modal-card regulamentos-modal-card">
+            <button class="publicados-modal-close" type="button" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <div class="publicados-modal-body">
+                <h3 id="regulamentos-modal-title">Documento</h3>
+                <div class="regulamentos-modal-actions">
+                    <a id="regulamentos-modal-link" class="publicados-modal-copy" href="#" target="_blank" rel="noopener">
+                        <i class="fas fa-arrow-up-right-from-square"></i>
+                        Abrir em nova aba
+                    </a>
+                </div>
+                <div id="regulamentos-modal-content" class="publicados-modal-content regulamentos-modal-content"></div>
+            </div>
+        </div>
+    </div>
     <script src="../app.js" defer></script>
     <script>
         window.addEventListener('load', function () {
-            (async function loadEquipeShowcase() {
-                const grid = document.getElementById('equipe-showcase-grid');
-                const countNode = document.getElementById('equipe-showcase-count');
-                if (!grid) return;
-                if (!window.supabase || !window.supabase.createClient) return;
+            const mapNode = document.getElementById('regulamentos-map');
+            if (mapNode && window.L) {
+                const imageUrl = 'assets/img/mapa.png';
+                const image = new Image();
+                image.onload = function () {
+                    const width = image.naturalWidth || 1600;
+                    const height = image.naturalHeight || 900;
+                    const bounds = [[0, 0], [height, width]];
+                    const aspectRatio = width / height;
+                    const availableWidth = Math.max(mapNode.clientWidth || 0, 320);
+                    const calculatedHeight = Math.max(420, Math.round(availableWidth / aspectRatio));
+                    mapNode.style.height = calculatedHeight + 'px';
 
-                const safe = function (value, fallback) {
-                    const text = (value ? value : '').toString().trim();
-                    return text || (fallback || '');
-                };
-
-                const initials = function (name) {
-                    const parts = safe(name, '').split(' ').filter(Boolean);
-                    if (!parts.length) return 'PRF';
-                    const first = parts[0][0] || '';
-                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
-                    return (first + last).toUpperCase();
-                };
-
-                const escapeHtml = function (value) {
-                    return String(value || '').replace(/</g, '&lt;');
-                };
-
-                const resolveGroupName = function (item) {
-                    const gp = safe(item.grupamento_principal, '');
-                    const gs = safe(item.grupamento_secundario, '');
-                    const legacy = safe(item.grupamento, '');
-                    const fromLegacy = legacy.includes('||')
-                        ? legacy.split('||')[0].trim()
-                        : legacy;
-                    return gp || fromLegacy || gs || 'Grupamento';
-                };
-
-                const resolvePrimaryGroup = function (item) {
-                    const gp = safe(item.grupamento_principal, '');
-                    if (gp) return gp;
-                    const legacy = safe(item.grupamento, '');
-                    if (legacy) return legacy.includes('||') ? legacy.split('||')[0].trim() : legacy;
-                    const gs = safe(item.grupamento_secundario, '');
-                    return gs || 'Sem grupamento';
-                };
-
-                const resolveGroupLogo = function (groupName) {
-                    const key = safe(groupName, '').toLowerCase();
-                    if (key.includes('ronda prf')) return 'assets/img/rprf.png';
-                    if (key.includes('patrulhamento motorizado') || key.includes('gpm')) return 'assets/img/gpm.png';
-                    if (key.includes('universidade corporativa')) return 'assets/img/uniprf.jpg';
-                    if (key.includes('operações aéreas') || key.includes('operacoes aereas') || key.includes('doa')) return 'assets/img/doa.png';
-                    if (key.includes('patrulhamento tático') || key.includes('patrulhamento tatico') || key.includes('gpt')) return 'assets/img/gpt.png';
-                    if (key.includes('resposta rápida') || key.includes('resposta rapida') || key.includes('noe')) return 'assets/img/noe.png';
-                    return 'assets/img/prf.png';
-                };
-
-                const renderCard = function (item) {
-                    const nome = escapeHtml(safe(item.nome_guerra, 'Agente'));
-                    const cargo = escapeHtml(safe(item.cargo, 'Cargo nao definido'));
-                    const rg = escapeHtml(safe(item.rg, '-'));
-                    const groupRaw = resolveGroupName(item);
-                    const groupName = escapeHtml(groupRaw);
-                    const crest = resolveGroupLogo(groupRaw);
-                    const foto = safe(item.foto_url, 'assets/img/prf.png');
-                    const fallback = initials(nome);
-                    return (
-                        '<article class="equipe-showcase-card">' +
-                        '<div class="equipe-showcase-top">' +
-                        '<img class="equipe-showcase-crest" src="' + crest + '" alt="' + groupName + '" onerror="this.src=\'assets/img/prf.png\'">' +
-                        '<span class="equipe-showcase-divider"></span>' +
-                        '</div>' +
-                        '<div class="equipe-showcase-photo">' +
-                        '<img src="' + foto + '" alt="' + nome + '" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\'">' +
-                        '<span class="equipe-showcase-photo-fallback">' + fallback + '</span>' +
-                        '</div>' +
-                        '<h3 class="equipe-showcase-name">' + nome + '</h3>' +
-                        '<p class="equipe-showcase-role">' + cargo + '</p>' +
-                        '<div class="equipe-showcase-group">' + groupName + '</div>' +
-                        '<div class="equipe-showcase-rg">RG: ' + rg + '</div>' +
-                        '</article>'
-                    );
-                };
-
-                const render = function (items) {
-                    const total = items.length;
-                    if (countNode) countNode.textContent = total + (total === 1 ? ' agente' : ' agentes');
-                    if (!total) {
-                        grid.innerHTML = '<div class="equipe-showcase-loading">Nenhum agente encontrado.</div>';
-                        return;
-                    }
-
-                    const grouped = new Map();
-                    items.forEach(function (item) {
-                        const key = resolvePrimaryGroup(item);
-                        if (!grouped.has(key)) grouped.set(key, []);
-                        grouped.get(key).push(item);
+                    const map = L.map(mapNode, {
+                        crs: L.CRS.Simple,
+                        maxZoom: 2,
+                        zoomSnap: 0.25,
+                        zoomDelta: 0.5,
+                        attributionControl: false
                     });
 
-                    const groupNames = Array.from(grouped.keys()).sort(function (a, b) {
-                        return String(a).localeCompare(String(b), 'pt-BR');
-                    });
+                    L.imageOverlay(imageUrl, bounds).addTo(map);
+                    L.control.zoom({ position: 'topright' }).addTo(map);
 
-                    grid.innerHTML = groupNames.map(function (groupName) {
-                        const members = grouped.get(groupName) || [];
-                        members.sort(function (a, b) {
-                            return safe(a.nome_guerra, '').localeCompare(safe(b.nome_guerra, ''), 'pt-BR');
-                        });
-                        return (
-                            '<section class="equipe-showcase-section">' +
-                            '<header class="equipe-showcase-section-header">' +
-                            '<h3>' + escapeHtml(groupName) + '</h3>' +
-                            '<span>' + members.length + (members.length === 1 ? ' agente' : ' agentes') + '</span>' +
-                            '</header>' +
-                            '<div class="equipe-showcase-grid equipe-showcase-grid--section">' +
-                            members.map(renderCard).join('') +
-                            '</div>' +
-                            '</section>'
-                        );
-                    }).join('');
-                };
-
-                grid.innerHTML = '<div class="equipe-showcase-loading">Carregando equipe...</div>';
-                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-                try {
-                    const blockedCargos = [
-                        'agente de classe especial',
-                        'agente de primeira classe',
-                        'agente de segunda classe',
-                        'agente de terceira classe',
-                        'agente aluno'
-                    ];
-                    const lockGerenciadorAccess = function () {
-                        document.querySelectorAll('.relatorios-subnav-item[href="gerenciador.html"]').forEach(function (link) {
-                            link.classList.add('is-locked');
-                            if (!link.querySelector('.relatorios-subnav-lock')) {
-                                const lock = document.createElement('span');
-                                lock.className = 'relatorios-subnav-lock';
-                                lock.innerHTML = '<i class="fas fa-lock" aria-hidden="true"></i>';
-                                lock.setAttribute('aria-label', 'Acesso restrito');
-                                link.appendChild(lock);
-                            }
-                            if (link.dataset.lockBound === 'true') return;
-                            link.dataset.lockBound = 'true';
-                            link.addEventListener('click', function (event) {
-                                event.preventDefault();
-                            });
-                        });
+                    const syncMapView = function () {
+                        map.invalidateSize();
+                        const fittedZoom = map.getBoundsZoom(bounds, false, [0, 0]);
+                        map.setMinZoom(fittedZoom - 0.5);
+                        map.fitBounds(bounds, { animate: false, padding: [0, 0] });
+                        map.setZoom(fittedZoom, { animate: false });
+                        map.setMaxBounds([
+                            [0, 0],
+                            [height, width]
+                        ]);
                     };
 
-                    const sessionResult = await client.auth.getSession();
-                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
-                    const user = session ? session.user : null;
-                    if (user && user.id) {
-                        const profileRes = await client
-                            .from('profiles')
-                            .select('cargo')
-                            .eq('id', user.id)
-                            .maybeSingle();
-                        const profile = profileRes && profileRes.data ? profileRes.data : null;
-                        const cargoLower = safe(profile && profile.cargo, '').toLowerCase();
-                        if (blockedCargos.indexOf(cargoLower) >= 0) {
-                            lockGerenciadorAccess();
-                        }
-                    }
+                    syncMapView();
+                    requestAnimationFrame(syncMapView);
+                    setTimeout(syncMapView, 120);
+                    window.addEventListener('resize', syncMapView);
+                };
+                image.src = imageUrl;
+            }
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            const modal = document.getElementById('regulamentos-modal');
+            const modalTitle = document.getElementById('regulamentos-modal-title');
+            const modalLink = document.getElementById('regulamentos-modal-link');
+            const modalContent = document.getElementById('regulamentos-modal-content');
+            const closeBtn = modal ? modal.querySelector('.publicados-modal-close') : null;
 
-                    let items = [];
-
-                    // Equipe: mostrar todos os aprovados da PRF.
-                    const rpcAll = await client.rpc('list_all_approved_profiles');
-                    if (!rpcAll.error && Array.isArray(rpcAll.data)) {
-                        items = rpcAll.data;
-                    }
-
-                    if (!items.length) {
-                        const res = await client
-                            .from('profiles')
-                            .select('id,nome_guerra,cargo,rg,foto_url,aprovado,grupamento,grupamento_principal,grupamento_secundario')
-                            .eq('aprovado', true)
-                            .order('grupamento_principal', { ascending: true })
-                            .order('nome_guerra', { ascending: true })
-                            .limit(2000);
-                        if (!res.error && Array.isArray(res.data)) {
-                            items = res.data;
-                        }
-                    }
-
-                    render(items);
-                } catch (e) {
-                    grid.innerHTML = '<div class="equipe-showcase-loading">Não foi possível carregar a equipe.</div>';
-                    if (countNode) countNode.textContent = '0 agentes';
+            const openModal = function (title, link) {
+                if (!modal || !modalContent || !modalTitle || !modalLink) return;
+                modalTitle.textContent = title || 'Documento';
+                modalLink.href = link || '#';
+                modalContent.innerHTML = '';
+                if (link) {
+                    const iframe = document.createElement('iframe');
+                    iframe.src = link;
+                    iframe.loading = 'lazy';
+                    iframe.referrerPolicy = 'no-referrer-when-downgrade';
+                    iframe.className = 'regulamentos-iframe';
+                    modalContent.appendChild(iframe);
+                } else {
+                    modalContent.innerHTML = '<p class="publicados-empty">Link não disponível.</p>';
                 }
-            })();
+                modal.classList.add('is-active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('publicados-modal-open');
+            };
+
+            const closeModal = function () {
+                if (!modal) return;
+                modal.classList.remove('is-active');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('publicados-modal-open');
+            };
+
+            document.querySelectorAll('.regulamentos-card[data-link]').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    const title = card.getAttribute('data-title') || 'Documento';
+                    const link = card.getAttribute('data-link') || '';
+                    openModal(title, link);
+                });
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (modal) {
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) closeModal();
+                });
+            }
         });
     </script>
     <script>
@@ -932,13 +913,6 @@
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
 
 
 

@@ -110,9 +110,9 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="regulamentos.html">
+                        <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
-                            <span>Regulamentos</span>
+                            <span>Documentos</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -310,6 +310,18 @@
                 return '';
             };
 
+            const formatDocumentDateTime = function (value) {
+                const text = String(value || '').trim();
+                const match = text.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+                if (!match) return text;
+                return `${match[3]}/${match[2]}/${match[1]} - ${match[4]}:${match[5]}`;
+            };
+
+            const isPlaceholderValue = function (value) {
+                const text = String(value || '').trim().toLowerCase();
+                return text === '' || text === '-' || text === 'n/a';
+            };
+
             const buildAuxiliares = function (conteudo) {
                 const aux = [];
                 const terceiro = resolvePerson(getFirstField(conteudo, [
@@ -401,7 +413,7 @@
                     ['resultado', 'Resultado'],
                     ['material', 'Material apreendido'],
                     ['veiculo', 'Veículo'],
-                    ['coloracao', 'Coloração'],
+                    ['coloracao', 'Emplacamento'],
                     ['assinatura', 'Assinatura']
                 ];
                 if (!normalized || typeof normalized !== 'object') {
@@ -421,18 +433,19 @@
                         if (baseValue) return;
                     }
                     let value = safe(getConteudoField(normalized, key), '');
+                    if (key === 'data_hora') value = formatDocumentDateTime(value);
                     if (key.includes('motorista') || key.includes('chefe_viatura') || key.includes('terceiro_homem') || key.includes('quarto_homem')) {
                         value = resolvePerson(value);
                     }
                     if (!value) return;
+                    if ((label === 'Segundo custodiado' || label === 'RG 2º custodiado' || label === 'Natureza 2º') && isPlaceholderValue(value)) return;
                     detailMap[label] = value;
                 });
 
                 const textSections = [
                     {
-                        title: 'BOLETIM DE OCORRENCIA UNIFICADO (BOU):',
+                        title: 'BOLETIM DE OCORRENCIA UNIFICADO (BOU)' + (detailMap['Título'] ? ' - ' + detailMap['Título'] : ''),
                         rows: [
-                            ['Titulo', detailMap['Título']],
                             ['Unidade', detailMap['Unidade']],
                             ['Equipe', detailMap['Equipe']],
                             ['Motorista', detailMap['Motorista']],
@@ -453,16 +466,16 @@
                         ]
                     },
                     {
-                        title: 'DADOS DA OCORRENCIA:',
+                        title: 'DADOS DA OCORRÊNCIA:',
                         rows: [
-                            ['Relato', detailMap['Relato']],
+                            ['Relato da ocorrência', detailMap['Relato']],
                             ['Data e hora', detailMap['Data e hora']],
                             ['Local', detailMap['Local']],
                             ['Envolvidos', detailMap['Envolvidos']],
                             ['Resultado', detailMap['Resultado']],
                             ['Material apreendido', detailMap['Material apreendido']],
                             ['Veiculo', detailMap['Veículo']],
-                            ['Coloracao', detailMap['Coloração']],
+                            ['Emplacamento', detailMap['Emplacamento']],
                             ['Assinatura', detailMap['Assinatura']]
                         ]
                     }
@@ -1427,6 +1440,7 @@
 </script>
 </body>
 </html>
+
 
 
 

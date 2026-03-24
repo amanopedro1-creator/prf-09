@@ -60,6 +60,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body class="inicio-page">
 <div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
@@ -110,9 +111,9 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="regulamentos.html">
+                        <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
-                            <span>Regulamentos</span>
+                            <span>Documentos</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -254,43 +255,57 @@
                             </div>
                             <input id="ripat-unidade" type="hidden" required>
                         </div>
-                        <label class="bou-form-field">
+                        <div class="bou-form-field">
                             <span>Área de patrulhamento</span>
-                            <input id="ripat-area" type="text" placeholder="Área de patrulhamento" required>
-                        </label>
+                            <div class="ripat-setores-select" id="ripat-setores-select" role="group" aria-label="Selecione os setores de patrulhamento">
+                                <label class="ripat-setor-chip ripat-setor-chip--setor0">
+                                    <input class="ripat-setor-input" type="checkbox" value="Setor 0">
+                                    <span>Setor 0</span>
+                                </label>
+                                <label class="ripat-setor-chip ripat-setor-chip--setor1">
+                                    <input class="ripat-setor-input" type="checkbox" value="Setor 1">
+                                    <span>Setor 1</span>
+                                </label>
+                                <label class="ripat-setor-chip ripat-setor-chip--setor2">
+                                    <input class="ripat-setor-input" type="checkbox" value="Setor 2">
+                                    <span>Setor 2</span>
+                                </label>
+                                <label class="ripat-setor-chip ripat-setor-chip--setor3">
+                                    <input class="ripat-setor-input" type="checkbox" value="Setor 3">
+                                    <span>Setor 3</span>
+                                </label>
+                            </div>
+                            <input id="ripat-area" type="hidden" required>
+                            <span id="ripat-area-hint" class="bou-field-hint is-hidden" aria-live="polite">Selecione pelo menos um setor.</span>
+                            <button id="ripat-open-map" class="ripat-map-link" type="button">Veja o mapa setorial</button>
+                        </div>
                     </div>
                     <div class="bou-form-row">
-                        <label class="bou-form-field">
-                            <span>Unidade manual (opcional)</span>
-                            <input id="ripat-unidade-manual" type="text" placeholder="Ou digite manualmente">
-                        </label>
                         <label class="bou-form-field">
                             <span>Data de início</span>
                             <input id="ripat-data-inicio" type="date" required>
                         </label>
-                    </div>
-                    <div class="bou-form-row">
                         <label class="bou-form-field">
                             <span>Horário de início</span>
                             <input id="ripat-hora-inicio" type="time" required>
                         </label>
+                    </div>
+                    <div class="bou-form-row">
                         <label class="bou-form-field">
                             <span>Data de término</span>
                             <input id="ripat-data-fim" type="date" required>
                         </label>
-                    </div>
-                    <div class="bou-form-row">
                         <label class="bou-form-field">
                             <span>Horário de término</span>
                             <input id="ripat-hora-fim" type="time" required>
                         </label>
+                    </div>
+                    <div class="bou-form-row ripat-stats-row">
                         <label class="bou-form-field">
                             <span>Ocorrências atendidas</span>
                             <input id="ripat-ocorrencias" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Quantidade em Numeros">
                             <span id="ripat-ocorrencias-hint" class="bou-field-hint is-hidden" aria-live="polite">Use apenas numeros inteiros.</span>
                         </label>
-                    </div>
-                    <div class="bou-form-row">
                         <label class="bou-form-field">
                             <span>Abordagens realizadas</span>
                             <input id="ripat-abordagens" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Quantidade em Numeros">
@@ -343,6 +358,17 @@
         </main>
      </div>
 </div>
+    <div id="ripat-map-modal" class="publicados-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="publicados-modal-card ripat-map-modal-card">
+            <button class="publicados-modal-close" type="button" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <div class="publicados-modal-body">
+                <h3>Mapa Setorial</h3>
+                <div id="ripat-map-canvas" class="ripat-map-canvas" aria-label="Mapa Setorial interativo"></div>
+            </div>
+        </div>
+    </div>
     <script src="../app.js" defer></script>
     <script>
         window.addEventListener('load', function () {
@@ -973,6 +999,7 @@
             const user = session ? session.user : null;
             if (!user || !user.id) return;
             const userId = String(user.id);
+            const currentUserEmail = String(user.email || '').trim();
 
             const form = document.getElementById('ripat-form');
             const statusNode = document.getElementById('ripat-status');
@@ -980,11 +1007,44 @@
             const ocorrenciasInput = document.getElementById('ripat-ocorrencias');
             const abordagensInput = document.getElementById('ripat-abordagens');
             const prisoesInput = document.getElementById('ripat-prisoes');
+            const areaInput = document.getElementById('ripat-area');
+            const areaHint = document.getElementById('ripat-area-hint');
+            const setorInputs = Array.from(document.querySelectorAll('.ripat-setor-input'));
+            const mapOpenBtn = document.getElementById('ripat-open-map');
+            const mapModal = document.getElementById('ripat-map-modal');
+            const mapCloseBtn = mapModal ? mapModal.querySelector('.publicados-modal-close') : null;
+            const mapCanvas = document.getElementById('ripat-map-canvas');
+            let ripatMap = null;
 
             const setStatus = function (text, isError) {
                 if (!statusNode) return;
                 statusNode.textContent = text;
                 statusNode.style.color = isError ? '#b91c1c' : '#111827';
+            };
+
+            const normalizeText = function (value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '');
+            };
+
+            const currentProfileResult = await client
+                .from('profiles')
+                .select('nome_guerra,rg,email')
+                .eq('id', userId)
+                .maybeSingle();
+            const currentProfile = currentProfileResult && currentProfileResult.data ? currentProfileResult.data : null;
+
+            const isMentionedInContent = function (conteudo) {
+                const haystack = normalizeText(typeof conteudo === 'string' ? conteudo : JSON.stringify(conteudo || ''));
+                const terms = [
+                    currentProfile && currentProfile.nome_guerra ? currentProfile.nome_guerra : '',
+                    currentProfile && currentProfile.rg ? currentProfile.rg : '',
+                    currentProfile && currentProfile.email ? currentProfile.email : '',
+                    currentUserEmail
+                ].map(normalizeText).filter(Boolean);
+                return terms.some(function (term) { return haystack.includes(term); });
             };
 
             const setupIntegerOnlyField = function (input, hint) {
@@ -1022,6 +1082,100 @@
                 document.getElementById('ripat-prisoes-hint')
             );
 
+            const updateAreaSelection = function () {
+                const setores = setorInputs
+                    .filter(function (input) { return input.checked; })
+                    .map(function (input) { return input.value; });
+                if (areaInput) {
+                    areaInput.value = setores.join(' | ');
+                    areaInput.setCustomValidity(setores.length ? '' : 'Selecione pelo menos um setor.');
+                }
+                if (areaHint) {
+                    areaHint.textContent = setores.length ? '' : 'Selecione pelo menos um setor.';
+                    areaHint.classList.toggle('is-hidden', !!setores.length);
+                }
+                return setores;
+            };
+
+            setorInputs.forEach(function (input) {
+                input.addEventListener('change', updateAreaSelection);
+            });
+            updateAreaSelection();
+
+            const ensureRipatMap = function () {
+                if (!mapCanvas || !window.L) return;
+                if (ripatMap) {
+                    setTimeout(function () { ripatMap.invalidateSize(); }, 50);
+                    return;
+                }
+
+                const imageUrl = 'assets/img/mapa.png';
+                const image = new Image();
+                image.onload = function () {
+                    const width = image.naturalWidth || 1600;
+                    const height = image.naturalHeight || 900;
+                    const bounds = [[0, 0], [height, width]];
+                    const aspectRatio = width / height;
+                    const availableWidth = Math.max(mapCanvas.clientWidth || 0, 320);
+                    const calculatedHeight = Math.max(320, Math.round(availableWidth / aspectRatio));
+                    mapCanvas.style.height = calculatedHeight + 'px';
+
+                    ripatMap = L.map(mapCanvas, {
+                        crs: L.CRS.Simple,
+                        maxZoom: 2,
+                        zoomSnap: 0.25,
+                        zoomDelta: 0.5,
+                        attributionControl: false
+                    });
+
+                    L.imageOverlay(imageUrl, bounds).addTo(ripatMap);
+                    L.control.zoom({ position: 'topright' }).addTo(ripatMap);
+
+                    const syncMapView = function () {
+                        if (!ripatMap) return;
+                        ripatMap.invalidateSize();
+                        const fittedZoom = ripatMap.getBoundsZoom(bounds, false, [0, 0]);
+                        ripatMap.setMinZoom(fittedZoom - 0.5);
+                        ripatMap.fitBounds(bounds, { animate: false, padding: [0, 0] });
+                        ripatMap.setZoom(fittedZoom, { animate: false });
+                        ripatMap.setMaxBounds([[0, 0], [height, width]]);
+                    };
+
+                    syncMapView();
+                    requestAnimationFrame(syncMapView);
+                    setTimeout(syncMapView, 120);
+                    window.addEventListener('resize', syncMapView);
+                };
+                image.src = imageUrl;
+            };
+
+            const openMapModal = function () {
+                if (!mapModal) return;
+                mapModal.classList.add('is-active');
+                mapModal.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('publicados-modal-open');
+                ensureRipatMap();
+            };
+
+            const closeMapModal = function () {
+                if (!mapModal) return;
+                mapModal.classList.remove('is-active');
+                mapModal.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('publicados-modal-open');
+            };
+
+            if (mapOpenBtn) {
+                mapOpenBtn.addEventListener('click', openMapModal);
+            }
+            if (mapCloseBtn) {
+                mapCloseBtn.addEventListener('click', closeMapModal);
+            }
+            if (mapModal) {
+                mapModal.addEventListener('click', function (event) {
+                    if (event.target === mapModal) closeMapModal();
+                });
+            }
+
             const pad = (n) => String(n).padStart(2, '0');
             const now = new Date();
             const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -1032,7 +1186,7 @@
             const horaFim = document.getElementById('ripat-hora-fim');
             if (dataInicio) dataInicio.value = today;
             if (dataFim) dataFim.value = today;
-            if (horaInicio) horaInicio.value = currentTime;
+            if (horaInicio) horaInicio.value = '';
             if (horaFim) horaFim.value = currentTime;
 
             const usersResult = await client
@@ -1248,61 +1402,67 @@
 
                 try {
                     const [bouRes, aitRes, aceRes] = await Promise.all([
-                        client.rpc('list_recent_bous_for_user', { p_days: 2 }),
-                        client.rpc('list_recent_aits_for_user', { p_days: 2 }),
-                        client.rpc('list_recent_relatorios_aluno_for_user', { p_days: 2 })
+                        client.rpc('list_recent_bous_for_user', { p_days: 1 }),
+                        client.rpc('list_recent_aits_for_user', { p_days: 1 }),
+                        client.rpc('list_recent_relatorios_aluno_for_user', { p_days: 1 })
                     ]);
 
                     let bous = Array.isArray(bouRes.data) ? bouRes.data : [];
                     let aits = Array.isArray(aitRes.data) ? aitRes.data : [];
                     let aces = Array.isArray(aceRes.data) ? aceRes.data : [];
 
-                    const cutoffIso = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+                    const cutoffIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
                     if (!bous.length) {
                         const bouFallback = await client
                             .from('bous')
-                            .select('id,titulo,created_at,data_criacao,conteudo_completo')
-                            .eq('user_id', userId)
+                            .select('id,user_id,titulo,created_at,data_criacao,conteudo_completo')
                             .gte('created_at', cutoffIso)
                             .order('created_at', { ascending: false })
-                            .limit(120);
+                            .limit(240);
                         if (bouFallback && Array.isArray(bouFallback.data)) {
-                            bous = bouFallback.data;
+                            bous = bouFallback.data.filter(function (row) {
+                                return String(row.user_id || '') === userId || isMentionedInContent(row.conteudo_completo);
+                            });
                         }
                     }
 
                     if (!aits.length) {
                         const aitFallback = await client
                             .from('aits')
-                            .select('id,numero_ait,created_at,data_criacao,conteudo_completo')
-                            .eq('user_id', userId)
+                            .select('id,user_id,numero_ait,created_at,data_criacao,conteudo_completo')
                             .gte('created_at', cutoffIso)
                             .order('created_at', { ascending: false })
-                            .limit(120);
+                            .limit(240);
                         if (aitFallback && Array.isArray(aitFallback.data)) {
-                            aits = aitFallback.data;
+                            aits = aitFallback.data.filter(function (row) {
+                                return String(row.user_id || '') === userId || isMentionedInContent(row.conteudo_completo);
+                            });
                         }
                     }
 
                     if (!aces.length) {
                         const aceFallback = await client
                             .from('relatorios_aluno')
-                            .select('id,titulo,created_at,conteudo_completo')
-                            .eq('user_id', userId)
+                            .select('id,user_id,titulo,created_at,conteudo_completo')
+                            .gte('created_at', cutoffIso)
                             .order('created_at', { ascending: false })
-                            .limit(120);
+                            .limit(240);
                         if (aceFallback && Array.isArray(aceFallback.data)) {
-                            aces = aceFallback.data;
+                            aces = aceFallback.data.filter(function (row) {
+                                return String(row.user_id || '') === userId || isMentionedInContent(row.conteudo_completo);
+                            });
                         } else {
                             const aceFallbackLegacy = await client
                                 .from('relatorio_aluno')
-                                .select('id,titulo,created_at,conteudo_completo')
-                                .eq('user_id', userId)
+                                .select('id,user_id,titulo,created_at,conteudo_completo')
+                                .gte('created_at', cutoffIso)
                                 .order('created_at', { ascending: false })
-                                .limit(120);
+                                .limit(240);
                             if (aceFallbackLegacy && Array.isArray(aceFallbackLegacy.data)) {
-                                aces = aceFallbackLegacy.data;
+                                aces = aceFallbackLegacy.data.filter(function (row) {
+                                    return String(row.user_id || '') === userId || isMentionedInContent(row.conteudo_completo);
+                                });
                             }
                         }
                     }
@@ -1557,10 +1717,15 @@
                         if (submitBtn) submitBtn.disabled = false;
                         return;
                     }
+                    const setoresSelecionados = updateAreaSelection();
+                    if (!setoresSelecionados.length) {
+                        setStatus('Selecione pelo menos um setor de patrulhamento.', true);
+                        if (submitBtn) submitBtn.disabled = false;
+                        return;
+                    }
 
-                    const unidadeManual = document.getElementById('ripat-unidade-manual')?.value || '';
                     const unidadeSelecionada = document.getElementById('ripat-unidade')?.value || '';
-                    const unidadeFinal = unidadeManual.trim() ? unidadeManual.trim() : unidadeSelecionada;
+                    const unidadeFinal = unidadeSelecionada;
                     const unidadeHidden = document.getElementById('ripat-unidade');
                     if (unidadeHidden) unidadeHidden.value = unidadeFinal;
 
@@ -1590,8 +1755,8 @@
                         },
                         dados_patrulhamento: {
                             unidade: unidadeFinal,
-                            unidade_manual: unidadeManual || '',
-                            area: document.getElementById('ripat-area')?.value || '',
+                            area: areaInput?.value || '',
+                            setores: setoresSelecionados,
                             data_inicio: document.getElementById('ripat-data-inicio')?.value || '',
                             horario_inicio: document.getElementById('ripat-hora-inicio')?.value || '',
                             data_fim: document.getElementById('ripat-data-fim')?.value || '',
@@ -1651,9 +1816,10 @@
 
                         setStatus('RIPAT enviado com sucesso.', false);
                         form.reset();
+                        updateAreaSelection();
                         if (dataInicio) dataInicio.value = today;
                         if (dataFim) dataFim.value = today;
-                        if (horaInicio) horaInicio.value = currentTime;
+                        if (horaInicio) horaInicio.value = '';
                         if (horaFim) horaFim.value = currentTime;
                         loadRecentLinks();
                     } catch (e) {
@@ -1671,6 +1837,7 @@
 </script>
 </body>
 </html>
+
 
 
 

@@ -110,9 +110,9 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="regulamentos.html">
+                        <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
-                            <span>Regulamentos</span>
+                            <span>Documentos</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -189,6 +189,7 @@
                 <div class="publicados-header">
                     <h2>ACE publicados</h2>
                     <p>Selecione um aluno para visualizar os ACE relacionados.</p>
+                    <div id="publicados-count" class="publicados-count">0 ACE</div>
                 </div>
                 <div class="publicados-search">
                     <label class="bou-form-field is-full">
@@ -234,6 +235,7 @@
         window.addEventListener('load', function () {
             const listNode = document.getElementById('publicados-list');
             const statusNode = document.getElementById('publicados-status');
+            const countNode = document.getElementById('publicados-count');
             const modal = document.getElementById('publicados-modal');
             const modalTitle = document.getElementById('publicados-modal-title');
             const modalMeta = document.getElementById('publicados-modal-meta');
@@ -248,6 +250,28 @@
                 selectedAluno: null,
                 items: [],
                 showAll: false
+            };
+
+            const getVisibleItems = function () {
+                if (!state.selectedAluno && !state.showAll) return [];
+                return state.showAll
+                    ? state.items
+                    : state.items.filter(function (item) { return item.matchesAluno; });
+            };
+
+            const updateCount = function (total) {
+                if (!countNode) return;
+                const amount = Number(total || 0);
+                if (state.showAll) {
+                    countNode.textContent = amount + (amount === 1 ? ' ACE publicado' : ' ACE publicados');
+                    return;
+                }
+                if (state.selectedAluno) {
+                    const nome = state.selectedAluno.nome_guerra || 'Aluno';
+                    countNode.textContent = nome + ': ' + amount + (amount === 1 ? ' ACE' : ' ACE');
+                    return;
+                }
+                countNode.textContent = '0 ACE';
             };
 
             const safe = function (value, fallback) {
@@ -443,10 +467,12 @@
             const renderList = function () {
                 if (!listNode) return;
                 if (!state.selectedAluno && !state.showAll) {
+                    updateCount(0);
                     listNode.innerHTML = '<p class="publicados-empty">Selecione um aluno.</p>';
                     return;
                 }
-                const filtered = state.showAll ? state.items : state.items.filter(function (item) { return item.matchesAluno; });
+                const filtered = getVisibleItems();
+                updateCount(filtered.length);
                 if (!filtered.length) {
                     listNode.innerHTML = state.showAll
                         ? '<p class="publicados-empty">Nenhum ACE publicado encontrado.</p>'
@@ -598,7 +624,8 @@
                 renderOptions('');
             };
 
-            const mapRows = function (rows, forceMatch) {
+            const mapRows = function (rows, options) {
+                const assumeMatched = !!(options && options.assumeMatched);
                 const alunoId = state.selectedAluno ? String(state.selectedAluno.id || '') : '';
                 const alunoNameNorm = state.selectedAluno ? normalizeText(state.selectedAluno.nome_guerra || '') : '';
                 state.items = rows.map(function (row) {
@@ -609,7 +636,7 @@
                         ? normalized
                         : JSON.stringify(normalized || '');
                     const rawTextNorm = normalizeText(rawText);
-                    const matchesAluno = forceMatch === true
+                    const matchesAluno = assumeMatched
                         || !state.selectedAluno
                         || (alunoId && alunoRef === alunoId)
                         || (alunoNameNorm && alunoNome.includes(alunoNameNorm))
@@ -632,6 +659,7 @@
                 if (statusNode) statusNode.textContent = 'Carregando ACE...';
 
                 let rows = [];
+                let usedFilteredRpc = false;
                 try {
                     const rpcResult = await client
                         .rpc('list_ace_for_aluno', {
@@ -641,6 +669,7 @@
                         });
                     if (rpcResult && !rpcResult.error && Array.isArray(rpcResult.data)) {
                         rows = rpcResult.data;
+                        usedFilteredRpc = true;
                     } else {
                         const result = await client
                             .from('relatorios_aluno')
@@ -679,7 +708,7 @@
                     }
                 }
 
-                mapRows(rows, true);
+                mapRows(rows, { assumeMatched: usedFilteredRpc });
 
                 if (statusNode) statusNode.textContent = '';
                 renderList();
@@ -734,7 +763,7 @@
                     }
                 }
 
-                mapRows(rows, false);
+                mapRows(rows);
                 if (statusNode) statusNode.textContent = '';
                 renderList();
             };
@@ -744,10 +773,14 @@
                 const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
                 const alunosResult = await client
                     .from('profiles')
-                    .select('id,nome_guerra,cargo,foto_url')
-                    .ilike('cargo', '%Agente Aluno%')
+                    .select('id,nome_guerra,cargo,foto_url,cursos')
                     .order('nome_guerra', { ascending: true });
-                state.alunos = Array.isArray(alunosResult.data) ? alunosResult.data : [];
+                const profiles = Array.isArray(alunosResult.data) ? alunosResult.data : [];
+                state.alunos = profiles.filter(function (profile) {
+                    const cargoNorm = normalizeText(profile && profile.cargo ? profile.cargo : '');
+                    const cursosNorm = normalizeText(profile && profile.cursos ? profile.cursos : '');
+                    return cargoNorm.includes('agente aluno') || cursosNorm.includes('ep | estagio probatorio');
+                });
                 setupUserSelect(document.querySelector('.bou-user-select[data-target="acepub-aluno"]'), state.alunos);
             };
 
@@ -1454,7 +1487,6 @@
 </script>
 </body>
 </html>
-
 
 
 

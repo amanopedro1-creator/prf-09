@@ -110,9 +110,9 @@
                             <i class="fas fa-file-circle-check"></i>
                             <span>Relatorios publicados</span>
                         </a>
-                        <a class="inicio-menu-item" href="regulamentos.html">
+                        <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
-                            <span>Regulamentos</span>
+                            <span>Documentos</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -202,6 +202,48 @@
                         </label>
                     </div>
 
+                    <h3 class="bou-form-section">Agentes envolvidos</h3>
+                    <div class="bou-form-row">
+                        <div class="bou-form-field">
+                            <span>Agente envolvido</span>
+                            <div class="bou-user-select" data-target="ait-citado-1" data-allow-empty="true">
+                                <button type="button" class="bou-user-trigger">
+                                    <span class="bou-user-avatar"></span>
+                                    <span class="bou-user-name">N/A</span>
+                                    <span class="bou-user-cargo">-</span>
+                                </button>
+                                <div class="bou-user-options"></div>
+                            </div>
+                            <input id="ait-citado-1" type="hidden">
+                        </div>
+                        <div class="bou-form-field">
+                            <span>Agente envolvido</span>
+                            <div class="bou-user-select" data-target="ait-citado-2" data-allow-empty="true">
+                                <button type="button" class="bou-user-trigger">
+                                    <span class="bou-user-avatar"></span>
+                                    <span class="bou-user-name">N/A</span>
+                                    <span class="bou-user-cargo">-</span>
+                                </button>
+                                <div class="bou-user-options"></div>
+                            </div>
+                            <input id="ait-citado-2" type="hidden">
+                        </div>
+                    </div>
+                    <div class="bou-form-row">
+                        <div class="bou-form-field">
+                            <span>Agente envolvido</span>
+                            <div class="bou-user-select" data-target="ait-citado-3" data-allow-empty="true">
+                                <button type="button" class="bou-user-trigger">
+                                    <span class="bou-user-avatar"></span>
+                                    <span class="bou-user-name">N/A</span>
+                                    <span class="bou-user-cargo">-</span>
+                                </button>
+                                <div class="bou-user-options"></div>
+                            </div>
+                            <input id="ait-citado-3" type="hidden">
+                        </div>
+                    </div>
+
                     <h3 class="bou-form-section">Dados do Infrator</h3>
                     <div class="bou-form-row">
                         <label class="bou-form-field">
@@ -214,10 +256,10 @@
                         </label>
                     </div>
 
-                    <h3 class="bou-form-section">Infracao e Veiculo</h3>
+                    <h3 class="bou-form-section">Infração e Veiculo</h3>
                     <div class="bou-form-row">
                         <label class="bou-form-field">
-                            <span>Infracoes cometidas</span>
+                            <span>Infrações cometidas</span>
                             <input id="ait-infracao" type="text" required>
                         </label>
                         <label class="bou-form-field">
@@ -892,11 +934,92 @@
                 const lastTitle = document.getElementById('ait-last-title');
                 const multaInput = document.getElementById('ait-multa');
                 const multaHint = document.getElementById('ait-multa-hint');
+                const userSelectWrappers = Array.from(document.querySelectorAll('.bou-user-select'));
+                let users = [];
 
                 const setStatus = function (text, isError) {
                     if (!statusNode) return;
                     statusNode.textContent = text;
                     statusNode.style.color = isError ? '#b91c1c' : '#111827';
+                };
+
+                const formatUserLabel = function (name, cargo) {
+                    const safeName = String(name || '').trim();
+                    const safeCargo = String(cargo || '').trim();
+                    if (!safeName || safeName === 'Selecionar policial...' || safeName === 'N/A') {
+                        return safeName === 'N/A' ? '' : '';
+                    }
+                    return safeCargo && safeCargo !== '-'
+                        ? `${safeCargo} ${safeName}`
+                        : safeName;
+                };
+
+                const setupUserSelect = function (wrapper) {
+                    if (!wrapper) return;
+                    const targetId = wrapper.getAttribute('data-target');
+                    const allowEmpty = wrapper.getAttribute('data-allow-empty') === 'true';
+                    const hiddenInput = document.getElementById(targetId);
+                    const trigger = wrapper.querySelector('.bou-user-trigger');
+                    const list = wrapper.querySelector('.bou-user-options');
+                    const nameNode = trigger ? trigger.querySelector('.bou-user-name') : null;
+                    const cargoNode = trigger ? trigger.querySelector('.bou-user-cargo') : null;
+                    const avatarNode = trigger ? trigger.querySelector('.bou-user-avatar') : null;
+
+                    const closeAll = function () {
+                        document.querySelectorAll('.bou-user-select.is-open').forEach(function (el) {
+                            el.classList.remove('is-open');
+                        });
+                    };
+
+                    const renderOption = function (userItem) {
+                        const option = document.createElement('div');
+                        option.className = 'bou-user-option';
+                        option.dataset.value = userItem.id || '';
+                        option.innerHTML =
+                            '<span class="bou-user-avatar"></span>' +
+                            '<span class="bou-user-name">' + (userItem.nome_guerra || 'Usuario') + '</span>' +
+                            '<span class="bou-user-cargo">' + (userItem.cargo || '-') + '</span>';
+                        const avatar = option.querySelector('.bou-user-avatar');
+                        if (avatar && userItem.foto_url) {
+                            avatar.style.backgroundImage = `url('${userItem.foto_url}')`;
+                        }
+                        option.addEventListener('click', function () {
+                            if (hiddenInput) hiddenInput.value = userItem.id || '';
+                            if (nameNode) nameNode.textContent = userItem.nome_guerra || 'Usuario';
+                            if (cargoNode) cargoNode.textContent = userItem.cargo || '-';
+                            if (avatarNode) {
+                                avatarNode.style.backgroundImage = userItem.foto_url ? `url('${userItem.foto_url}')` : '';
+                            }
+                            closeAll();
+                        });
+                        return option;
+                    };
+
+                    if (list) {
+                        list.innerHTML = '';
+                        if (allowEmpty) {
+                            list.appendChild(renderOption({ id: '', nome_guerra: 'N/A', cargo: '-', foto_url: '' }));
+                        }
+                        users.forEach(function (userItem) {
+                            list.appendChild(renderOption(userItem));
+                        });
+                    }
+
+                    if (trigger && wrapper.dataset.bound !== 'true') {
+                        wrapper.dataset.bound = 'true';
+                        trigger.addEventListener('click', function (event) {
+                            event.preventDefault();
+                            const isOpen = wrapper.classList.contains('is-open');
+                            closeAll();
+                            if (!isOpen) wrapper.classList.add('is-open');
+                        });
+
+                        document.addEventListener('click', function (event) {
+                            if (!wrapper.contains(event.target)) {
+                                wrapper.classList.remove('is-open');
+                            }
+                        });
+                    }
                 };
 
                 const validateMultaField = function () {
@@ -916,6 +1039,38 @@
                     return isValid;
                 };
 
+                const formatDateTime24 = function (date) {
+                    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+                    const pad = function (n) { return String(n).padStart(2, '0'); };
+                    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+                };
+
+                const formatDateTimeDisplay = function (value) {
+                    const normalized = normalizeDateTimeTo24h(value);
+                    const match = String(normalized || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+                    if (!match) return normalized || '';
+                    return `${match[3]}/${match[2]}/${match[1]} - ${match[4]}:${match[5]}`;
+                };
+
+                const normalizeDateTimeTo24h = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return '';
+                    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) return raw;
+
+                    const amPmMatch = raw.match(/^(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}):(\d{2})\s*([AP]M)$/i);
+                    if (amPmMatch) {
+                        let hour = Number(amPmMatch[2]);
+                        const minute = amPmMatch[3];
+                        const period = amPmMatch[4].toUpperCase();
+                        if (period === 'AM' && hour === 12) hour = 0;
+                        if (period === 'PM' && hour < 12) hour += 12;
+                        return `${amPmMatch[1]}T${String(hour).padStart(2, '0')}:${minute}`;
+                    }
+
+                    const parsed = new Date(raw);
+                    return Number.isNaN(parsed.getTime()) ? raw : formatDateTime24(parsed);
+                };
+
                 if (multaInput) {
                     multaInput.addEventListener('input', validateMultaField);
                     multaInput.addEventListener('blur', validateMultaField);
@@ -923,8 +1078,13 @@
 
                 const now = new Date();
                 if (datahora) {
-                    const pad = (n) => String(n).padStart(2, '0');
-                    datahora.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                    datahora.value = formatDateTime24(now);
+                    datahora.addEventListener('change', function () {
+                        datahora.value = normalizeDateTimeTo24h(datahora.value);
+                    });
+                    datahora.addEventListener('blur', function () {
+                        datahora.value = normalizeDateTimeTo24h(datahora.value);
+                    });
                 }
 
                 const profileResult = await client
@@ -938,6 +1098,29 @@
                 if (responsavel) {
                     responsavel.value = `${nome}${rg ? ' - ' + rg : ''}`;
                 }
+
+                try {
+                    const usersResult = await client
+                        .from('profiles')
+                        .select('id,nome_guerra,cargo,foto_url,aprovado')
+                        .eq('aprovado', true)
+                        .order('nome_guerra', { ascending: true })
+                        .limit(2000);
+
+                    users = Array.isArray(usersResult.data) ? usersResult.data : [];
+                    if (!users.length) {
+                        const usersFallback = await client
+                            .from('profiles')
+                            .select('id,nome_guerra,cargo,foto_url')
+                            .order('nome_guerra', { ascending: true })
+                            .limit(2000);
+                        users = Array.isArray(usersFallback.data) ? usersFallback.data : [];
+                    }
+                } catch (e) {
+                    users = [];
+                }
+
+                userSelectWrappers.forEach(setupUserSelect);
 
                 try {
                     if (lastTitle) {
@@ -977,22 +1160,37 @@
                         }
                         const valorMulta = multaInput?.value || '';
                         const apreensao = document.getElementById('ait-apreensao')?.value || '';
-                        const dataHora = document.getElementById('ait-datahora')?.value || '';
+                        const dataHora = normalizeDateTimeTo24h(document.getElementById('ait-datahora')?.value || '');
+                        const dataHoraFormatada = formatDateTimeDisplay(dataHora);
                         const local = document.getElementById('ait-local')?.value || '';
                         const veiculo = document.getElementById('ait-veiculo')?.value || '';
                         const placa = document.getElementById('ait-placa')?.value || '';
+                        const getSelectedUserLabel = function (id) {
+                            const hidden = document.getElementById(id);
+                            const wrapper = hidden ? hidden.closest('.bou-form-field') : null;
+                            const nameNode = wrapper ? wrapper.querySelector('.bou-user-name') : null;
+                            const cargoNode = wrapper ? wrapper.querySelector('.bou-user-cargo') : null;
+                            const nameText = nameNode ? nameNode.textContent.trim() : '';
+                            const cargoText = cargoNode ? cargoNode.textContent.trim() : '';
+                            return formatUserLabel(nameText, cargoText);
+                        };
+                        const agenteCitado1 = getSelectedUserLabel('ait-citado-1');
+                        const agenteCitado2 = getSelectedUserLabel('ait-citado-2');
+                        const agenteCitado3 = getSelectedUserLabel('ait-citado-3');
+                        const agentesCitados = [agenteCitado1, agenteCitado2, agenteCitado3].filter(Boolean);
 
                         const textoOriginal = [
                             'AUTO DE INFRACAO DE TRANSITO (AIT):',
                             '',
                             'Numero do AIT: ' + (numeroAit || '-'),
                             'Responsavel: ' + (policialResponsavel || '-'),
+                            'Agentes citados: ' + (agentesCitados.length ? agentesCitados.join(' | ') : '-'),
                             'Infrator: ' + (infratorNome || '-'),
                             'RG: ' + (infratorRg || '-'),
                             'Infracoes: ' + (infracoes || '-'),
                             'Multa: ' + (valorMulta || '-'),
                             'Apreensao do veiculo: ' + (apreensao || '-'),
-                            'Data e hora: ' + (dataHora || '-'),
+                            'Data e hora: ' + (dataHoraFormatada || '-'),
                             'Local: ' + (local || '-'),
                             'Veiculo: ' + (veiculo || '-'),
                             'Placa: ' + (placa || '-')
@@ -1001,12 +1199,16 @@
                         const campos = {
                             numero_ait: numeroAit,
                             policial_responsavel: policialResponsavel,
+                            agente_citado_1: agenteCitado1,
+                            agente_citado_2: agenteCitado2,
+                            agente_citado_3: agenteCitado3,
+                            agentes_citados: agentesCitados,
                             infrator_nome: infratorNome,
                             infrator_rg: infratorRg,
                             infracoes: infracoes,
                             valor_multa: valorMulta,
                             apreensao_veiculo: apreensao,
-                            data_hora: dataHora,
+                            data_hora: dataHoraFormatada,
                             local: local,
                             veiculo: veiculo,
                             placa: placa
@@ -1017,6 +1219,11 @@
                             numeroAIT: numeroAit,
                             policial_responsavel: policialResponsavel,
                             responsavel: policialResponsavel,
+                            agente_citado_1: agenteCitado1,
+                            agente_citado_2: agenteCitado2,
+                            agente_citado_3: agenteCitado3,
+                            agentes_citados: agentesCitados,
+                            agentesCitados: agentesCitados,
                             infrator_nome: infratorNome,
                             nome_infrator: infratorNome,
                             infrator: infratorNome,
@@ -1029,8 +1236,8 @@
                             multa: valorMulta,
                             apreensao_veiculo: apreensao,
                             apreensao: apreensao,
-                            data_hora: dataHora,
-                            datahora: dataHora,
+                            data_hora: dataHoraFormatada,
+                            datahora: dataHoraFormatada,
                             local: local,
                             veiculo: veiculo,
                             marca_modelo: veiculo,
@@ -1075,7 +1282,8 @@
                                 setStatus('AIT enviado com sucesso.', false);
                                 form.reset();
                                 if (responsavel) responsavel.value = `${nome}${rg ? ' - ' + rg : ''}`;
-                                if (datahora) datahora.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                                if (datahora) datahora.value = formatDateTime24(new Date());
+                                userSelectWrappers.forEach(setupUserSelect);
                             }
                         } catch (e) {
                             setStatus('Erro ao enviar.', true);
@@ -1149,7 +1357,6 @@
 </script>
 </body>
 </html>
-
 
 
 
