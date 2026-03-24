@@ -11428,6 +11428,104 @@ body.publicados-modal-open {
         padding: 18px;
     }
 
+    .inicio-menu {
+        gap: 8px;
+        padding: 10px 12px;
+    }
+
+    .inicio-menu > div:first-child {
+        flex: 0 0 44px;
+        width: 44px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .inicio-menu > div:first-child img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+    }
+
+    .inicio-menu-items {
+        min-width: 0;
+        gap: 6px;
+    }
+
+    .inicio-menu-item {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+    }
+
+    .inicio-menu-item i {
+        font-size: 14px;
+    }
+
+    .inicio-menu-footer {
+        margin-left: 0;
+    }
+
+    .inicio-menu-user {
+        display: none;
+    }
+
+    .inicio-header {
+        display: grid;
+        grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+    }
+
+    .inicio-user-card {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        gap: 10px;
+    }
+
+    .inicio-user-photo {
+        width: 88px;
+        height: 88px;
+        border-radius: 14px;
+    }
+
+    .inicio-user-name {
+        font-size: 26px;
+        line-height: 1;
+    }
+
+    .inicio-user-cargo {
+        justify-content: flex-start;
+        font-size: 13px;
+    }
+
+    .inicio-user-rg {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .inicio-user-cargo-img {
+        width: 28px;
+        height: 28px;
+    }
+
+    .inicio-user-meta {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 16px;
+        font-size: 12px;
+    }
+
+    .inicio-user-meta-title {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    .inicio-user-meta-row {
+        font-size: 12px;
+        gap: 2px;
+    }
+
     .inicio-summary-grid {
         grid-template-columns: 1fr;
     }
