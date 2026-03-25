@@ -11433,22 +11433,36 @@ body.publicados-modal-open {
         padding: 10px 12px;
     }
 
-    .inicio-menu > div:first-child {
-        flex: 0 0 44px;
-        width: 44px;
+    .inicio-menu > div[aria-hidden="true"] {
+        flex: 0 0 40px;
+        width: 40px;
+        min-width: 40px;
         display: flex;
         justify-content: center;
+        align-items: center;
     }
 
-    .inicio-menu > div:first-child img {
-        width: 44px;
-        height: 44px;
+    .inicio-menu > div[aria-hidden="true"] a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+    }
+
+    .inicio-menu > div[aria-hidden="true"] img {
+        width: 40px;
+        height: 40px;
         object-fit: contain;
     }
 
     .inicio-menu-items {
+        display: flex;
+        flex: 1 1 auto;
         min-width: 0;
         gap: 6px;
+        overflow-x: auto;
+        justify-content: flex-start;
     }
 
     .inicio-menu-item {
@@ -11462,7 +11476,7 @@ body.publicados-modal-open {
     }
 
     .inicio-menu-footer {
-        margin-left: 0;
+        display: none;
     }
 
     .inicio-menu-user {
@@ -11471,8 +11485,8 @@ body.publicados-modal-open {
 
     .inicio-header {
         display: grid;
-        grid-template-columns: minmax(0, 150px) minmax(0, 1fr);
-        gap: 14px;
+        grid-template-columns: minmax(0, 132px) minmax(0, 1fr);
+        gap: 12px;
         align-items: start;
     }
 
@@ -11484,13 +11498,13 @@ body.publicados-modal-open {
     }
 
     .inicio-user-photo {
-        width: 88px;
-        height: 88px;
+        width: 82px;
+        height: 82px;
         border-radius: 14px;
     }
 
     .inicio-user-name {
-        font-size: 26px;
+        font-size: 24px;
         line-height: 1;
     }
 
@@ -11511,18 +11525,19 @@ body.publicados-modal-open {
 
     .inicio-user-meta {
         width: 100%;
-        padding: 12px 14px;
+        min-width: 0;
+        padding: 10px 12px;
         border-radius: 16px;
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .inicio-user-meta-title {
         font-size: 11px;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
     .inicio-user-meta-row {
-        font-size: 12px;
+        font-size: 11px;
         gap: 2px;
     }
 
