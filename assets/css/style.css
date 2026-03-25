@@ -2645,6 +2645,64 @@ p {
     line-height: 1.6;
 } 
 
+.cursos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-top: 24px;
+}
+
+.curso-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    min-height: 100%;
+    border: 1px solid #d6deee;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+    box-shadow: 0 10px 24px rgba(10, 37, 64, 0.08);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.curso-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px rgba(10, 37, 64, 0.12);
+}
+
+.curso-card-image,
+.curso-card-placeholder {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+}
+
+.curso-card-image {
+    display: block;
+    object-fit: contain;
+    background: #ffffff;
+    padding: 10px;
+}
+
+.curso-card-placeholder {
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: linear-gradient(135deg, #003a70 0%, #0f5c9c 100%);
+    color: #f7c948;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.curso-card-title {
+    margin: 0;
+    color: #16324f;
+    font-size: 16px;
+    line-height: 1.45;
+    text-align: center;
+}
+
 .aluno-rating-card {
     border: 1px solid #d7deed;
     border-radius: 12px;
@@ -4715,7 +4773,8 @@ p {
 
 .capacitacao-page .info-card,
 .capacitacao-page .info-card-historia,
-.capacitacao-page .centralizar-foto {
+.capacitacao-page .centralizar-foto,
+.capacitacao-page .curso-card {
     opacity: 0;
     transform: translateY(28px) scale(0.96);
     animation: stackIn 680ms ease both;
@@ -4754,6 +4813,7 @@ p {
     .capacitacao-page .info-card,
     .capacitacao-page .info-card-historia,
     .capacitacao-page .centralizar-foto,
+    .capacitacao-page .curso-card,
     .corregedoria-page .info-card {
         animation: none;
         opacity: 1;
