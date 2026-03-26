@@ -91,7 +91,7 @@
                 <nav class="inicio-menu-items">
                         <a class="inicio-menu-item" href="inicio.html">
                             <i class="fas fa-house"></i>
-                            <span>Inicio</span>
+                            <span>Início</span>
                         </a>
                         <a class="inicio-menu-item" href="paineldgp.html" data-requires-admin="true">
                             <i class="fas fa-user-shield"></i>
@@ -104,15 +104,19 @@
                         </a>
                         <a class="inicio-menu-item is-active" href="relatorios.html">
                             <i class="fas fa-file-lines"></i>
-                            <span>Relatorios</span>
+                            <span>Relatórios</span>
                         </a>
                         <a class="inicio-menu-item" href="relatoriospublicados.html">
                             <i class="fas fa-file-circle-check"></i>
-                            <span>Relatorios publicados</span>
+                            <span>Relatórios publicados</span>
                         </a>
                         <a class="inicio-menu-item" href="documentos.html">
                             <i class="fas fa-scale-balanced"></i>
                             <span>Documentos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="consultar-dados.html">
+                            <i class="fas fa-database"></i>
+                            <span>Consultar Dados</span>
                         </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
@@ -124,7 +128,7 @@
                         </a>
                         <a class="inicio-menu-item" href="diario-oficial.html">
                             <i class="fas fa-newspaper"></i>
-                            <span>Diario Oficial</span>
+                            <span>Diário Oficial</span>
                         </a>
                 </nav>
 
@@ -144,7 +148,7 @@
                     </div>
                     <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
                         <i class="fas fa-user-clock"></i>
-                        Entrar em servico
+                        Entrar em serviço
                     </button>
                 </header>
                 <div class="plantao-list" id="inicio-on-duty-list">
@@ -160,7 +164,7 @@
                         <img id="inicio-user-photo" src="assets/img/prf.png" alt="Foto do usuario">
                     </div>
                     <div class="inicio-user-text">
-                        <h1 id="inicio-user-name" class="inicio-user-name">Usuario</h1>
+                        <h1 id="inicio-user-name" class="inicio-user-name">Usuário</h1>
                         <div class="inicio-user-cargo">
                             <img id="inicio-user-cargo-img" class="inicio-user-cargo-img is-hidden" alt="Imagem do cargo">
                             <span id="inicio-user-cargo">Cargo do agente</span>
@@ -190,14 +194,14 @@
                 <br>
                 <div><h3 class="black">Auto de Infração de Trânsito - AIT</h3></div>
                 <form id="ait-form" class="bou-form" aria-label="Formulario AIT">
-                    <h3 class="bou-form-section">Dados da Atuacao</h3>
+                    <h3 class="bou-form-section">Dados da Atuação</h3>
                     <div class="bou-form-row">
                         <label class="bou-form-field">
-                            <span>Numero do AIT</span>
+                            <span>Número do AIT</span>
                             <input id="ait-numero" type="text" placeholder="xxx/2026" required>
                         </label>
                         <label class="bou-form-field">
-                            <span>Policial responsavel</span>
+                            <span>Policial responsável</span>
                             <input id="ait-responsavel" type="text" readonly>
                         </label>
                     </div>
@@ -258,19 +262,21 @@
 
                     <h3 class="bou-form-section">Infração e Veiculo</h3>
                     <div class="bou-form-row">
-                        <label class="bou-form-field">
+                        <div class="bou-form-field">
                             <span>Infrações cometidas</span>
-                            <input id="ait-infracao" type="text" required>
-                        </label>
+                            <button id="ait-infracao-trigger" class="ait-infracao-trigger" type="button">
+                                <span id="ait-infracao-label">Selecionar infração...</span>
+                            </button>
+                            <input id="ait-infracao" type="hidden" required>
+                        </div>
                         <label class="bou-form-field">
                             <span>Valor da multa em R$</span>
-                            <input id="ait-multa" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente numeros" required>
-                            <span id="ait-multa-hint" class="bou-field-hint is-hidden" aria-live="polite">Use apenas numeros inteiros.</span>
+                            <input id="ait-multa" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Somente numeros" required readonly>
                         </label>
                     </div>
                     <div class="bou-form-row">
                         <div class="bou-form-field">
-                            <span>Houve apreensao do veiculo?</span>
+                            <span>Houve apreensão do veículo</span>
                             <div class="bou-text-select" data-target="ait-apreensao" data-placeholder="Selecionar...">
                                 <button type="button" class="bou-text-trigger">
                                     <span class="bou-text-value">Selecionar...</span>
@@ -280,17 +286,17 @@
                             <input id="ait-apreensao" type="hidden" required>
                         </div>
                         <label class="bou-form-field">
-                            <span>Data e horario</span>
+                            <span>Data e horário</span>
                             <input id="ait-datahora" type="datetime-local" required>
                         </label>
                     </div>
                     <div class="bou-form-row">
                         <label class="bou-form-field">
-                            <span>Local de Autuacao</span>
+                            <span>Local de Autuação</span>
                             <input id="ait-local" type="text" required>
                         </label>
                         <label class="bou-form-field">
-                            <span>Marca e modelo do veiculo</span>
+                            <span>Marca e modelo do veículo</span>
                             <input id="ait-veiculo" type="text" required>
                         </label>
                     </div>
@@ -310,6 +316,18 @@
         </main>
      </div>
 </div>
+    <div id="ait-infracao-modal" class="publicados-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="publicados-modal-card ait-infracao-modal-card">
+            <button id="ait-infracao-close" class="publicados-modal-close" type="button" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <div class="publicados-modal-body">
+                <h3>Selecionar Infração</h3>
+                <div class="publicados-modal-meta">Categorias: Branco, Azul, Laranja e Vermelho.</div>
+                <div id="ait-infracao-grid" class="ait-infracao-grid"></div>
+            </div>
+        </div>
+    </div>
     <script src="../app.js" defer></script>
     <script>
         window.addEventListener('load', function () {
@@ -934,7 +952,14 @@
                 const lastTitle = document.getElementById('ait-last-title');
                 const multaInput = document.getElementById('ait-multa');
                 const multaHint = document.getElementById('ait-multa-hint');
+                const infracaoInput = document.getElementById('ait-infracao');
+                const infracaoTrigger = document.getElementById('ait-infracao-trigger');
+                const infracaoLabel = document.getElementById('ait-infracao-label');
+                const infracaoModal = document.getElementById('ait-infracao-modal');
+                const infracaoModalClose = document.getElementById('ait-infracao-close');
+                const infracaoGrid = document.getElementById('ait-infracao-grid');
                 const userSelectWrappers = Array.from(document.querySelectorAll('.bou-user-select'));
+                const selectedInfracoes = new Map();
                 let users = [];
 
                 const setStatus = function (text, isError) {
@@ -952,6 +977,229 @@
                     return safeCargo && safeCargo !== '-'
                         ? `${safeCargo} ${safeName}`
                         : safeName;
+                };
+
+                const PERSON_PROFILE_TABLE = 'acusados_infratores';
+                const PERSON_HISTORY_TABLE = 'acusados_infratores_historico';
+
+                const normalizeRg = function (value) {
+                    return String(value || '').replace(/\D/g, '');
+                };
+
+                const normalizeText = function (value) {
+                    return String(value || '').replace(/\s+/g, ' ').trim();
+                };
+
+                const buildSyncWarning = function (prefix, error) {
+                    const detail = error && (error.message || error.details || error.hint)
+                        ? String(error.message || error.details || error.hint)
+                        : 'erro desconhecido';
+                    return `${prefix}: ${detail}`;
+                };
+
+                const AIT_INFRACOES = [
+                    { artigo: '162', descricao: 'Dirigir veículo sem possuir CNH ou com documento vencido', multa: '1500', apreensao: 'Sim', categoria: 'azul' },
+                    { artigo: '165-A', descricao: 'Recusar-se a ser submetido ao teste do etilômetro', multa: '400', apreensao: 'Sim', categoria: 'vermelho' },
+                    { artigo: '167', descricao: 'Deixar de utilizar o cinto de segurança', multa: '800', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '169', descricao: 'Dirigir sem atenção ou sem os cuidados indispensáveis à segurança', multa: '400', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '172', descricao: 'Atirar do veículo ou abandonar na via objetos', multa: '250', apreensao: 'Não', categoria: 'laranja' },
+                    { artigo: '173', descricao: 'Disputar corrida', multa: '2000', apreensao: 'Sim', categoria: 'vermelho' },
+                    { artigo: '175', descricao: 'Utilizar o veículo para exibir manobra perigosa', multa: '1500', apreensao: 'Sim', categoria: 'laranja' },
+                    { artigo: '176-I', descricao: 'Deixar o condutor de prestar socorro à vítima', multa: '900', apreensao: 'Sim', categoria: 'vermelho' },
+                    { artigo: '180', descricao: 'Imobilizar o veículo na via por estar sem combustível', multa: '250', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '181', descricao: 'Parar ou estacionar em locais proibidos', multa: '200', apreensao: 'Sim', categoria: 'laranja' },
+                    { artigo: '186', descricao: 'Transitar pela contramão de direção', multa: '950', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '190', descricao: 'Seguir veículo policial ou em situação de emergência', multa: '900', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '192', descricao: 'Deixar de guardar distância de segurança', multa: '300', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '193', descricao: 'Transitar com o veículo em locais proibidos', multa: '900', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '194', descricao: 'Transitar de marcha à ré', multa: '800', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '195', descricao: 'Desobedecer as ordens emanadas do agente policial', multa: '1000', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '206', descricao: 'Executar operação de retorno em local proibido', multa: '150', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '210', descricao: 'Transpor, sem autorização, bloqueio viário policial', multa: '2000', apreensao: 'Sim', categoria: 'laranja' },
+                    { artigo: '218', descricao: 'Transitar em velocidade superior à máxima permitida', multa: '600', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '227', descricao: 'Utilizar buzina prolongada ou em desacordo', multa: '600', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '228', descricao: 'Usar som veicular em áreas proibidas', multa: '1200', apreensao: 'Sim', categoria: 'azul' },
+                    { artigo: '230', descricao: 'Conduzir veículo com cor ou característica alterada', multa: '400', apreensao: 'Sim', categoria: 'azul' },
+                    { artigo: '230', descricao: 'Transitar com o veículo em mau estado de conservação', multa: '400', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '231', descricao: 'Transitar com o veículo excedendo peso permitido', multa: '500', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '235', descricao: 'Conduzir pessoas ou animais em partes externas do veículo', multa: '300', apreensao: 'Não', categoria: 'branco' },
+                    { artigo: '244', descricao: 'Conduzir motocicleta sem capacete ou equipamentos', multa: '900', apreensao: 'Sim', categoria: 'azul' },
+                    { artigo: '252', descricao: 'Conduzir motocicleta com calçado inadequado', multa: '500', apreensao: 'Sim', categoria: 'azul' },
+                    { artigo: '253', descricao: 'Bloquear a via com o veículo', multa: '600', apreensao: 'Sim', categoria: 'laranja' }
+                ].sort(function (a, b) {
+                    const getNumeric = function (value) {
+                        const match = String(value || '').match(/^(\d+)/);
+                        return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+                    };
+                    return getNumeric(a.artigo) - getNumeric(b.artigo);
+                });
+
+                const setApreensaoValue = function (value) {
+                    const hidden = document.getElementById('ait-apreensao');
+                    const wrapper = document.querySelector('.bou-text-select[data-target="ait-apreensao"]');
+                    const valueNode = wrapper ? wrapper.querySelector('.bou-text-value') : null;
+                    if (hidden) hidden.value = value;
+                    if (valueNode) valueNode.textContent = value || 'Selecionar...';
+                };
+
+                const openInfracaoModal = function () {
+                    if (!infracaoModal) return;
+                    infracaoModal.classList.add('is-active');
+                    infracaoModal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('publicados-modal-open');
+                };
+
+                const closeInfracaoModal = function () {
+                    if (!infracaoModal) return;
+                    infracaoModal.classList.remove('is-active');
+                    infracaoModal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('publicados-modal-open');
+                };
+
+                const syncInfracaoSelection = function () {
+                    const selected = Array.from(selectedInfracoes.values());
+                    if (infracaoInput) {
+                        infracaoInput.value = selected.map(function (item) {
+                            return 'Art. ' + item.artigo + ' - ' + item.descricao;
+                        }).join(' | ');
+                    }
+                    if (infracaoLabel) {
+                        infracaoLabel.textContent = selected.length
+                            ? selected.map(function (item) { return 'Art. ' + item.artigo; }).join(', ')
+                            : 'Selecionar infração...';
+                    }
+                    if (multaInput) {
+                        const total = selected.reduce(function (sum, item) {
+                            return sum + (Number(String(item.multa || '').replace(/\D/g, '')) || 0);
+                        }, 0);
+                        multaInput.value = selected.length ? String(total) : '';
+                    }
+                    setApreensaoValue(selected.some(function (item) { return item.apreensao === 'Sim'; }) ? 'Sim' : 'Não');
+                };
+
+                const renderInfracaoOptions = function () {
+                    if (!infracaoGrid) return;
+                    infracaoGrid.innerHTML = AIT_INFRACOES.map(function (item) {
+                        const isSelected = selectedInfracoes.has(item.artigo + '|' + item.descricao);
+                        return (
+                            '<button class="ait-infracao-option is-' + item.categoria + (isSelected ? ' is-selected' : '') + '" type="button" data-artigo="' + item.artigo + '">' +
+                            '<span class="ait-infracao-check"><i class="fas fa-check"></i></span>' +
+                            '<span class="ait-infracao-artigo">Art. ' + item.artigo + '</span>' +
+                            '<span class="ait-infracao-descricao">' + item.descricao + '</span>' +
+                            '<span class="ait-infracao-meta">R$ ' + item.multa + ' • Apreensão: ' + item.apreensao + '</span>' +
+                            '</button>'
+                        );
+                    }).join('');
+
+                    infracaoGrid.querySelectorAll('.ait-infracao-option').forEach(function (button, index) {
+                        button.addEventListener('click', function () {
+                            const item = AIT_INFRACOES[index];
+                            if (!item) return;
+                            const key = item.artigo + '|' + item.descricao;
+                            if (selectedInfracoes.has(key)) {
+                                selectedInfracoes.delete(key);
+                            } else {
+                                selectedInfracoes.set(key, item);
+                            }
+                            syncInfracaoSelection();
+                            renderInfracaoOptions();
+                        });
+                    });
+                };
+
+                const syncPessoaPerfil = async function (entry) {
+                    const nome = normalizeText(entry && entry.nome);
+                    const rgValue = normalizeRg(entry && entry.rg);
+                    if (!nome && !rgValue) return { ok: true, skipped: true };
+                    if (!rgValue) return { ok: false, warning: `RG ausente para ${nome || 'infrator'}` };
+
+                    const nowIso = new Date().toISOString();
+                    const tipoRegistro = String(entry && entry.tipo_registro || '').toUpperCase();
+                    const eventAt = entry && entry.ocorrido_em ? entry.ocorrido_em : nowIso;
+                    const existingResult = await client
+                        .from(PERSON_PROFILE_TABLE)
+                        .select('id,nome_atual,total_bous,total_aits')
+                        .eq('rg', rgValue)
+                        .maybeSingle();
+
+                    if (existingResult.error) {
+                        return { ok: false, warning: buildSyncWarning(`Falha ao localizar perfil do RG ${rgValue}`, existingResult.error) };
+                    }
+
+                    const existing = existingResult.data || null;
+                    const profilePayload = {
+                        rg: rgValue,
+                        nome_atual: nome || (existing ? existing.nome_atual : null) || null,
+                        total_bous: Number(existing && existing.total_bous || 0) + (tipoRegistro === 'BOU' ? 1 : 0),
+                        total_aits: Number(existing && existing.total_aits || 0) + (tipoRegistro === 'AIT' ? 1 : 0),
+                        ultima_ocorrencia_tipo: tipoRegistro || null,
+                        ultima_ocorrencia_id: entry && entry.registro_id ? entry.registro_id : null,
+                        ultima_ocorrencia_em: eventAt,
+                        atualizado_em: nowIso
+                    };
+
+                    let perfilId = existing ? existing.id : null;
+                    if (existing) {
+                        const updateResult = await client
+                            .from(PERSON_PROFILE_TABLE)
+                            .update(profilePayload)
+                            .eq('id', existing.id)
+                            .select('id')
+                            .single();
+                        if (updateResult.error || !updateResult.data) {
+                            return { ok: false, warning: buildSyncWarning(`Falha ao atualizar perfil do RG ${rgValue}`, updateResult.error) };
+                        }
+                        perfilId = updateResult.data.id;
+                    } else {
+                        const insertResult = await client
+                            .from(PERSON_PROFILE_TABLE)
+                            .insert(Object.assign({}, profilePayload, { criado_em: nowIso }))
+                            .select('id')
+                            .single();
+                        if (insertResult.error || !insertResult.data) {
+                            return { ok: false, warning: buildSyncWarning(`Falha ao criar perfil do RG ${rgValue}`, insertResult.error) };
+                        }
+                        perfilId = insertResult.data.id;
+                    }
+
+                    const historyPayload = {
+                        perfil_id: perfilId,
+                        rg: rgValue,
+                        nome_informado: nome || null,
+                        tipo_registro: tipoRegistro,
+                        registro_id: entry && entry.registro_id ? entry.registro_id : null,
+                        user_id: userId,
+                        resumo: normalizeText(entry && entry.resumo) || null,
+                        dados: entry && entry.dados ? entry.dados : {},
+                        criado_em: eventAt
+                    };
+
+                    const historyResult = await client
+                        .from(PERSON_HISTORY_TABLE)
+                        .upsert(historyPayload, { onConflict: 'tipo_registro,registro_id,rg' });
+
+                    if (historyResult.error) {
+                        return { ok: false, warning: buildSyncWarning(`Falha ao registrar histórico do RG ${rgValue}`, historyResult.error) };
+                    }
+
+                    return { ok: true, skipped: false };
+                };
+
+                const syncPessoasPerfis = async function (entries) {
+                    const warnings = [];
+                    const handled = new Set();
+
+                    for (const entry of (entries || [])) {
+                        const key = normalizeRg(entry && entry.rg);
+                        if (!key || handled.has(key)) continue;
+                        handled.add(key);
+                        const result = await syncPessoaPerfil(entry);
+                        if (result && result.ok === false && result.warning) {
+                            warnings.push(result.warning);
+                        }
+                    }
+
+                    return warnings;
                 };
 
                 const setupUserSelect = function (wrapper) {
@@ -1024,6 +1272,10 @@
 
                 const validateMultaField = function () {
                     if (!multaInput) return true;
+                    if (multaInput.hasAttribute('readonly')) {
+                        multaInput.setCustomValidity(multaInput.value ? '' : 'Selecione ao menos uma infração.');
+                        return Boolean(multaInput.value);
+                    }
                     const rawValue = multaInput.value || '';
                     const sanitizedValue = rawValue.replace(/\D/g, '');
                     const hadInvalidChars = sanitizedValue !== rawValue;
@@ -1071,7 +1323,7 @@
                     return Number.isNaN(parsed.getTime()) ? raw : formatDateTime24(parsed);
                 };
 
-                if (multaInput) {
+                if (multaInput && !multaInput.hasAttribute('readonly')) {
                     multaInput.addEventListener('input', validateMultaField);
                     multaInput.addEventListener('blur', validateMultaField);
                 }
@@ -1153,6 +1405,11 @@
                         const infratorNome = document.getElementById('ait-infrator-nome')?.value || '';
                         const infratorRg = document.getElementById('ait-infrator-rg')?.value || '';
                         const infracoes = document.getElementById('ait-infracao')?.value || '';
+                        if (!infracoes) {
+                            setStatus('Selecione uma infração para continuar.', true);
+                            if (submitBtn) submitBtn.disabled = false;
+                            return;
+                        }
                         if (!validateMultaField()) {
                             setStatus('O valor da multa deve conter apenas numeros inteiros.', true);
                             if (submitBtn) submitBtn.disabled = false;
@@ -1250,6 +1507,7 @@
                         };
 
                         try {
+                            const createdAtIso = new Date().toISOString();
                             const insertResult = await client
                                 .from('aits')
                                 .insert({
@@ -1257,7 +1515,7 @@
                                     numero_ait: payload.numero_ait,
                                     infrator: payload.infrator_nome,
                                     conteudo_completo: payload,
-                                    data_criacao: new Date().toISOString()
+                                    data_criacao: createdAtIso
                                 })
                                 .select('id')
                                 .single();
@@ -1269,6 +1527,33 @@
                             }
 
                             const aitId = insertResult.data.id;
+                            const profileWarnings = await syncPessoasPerfis([
+                                {
+                                    nome: payload.infrator_nome,
+                                    rg: payload.infrator_rg,
+                                    tipo_registro: 'AIT',
+                                    registro_id: aitId,
+                                    ocorrido_em: createdAtIso,
+                                    resumo: payload.infracoes || payload.numero_ait,
+                                    dados: {
+                                        origem: 'ait.html',
+                                        numero_ait: payload.numero_ait || null,
+                                        infracoes: payload.infracoes || null,
+                                        valor_multa: payload.valor_multa || null,
+                                        apreensao_veiculo: payload.apreensao_veiculo || null,
+                                        placa: payload.placa || null,
+                                        veiculo: payload.veiculo || null,
+                                        infrator_nome: payload.infrator_nome || null,
+                                        infrator_rg: payload.infrator_rg || null,
+                                        data_hora: payload.data_hora || null,
+                                        local: payload.local || null,
+                                        texto_original: payload.texto_original || ''
+                                    }
+                                }
+                            ]);
+                            const profileWarningText = profileWarnings.length
+                                ? ' Perfil do acusado/infrator não foi sincronizado: ' + profileWarnings.join(' | ')
+                                : '';
                             const rpcResult = await client.rpc('send_ait_to_discord', { p_ait_id: aitId });
                             const rpcOk = !!(rpcResult && rpcResult.data && rpcResult.data.ok !== false);
                             if (rpcResult.error || !rpcOk) {
@@ -1276,14 +1561,22 @@
                                     ? (rpcResult.error.message || rpcResult.error.details || rpcResult.error.hint || '')
                                     : (rpcResult && rpcResult.data && (rpcResult.data.error || rpcResult.data.message) ? String(rpcResult.data.error || rpcResult.data.message) : '');
                                 const finalReason = reason ? (' Detalhe: ' + reason) : '';
-                                setStatus('Salvo, mas falhou ao enviar ao Discord.' + finalReason, true);
+                                setStatus('Salvo, mas falhou ao enviar ao Discord.' + finalReason + profileWarningText, true);
                                 try { console.error('send_ait_to_discord failed', rpcResult); } catch (err) {}
                             } else {
-                                setStatus('AIT enviado com sucesso.', false);
+                                if (profileWarnings.length) {
+                                    setStatus('AIT enviado com sucesso.' + profileWarningText, true);
+                                } else {
+                                    setStatus('AIT enviado com sucesso.', false);
+                                }
+                                selectedInfracoes.clear();
                                 form.reset();
                                 if (responsavel) responsavel.value = `${nome}${rg ? ' - ' + rg : ''}`;
                                 if (datahora) datahora.value = formatDateTime24(new Date());
+                                if (infracaoLabel) infracaoLabel.textContent = 'Selecionar infração...';
+                                syncInfracaoSelection();
                                 userSelectWrappers.forEach(setupUserSelect);
+                                renderInfracaoOptions();
                             }
                         } catch (e) {
                             setStatus('Erro ao enviar.', true);
@@ -1343,8 +1636,23 @@
 
                 setupTextSelect(
                     document.querySelector('.bou-text-select[data-target="ait-apreensao"]'),
-                    ['Sim', 'Nao']
+                    ['Sim', 'Não']
                 );
+                renderInfracaoOptions();
+                if (infracaoTrigger) {
+                    infracaoTrigger.addEventListener('click', function () {
+                        openInfracaoModal();
+                    });
+                }
+                if (infracaoModalClose) {
+                    infracaoModalClose.addEventListener('click', closeInfracaoModal);
+                }
+                if (infracaoModal) {
+                    infracaoModal.addEventListener('click', function (event) {
+                        if (event.target === infracaoModal) closeInfracaoModal();
+                    });
+                }
+                syncInfracaoSelection();
             })();
         });
     </script>
@@ -1357,15 +1665,6 @@
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
 
 

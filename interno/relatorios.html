@@ -114,6 +114,10 @@
                             <i class="fas fa-scale-balanced"></i>
                             <span>Documentos</span>
                         </a>
+                        <a class="inicio-menu-item" href="consultar-dados.html">
+                            <i class="fas fa-database"></i>
+                            <span>Consultar Dados</span>
+                        </a>
                         <a class="inicio-menu-item" href="avisos-internos.html">
                             <i class="fas fa-bullhorn"></i>
                             <span>Avisos internos</span>
@@ -329,10 +333,15 @@
                         <input id="bou-envolvidos" type="text">
                     </label>
                     <div class="bou-form-row">
-                        <label class="bou-form-field">
+                        <div class="bou-form-field">
                             <span>Resultado da abordagem</span>
-                            <input id="bou-resultado" type="text" placeholder="Conducao, apreensao, orientacao">
-                        </label>
+                            <div class="bou-resultado-options" role="group" aria-label="Resultado da abordagem">
+                                <button class="bou-resultado-option is-vermelho" type="button" data-value="Apreensão">Apreensão</button>
+                                <button class="bou-resultado-option is-amarelo" type="button" data-value="Condução">Condução</button>
+                                <button class="bou-resultado-option is-verde" type="button" data-value="Orientação">Orientação</button>
+                            </div>
+                            <input id="bou-resultado" type="hidden">
+                        </div>
                         <label class="bou-form-field">
                             <span>Material apreendido</span>
                             <input id="bou-material" type="text">
@@ -1189,6 +1198,169 @@
                         : safeName;
                 };
 
+                const PERSON_PROFILE_TABLE = 'acusados_infratores';
+                const PERSON_HISTORY_TABLE = 'acusados_infratores_historico';
+
+                const normalizeRg = function (value) {
+                    return String(value || '').replace(/\D/g, '');
+                };
+
+                const normalizeText = function (value) {
+                    return String(value || '').replace(/\s+/g, ' ').trim();
+                };
+
+                const buildSyncWarning = function (prefix, error) {
+                    const detail = error && (error.message || error.details || error.hint)
+                        ? String(error.message || error.details || error.hint)
+                        : 'erro desconhecido';
+                    return `${prefix}: ${detail}`;
+                };
+
+                const syncPessoaPerfil = async function (entry) {
+                    const nome = normalizeText(entry && entry.nome);
+                    const rg = normalizeRg(entry && entry.rg);
+                    if (!nome && !rg) return { ok: true, skipped: true };
+                    if (!rg) return { ok: false, warning: `RG ausente para ${nome || 'acusado'}` };
+
+                    const nowIso = new Date().toISOString();
+                    const tipoRegistro = String(entry && entry.tipo_registro || '').toUpperCase();
+                    const eventAt = entry && entry.ocorrido_em ? entry.ocorrido_em : nowIso;
+                    const existingResult = await client
+                        .from(PERSON_PROFILE_TABLE)
+                        .select('id,nome_atual,total_bous,total_aits')
+                        .eq('rg', rg)
+                        .maybeSingle();
+
+                    if (existingResult.error) {
+                        return { ok: false, warning: buildSyncWarning(`Falha ao localizar perfil do RG ${rg}`, existingResult.error) };
+                    }
+
+                    const existing = existingResult.data || null;
+                    const profilePayload = {
+                        rg: rg,
+                        nome_atual: nome || (existing ? existing.nome_atual : null) || null,
+                        total_bous: Number(existing && existing.total_bous || 0) + (tipoRegistro === 'BOU' ? 1 : 0),
+                        total_aits: Number(existing && existing.total_aits || 0) + (tipoRegistro === 'AIT' ? 1 : 0),
+                        ultima_ocorrencia_tipo: tipoRegistro || null,
+                        ultima_ocorrencia_id: entry && entry.registro_id ? entry.registro_id : null,
+                        ultima_ocorrencia_em: eventAt,
+                        atualizado_em: nowIso
+                    };
+
+                    let perfilId = existing ? existing.id : null;
+                    if (existing) {
+                        const updateResult = await client
+                            .from(PERSON_PROFILE_TABLE)
+                            .update(profilePayload)
+                            .eq('id', existing.id)
+                            .select('id')
+                            .single();
+                        if (updateResult.error || !updateResult.data) {
+                            return { ok: false, warning: buildSyncWarning(`Falha ao atualizar perfil do RG ${rg}`, updateResult.error) };
+                        }
+                        perfilId = updateResult.data.id;
+                    } else {
+                        const insertResult = await client
+                            .from(PERSON_PROFILE_TABLE)
+                            .insert(Object.assign({}, profilePayload, { criado_em: nowIso }))
+                            .select('id')
+                            .single();
+                        if (insertResult.error || !insertResult.data) {
+                            return { ok: false, warning: buildSyncWarning(`Falha ao criar perfil do RG ${rg}`, insertResult.error) };
+                        }
+                        perfilId = insertResult.data.id;
+                    }
+
+                    const historyPayload = {
+                        perfil_id: perfilId,
+                        rg: rg,
+                        nome_informado: nome || null,
+                        tipo_registro: tipoRegistro,
+                        registro_id: entry && entry.registro_id ? entry.registro_id : null,
+                        user_id: userId,
+                        resumo: normalizeText(entry && entry.resumo) || null,
+                        dados: entry && entry.dados ? entry.dados : {},
+                        criado_em: eventAt
+                    };
+
+                    const historyResult = await client
+                        .from(PERSON_HISTORY_TABLE)
+                        .upsert(historyPayload, { onConflict: 'tipo_registro,registro_id,rg' });
+
+                    if (historyResult.error) {
+                        return { ok: false, warning: buildSyncWarning(`Falha ao registrar histórico do RG ${rg}`, historyResult.error) };
+                    }
+
+                    return { ok: true, skipped: false };
+                };
+
+                const syncPessoasPerfis = async function (entries) {
+                    const warnings = [];
+                    const handled = new Set();
+
+                    for (const entry of (entries || [])) {
+                        const key = normalizeRg(entry && entry.rg);
+                        if (!key || handled.has(key)) continue;
+                        handled.add(key);
+                        const result = await syncPessoaPerfil(entry);
+                        if (result && result.ok === false && result.warning) {
+                            warnings.push(result.warning);
+                        }
+                    }
+
+                    return warnings;
+                };
+
+                const buildBouTextoOriginal = function (payload, isSecond) {
+                    const acusadoNome = isSecond ? payload.acusado2_nome : payload.acusado_nome;
+                    const acusadoRg = isSecond ? payload.acusado2_rg : payload.acusado_rg;
+                    const natureza = isSecond ? payload.acusado2_natureza : payload.natureza;
+                    const lines = [
+                        'BOLETIM DE OCORRÊNCIA UNIFICADO (BOU) - ' + (payload.bou_prf || '-'),
+                        '',
+                        'Unidade: ' + (payload.unidade || '-'),
+                        'Equipe: ' + (payload.equipe || '-'),
+                        'Motorista: ' + (payload.motorista || '-'),
+                        'Chefe da viatura: ' + (payload.chefe_viatura || '-'),
+                        'Auxiliar 1: ' + (payload.terceiro_homem || '-'),
+                        'Auxiliar 2: ' + (payload.quarto_homem || '-'),
+                        '',
+                        'DADOS DO CUSTODIADO:',
+                        '',
+                        'Custodiado: ' + (acusadoNome || '-'),
+                        'RG custodiado: ' + (acusadoRg || '-'),
+                        'Natureza: ' + (natureza || '-')
+                    ];
+
+                    if (!isSecond && (payload.acusado2_nome || payload.acusado2_rg || payload.acusado2_natureza)) {
+                        lines.push(
+                            '',
+                            'SEGUNDO CUSTODIADO:',
+                            '',
+                            'Custodiado: ' + (payload.acusado2_nome || '-'),
+                            'RG custodiado: ' + (payload.acusado2_rg || '-'),
+                            'Natureza: ' + (payload.acusado2_natureza || '-')
+                        );
+                    }
+
+                    lines.push(
+                        '',
+                        'DADOS DA OCORRÊNCIA:',
+                        '',
+                        'Relato da ocorrência: ' + (payload.relato || '-'),
+                        'Data e hora: ' + (payload.data_hora || '-'),
+                        'Local: ' + (payload.local || '-'),
+                        'Envolvidos: ' + (payload.envolvidos || '-'),
+                        'Resultado: ' + (payload.resultado || '-'),
+                        'Material apreendido: ' + (payload.material || '-'),
+                        'Veículo: ' + (payload.veiculo || '-'),
+                        'Emplacamento: ' + (payload.coloracao || '-'),
+                        'Assinatura: ' + (payload.assinatura || '-')
+                    );
+
+                    return lines.join('\n');
+                };
+
                 const now = new Date();
                 if (numero) {
                     const year = now.getFullYear();
@@ -1288,6 +1460,21 @@
                     if (lastTitle) lastTitle.textContent = 'Ultimo BOU enviado: -';
                 }
 
+                const resultadoInput = document.getElementById('bou-resultado');
+                const resultadoButtons = Array.from(document.querySelectorAll('.bou-resultado-option'));
+                const setResultado = function (value) {
+                    if (resultadoInput) resultadoInput.value = value || '';
+                    resultadoButtons.forEach(function (button) {
+                        button.classList.toggle('is-selected', button.getAttribute('data-value') === value);
+                    });
+                };
+                resultadoButtons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        const value = button.getAttribute('data-value') || '';
+                        setResultado(resultadoInput && resultadoInput.value === value ? '' : value);
+                    });
+                });
+
                 if (form) {
                     form.addEventListener('submit', async function (event) {
                         event.preventDefault();
@@ -1338,13 +1525,14 @@
                         };
 
                         try {
+                            const createdAtIso = new Date().toISOString();
                             const insertResult = await client
                                 .from('bous')
                                 .insert({
                                     user_id: userId,
                                     titulo: payload.titulo || payload.bou_prf,
                                     conteudo_completo: JSON.stringify(payload),
-                                    data_criacao: new Date().toISOString()
+                                    data_criacao: createdAtIso
                                 })
                                 .select('id,user_id')
                                 .single();
@@ -1369,11 +1557,84 @@
                                 return;
                             }
 
+                            const profileWarnings = await syncPessoasPerfis([
+                                {
+                                    nome: payload.acusado_nome,
+                                    rg: payload.acusado_rg,
+                                    tipo_registro: 'BOU',
+                                    registro_id: bouId,
+                                    ocorrido_em: createdAtIso,
+                                    resumo: payload.natureza || payload.titulo || payload.bou_prf,
+                                    dados: {
+                                        origem: 'relatorios.html',
+                                        posicao: 'principal',
+                                        titulo: payload.titulo || null,
+                                        bou_prf: payload.bou_prf || null,
+                                        natureza: payload.natureza || null,
+                                        acusado_nome: payload.acusado_nome || null,
+                                        acusado_rg: payload.acusado_rg || null,
+                                        data_hora: payload.data_hora || null,
+                                        local: payload.local || null,
+                                        relato: payload.relato || null,
+                                        resultado: payload.resultado || null,
+                                        material: payload.material || null,
+                                        unidade: payload.unidade || null,
+                                        equipe: payload.equipe || null,
+                                        motorista: payload.motorista || null,
+                                        chefe_viatura: payload.chefe_viatura || null,
+                                        terceiro_homem: payload.terceiro_homem || null,
+                                        quarto_homem: payload.quarto_homem || null,
+                                        envolvidos: payload.envolvidos || null,
+                                        coloracao: payload.coloracao || null,
+                                        assinatura: payload.assinatura || null,
+                                        texto_original: buildBouTextoOriginal(payload, false)
+                                    }
+                                },
+                                {
+                                    nome: payload.acusado2_nome,
+                                    rg: payload.acusado2_rg,
+                                    tipo_registro: 'BOU',
+                                    registro_id: bouId,
+                                    ocorrido_em: createdAtIso,
+                                    resumo: payload.acusado2_natureza || payload.titulo || payload.bou_prf,
+                                    dados: {
+                                        origem: 'relatorios.html',
+                                        posicao: 'secundario',
+                                        titulo: payload.titulo || null,
+                                        bou_prf: payload.bou_prf || null,
+                                        natureza: payload.acusado2_natureza || null,
+                                        acusado_nome: payload.acusado2_nome || null,
+                                        acusado_rg: payload.acusado2_rg || null,
+                                        data_hora: payload.data_hora || null,
+                                        local: payload.local || null,
+                                        relato: payload.relato || null,
+                                        resultado: payload.resultado || null,
+                                        material: payload.material || null,
+                                        unidade: payload.unidade || null,
+                                        equipe: payload.equipe || null,
+                                        motorista: payload.motorista || null,
+                                        chefe_viatura: payload.chefe_viatura || null,
+                                        terceiro_homem: payload.terceiro_homem || null,
+                                        quarto_homem: payload.quarto_homem || null,
+                                        envolvidos: payload.envolvidos || null,
+                                        coloracao: payload.coloracao || null,
+                                        assinatura: payload.assinatura || null,
+                                        texto_original: buildBouTextoOriginal(payload, true)
+                                    }
+                                }
+                            ]);
+                            const profileWarningText = profileWarnings.length
+                                ? ' Perfil do acusado/infrator não foi sincronizado: ' + profileWarnings.join(' | ')
+                                : '';
                             const rpcResult = await client.rpc('send_bou_to_discord', { p_bou_id: bouId });
                             if (rpcResult.error) {
-                                setStatus('Salvo, mas falhou ao enviar ao Discord.', true);
+                                setStatus('Salvo, mas falhou ao enviar ao Discord.' + profileWarningText, true);
                             } else {
-                                setStatus('BOU enviado com sucesso.', false);
+                                if (profileWarnings.length) {
+                                    setStatus('BOU enviado com sucesso.' + profileWarningText, true);
+                                } else {
+                                    setStatus('BOU enviado com sucesso.', false);
+                                }
                                 form.reset();
                                 if (numero) {
                                     const year = new Date().getFullYear();
@@ -1385,6 +1646,7 @@
                                 if (assinatura) {
                                     assinatura.value = `Assinado digitalmente por ${nome}${cargo ? ' - ' + cargo : ''}`;
                                 }
+                                setResultado('');
                             }
                         } catch (e) {
                             setStatus('Erro ao enviar.', true);

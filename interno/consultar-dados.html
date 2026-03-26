@@ -1,0 +1,1435 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <title>Consultar Dados - PRF S&atilde;o Paulo</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/prflogoico.ico">
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
+        window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+
+        (async function enforceAuth() {
+            try {
+                if (!window.supabase || !window.supabase.createClient) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const result = await client.auth.getSession();
+                const session = result && result.data ? result.data.session : null;
+                const user = session ? session.user : null;
+                if (!user) {
+                    window.location.replace('../login.html');
+                    return;
+                }
+
+                const profileQuery = await client
+                    .from('profiles')
+                    .select('aprovado')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                const profile = profileQuery ? profileQuery.data : null;
+                const profileError = profileQuery ? profileQuery.error : null;
+
+                if (profileError || !profile || profile.aprovado !== true) {
+                    await client.auth.signOut();
+                    window.location.replace('../login.html');
+                    return;
+                }
+            } catch (e) {
+                window.location.replace('../login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="inicio-page">
+<div id="inicio-loader-wrapper" class="inicio-loader-wrapper" aria-hidden="true">
+    <div class="inicio-loader"></div>
+    <div class="inicio-loader-section section-left"></div>
+    <div class="inicio-loader-section section-right"></div>
+    <img class="inicio-loader-logo" src="assets/img/prf.png" alt="PRF">
+</div>
+    <div class="inicio-shell">
+        <header class="inicio-topbar" aria-label="Cabecalho">
+            <div class="inicio-topbar-controls" aria-label="Controles da janela">
+                <a class="mac-dot is-red" href="../index.html" title="Voltar ao site"></a>
+                <a class="mac-dot is-yellow" href="inicio.html" title="Inicio"></a>
+                <button class="mac-dot is-white" type="button" title="Recarregar" onclick="window.location.reload()"></button>
+            </div>
+            <div class="inicio-topbar-title">SIGA - Painel Interno</div>
+            <button class="inicio-topbar-logout" type="button" onclick="auth.logout()">
+                <i class="fas fa-right-from-bracket"></i>
+                SAIR
+            </button>
+        </header>
+
+        <div class="inicio-body">
+        <div class="inicio-rail" aria-label="Menu e Plantao">
+            <aside class="inicio-menu" aria-label="Menu principal">
+                <div aria-hidden="true">
+                    <a href="inicio.html"><img src="assets/img/prf.png"></a>
+                </div>
+                <nav class="inicio-menu-items">
+                        <a class="inicio-menu-item" href="inicio.html">
+                            <i class="fas fa-house"></i>
+                            <span>Inicio</span>
+                        </a>
+                        <a class="inicio-menu-item" href="paineldgp.html" data-requires-admin="true">
+                            <i class="fas fa-user-shield"></i>
+                            <span>Painel DGP</span>
+                            <i class="fas fa-lock inicio-menu-lock" aria-hidden="true"></i>
+                        </a>
+                        <a class="inicio-menu-item" href="meu-perfil.html">
+                            <i class="fas fa-id-badge"></i>
+                            <span>Meu perfil</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatorios.html">
+                            <i class="fas fa-file-lines"></i>
+                            <span>Relatorios</span>
+                        </a>
+                        <a class="inicio-menu-item" href="relatoriospublicados.html">
+                            <i class="fas fa-file-circle-check"></i>
+                            <span>Relatorios publicados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="regulamentos.html">
+                            <i class="fas fa-scale-balanced"></i>
+                            <span>Regulamentos</span>
+                        </a>
+                        <a class="inicio-menu-item is-active" href="consultar-dados.html">
+                            <i class="fas fa-database"></i>
+                            <span>Consultar Dados</span>
+                        </a>
+                        <a class="inicio-menu-item" href="avisos-internos.html">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Avisos internos</span>
+                        </a>
+                        <a class="inicio-menu-item" href="equipe.html">
+                            <i class="fas fa-users"></i>
+                            <span>Equipe</span>
+                        </a>
+                        <a class="inicio-menu-item" href="diario-oficial.html">
+                            <i class="fas fa-newspaper"></i>
+                            <span>Diario Oficial</span>
+                        </a>
+                </nav>
+
+                <div class="inicio-menu-footer">
+                    <a class="inicio-menu-avatar-link" href="meu-perfil.html">
+                        <img id="inicio-footer-avatar" class="inicio-menu-avatar" src="assets/img/prf.png" alt="Foto do usuario">
+                    </a>
+                    <span id="inicio-footer-name" class="inicio-menu-user">Operador</span>
+                </div>
+            </aside>
+
+            <section class="plantao-panel" aria-label="Plantao">
+                <header class="plantao-header">
+                    <div class="plantao-title">
+                        <h2>Plantão</h2>
+                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    </div>
+                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                        <i class="fas fa-user-clock"></i>
+                        Entrar em servico
+                    </button>
+                </header>
+                <div class="plantao-list" id="inicio-on-duty-list">
+                    <p class="plantao-empty">Carregando agentes...</p>
+                </div>
+            </section>
+        </div>
+
+        <main class="inicio-main">
+            <header class="inicio-header">
+                <div class="inicio-user-card">
+                    <div class="inicio-user-photo">
+                        <img id="inicio-user-photo" src="assets/img/prf.png" alt="Foto do usuario">
+                    </div>
+                    <div class="inicio-user-text">
+                        <h1 id="inicio-user-name" class="inicio-user-name">Usuario</h1>
+                        <div class="inicio-user-cargo">
+                            <img id="inicio-user-cargo-img" class="inicio-user-cargo-img is-hidden" alt="Imagem do cargo">
+                            <span id="inicio-user-cargo">Cargo do agente</span>
+                        </div>
+                        <span id="inicio-user-rg" class="inicio-user-rg">RG: -</span>
+                        <div id="inicio-user-medals" class="inicio-user-medals is-hidden" aria-label="Condecorações do Usuário"></div>
+                    </div>
+                </div>
+                <aside class="inicio-user-meta">
+                    <div id="inicio-user-grupamentos" class="inicio-user-meta-title">Grupamento</div>
+                    <div class="inicio-user-meta-row">
+                        <div class="inicio-user-meta-label">Cursos:</div>
+                        <div id="inicio-user-cursos" class="inicio-user-meta-value">-</div>
+                    </div>
+                </aside>
+            </header>
+
+            <section class="inicio-content-card consulta-page" aria-label="Conteudo">
+                <div class="consulta-header">
+                    <div>
+                        <h2>Consultar Dados</h2>
+                        <p>Pesquise pelo RG ou pelo nome do acusado/infrator para localizar o perfil consolidado e o histórico de BOU/AIT.</p>
+                    </div>
+                </div>
+
+                <form id="consulta-form" class="consulta-search" aria-label="Buscar por RG ou nome">
+                    <label class="consulta-search-field">
+                        <span>RG ou Nome</span>
+                        <input id="consulta-rg" type="text" placeholder="Digite o RG ou o nome do acusado/infrator" required>
+                        <div id="consulta-suggestions" class="consulta-suggestions is-hidden"></div>
+                    </label>
+                    <button id="consulta-submit" class="inicio-pill" type="submit">
+                        <i class="fas fa-magnifying-glass"></i>
+                        Buscar
+                    </button>
+                </form>
+
+                <div class="consulta-recentes">
+                    <span class="consulta-recentes-label">Pesquisas recentes</span>
+                    <div id="consulta-recentes-list" class="consulta-recentes-list">
+                        <p class="publicados-empty">Nenhuma pesquisa recente.</p>
+                    </div>
+                </div>
+
+                <p id="consulta-status" class="consulta-status publicados-empty">Informe um RG ou nome para iniciar a pesquisa.</p>
+
+                <div id="consulta-empty" class="consulta-empty">
+                    <div class="consulta-empty-icon"><i class="fas fa-fingerprint"></i></div>
+                    <h3>Nenhuma consulta realizada</h3>
+                    <p>Ao buscar por RG ou nome, os dados consolidados do perfil e o histórico de ocorrências aparecerão aqui.</p>
+                </div>
+
+                <div id="consulta-results" class="consulta-results is-hidden">
+                    <section class="consulta-profile-card">
+                        <div class="consulta-profile-top">
+                            <div>
+                                <span class="consulta-eyebrow">Perfil consolidado</span>
+                                <h3 id="consulta-nome">Nome - RG</h3>
+                            </div>
+                            <span id="consulta-last-badge" class="consulta-badge">Sem ocorrências</span>
+                        </div>
+
+                        <div class="consulta-stats">
+                            <div class="consulta-stat">
+                                <span>Total de apreensões</span>
+                                <strong id="consulta-total-bous">0</strong>
+                            </div>
+                            <div class="consulta-stat">
+                                <span>Total de autuações</span>
+                                <strong id="consulta-total-aits">0</strong>
+                            </div>
+                            <div class="consulta-stat consulta-stat-wide">
+                                <span>Última ocorrência</span>
+                                <strong id="consulta-last-date">-</strong>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="consulta-history-card">
+                        <div class="consulta-history-head">
+                            <div>
+                                <span class="consulta-eyebrow">Histórico</span>
+                                <h3>Ocorrências localizadas</h3>
+                            </div>
+                            <div class="consulta-filter-group" role="tablist" aria-label="Filtrar histórico">
+                                <button class="consulta-filter is-active" type="button" data-filter="all">Tudo</button>
+                                <button class="consulta-filter" type="button" data-filter="bou">BOU</button>
+                                <button class="consulta-filter" type="button" data-filter="ait">AIT</button>
+                            </div>
+                        </div>
+                        <div id="consulta-history" class="consulta-history-list"></div>
+                    </section>
+                </div>
+            </section>
+        </main>
+     </div>
+</div>
+    <div id="consulta-bou-modal" class="publicados-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="publicados-modal-card consulta-bou-modal-card">
+            <button id="consulta-bou-close" class="publicados-modal-close" type="button" aria-label="Fechar">
+                <i class="fas fa-xmark"></i>
+            </button>
+            <div class="publicados-modal-body">
+                <h3 id="consulta-bou-modal-title">BOU</h3>
+                <div id="consulta-bou-modal-meta" class="publicados-modal-meta"></div>
+                <button id="consulta-bou-copy" class="publicados-modal-copy" type="button">
+                    <i class="fas fa-copy"></i>
+                    <span>Copiar texto</span>
+                </button>
+                <div id="consulta-bou-modal-content" class="publicados-modal-content consulta-bou-modal-content"></div>
+            </div>
+        </div>
+    </div>
+    <script src="../app.js" defer></script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupConsultaDados() {
+                const form = document.getElementById('consulta-form');
+                const input = document.getElementById('consulta-rg');
+                const submit = document.getElementById('consulta-submit');
+                const status = document.getElementById('consulta-status');
+                const empty = document.getElementById('consulta-empty');
+                const results = document.getElementById('consulta-results');
+                const recentList = document.getElementById('consulta-recentes-list');
+                const suggestionsNode = document.getElementById('consulta-suggestions');
+                const nameNode = document.getElementById('consulta-nome');
+                const rgNode = document.getElementById('consulta-rg-display');
+                const badgeNode = document.getElementById('consulta-last-badge');
+                const totalBousNode = document.getElementById('consulta-total-bous');
+                const totalAitsNode = document.getElementById('consulta-total-aits');
+                const lastDateNode = document.getElementById('consulta-last-date');
+                const historyNode = document.getElementById('consulta-history');
+                const filterButtons = Array.from(document.querySelectorAll('.consulta-filter'));
+                const modal = document.getElementById('consulta-bou-modal');
+                const modalClose = document.getElementById('consulta-bou-close');
+                const modalCopy = document.getElementById('consulta-bou-copy');
+                const modalTitle = document.getElementById('consulta-bou-modal-title');
+                const modalMeta = document.getElementById('consulta-bou-modal-meta');
+                const modalContent = document.getElementById('consulta-bou-modal-content');
+                if (!form || !input || !submit || !status || !empty || !results || !historyNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const RECENT_KEY = 'consulta-dados-recentes';
+                const state = {
+                    filter: 'all',
+                    historico: [],
+                    registrosPorChave: {},
+                    suggestions: [],
+                    highlightedSuggestion: -1
+                };
+
+                const normalizeRg = function (value) {
+                    return String(value || '').replace(/\D/g, '');
+                };
+
+                const normalizeText = function (value) {
+                    return String(value || '').replace(/\s+/g, ' ').trim();
+                };
+
+                const escapeHtml = function (value) {
+                    return String(value || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                };
+
+                const formatDate = function (value) {
+                    if (!value) return '-';
+                    const date = new Date(value);
+                    if (Number.isNaN(date.getTime())) return String(value);
+                    return date.toLocaleString('pt-BR');
+                };
+
+                const setStatus = function (text, isError) {
+                    status.textContent = text;
+                    status.style.color = isError ? '#b91c1c' : '#64748b';
+                };
+
+                const closeSuggestions = function () {
+                    state.suggestions = [];
+                    state.highlightedSuggestion = -1;
+                    if (suggestionsNode) {
+                        suggestionsNode.innerHTML = '';
+                        suggestionsNode.classList.add('is-hidden');
+                    }
+                };
+
+                const renderSuggestions = function () {
+                    if (!suggestionsNode) return;
+                    if (!state.suggestions.length) {
+                        closeSuggestions();
+                        return;
+                    }
+
+                    suggestionsNode.innerHTML = state.suggestions.map(function (item, index) {
+                        const label = escapeHtml((item.nome || 'Nome não informado') + ' - ' + (item.rg || '-'));
+                        const isActive = index === state.highlightedSuggestion;
+                        return '<button class="consulta-suggestion' + (isActive ? ' is-active' : '') + '" type="button" data-index="' + index + '">' + label + '</button>';
+                    }).join('');
+                    suggestionsNode.classList.remove('is-hidden');
+
+                    suggestionsNode.querySelectorAll('.consulta-suggestion').forEach(function (button) {
+                        button.addEventListener('mousedown', function (event) {
+                            event.preventDefault();
+                        });
+                        button.addEventListener('click', function () {
+                            const index = Number(button.getAttribute('data-index'));
+                            const item = state.suggestions[index];
+                            if (!item) return;
+                            input.value = item.nome || item.rg || '';
+                            closeSuggestions();
+                            form.requestSubmit();
+                        });
+                    });
+                };
+
+                const fetchSuggestions = async function (query) {
+                    const normalized = normalizeText(query);
+                    if (!suggestionsNode || !normalized || normalizeRg(normalized) || normalized.length < 2) {
+                        closeSuggestions();
+                        return;
+                    }
+
+                    try {
+                        const result = await client
+                            .from('acusados_infratores')
+                            .select('nome_atual,rg')
+                            .ilike('nome_atual', '%' + normalized + '%')
+                            .limit(6);
+
+                        if (result.error) {
+                            closeSuggestions();
+                            return;
+                        }
+
+                        const seen = new Set();
+                        state.suggestions = (Array.isArray(result.data) ? result.data : []).filter(function (item) {
+                            const nome = normalizeText(item && item.nome_atual);
+                            const rg = String(item && item.rg || '').trim();
+                            const key = nome.toLowerCase() + '|' + rg;
+                            if (!nome || seen.has(key)) return false;
+                            seen.add(key);
+                            return true;
+                        }).map(function (item) {
+                            return {
+                                nome: normalizeText(item.nome_atual),
+                                rg: String(item.rg || '').trim()
+                            };
+                        }).sort(function (a, b) {
+                            const rgA = Number(String(a.rg || '').replace(/\D/g, '')) || 0;
+                            const rgB = Number(String(b.rg || '').replace(/\D/g, '')) || 0;
+                            return rgA - rgB;
+                        });
+                        state.highlightedSuggestion = state.suggestions.length ? 0 : -1;
+                        renderSuggestions();
+                    } catch (e) {
+                        closeSuggestions();
+                    }
+                };
+
+                const loadRecentes = function () {
+                    try {
+                        const raw = localStorage.getItem(RECENT_KEY);
+                        const parsed = raw ? JSON.parse(raw) : [];
+                        return Array.isArray(parsed) ? parsed : [];
+                    } catch (e) {
+                        return [];
+                    }
+                };
+
+                const saveRecentes = function (items) {
+                    try {
+                        localStorage.setItem(RECENT_KEY, JSON.stringify(items.slice(0, 3)));
+                    } catch (e) {
+                        /* ignore */
+                    }
+                };
+
+                const renderRecentes = function () {
+                    if (!recentList) return;
+                    const items = loadRecentes();
+                    if (!items.length) {
+                        recentList.innerHTML = '<p class="publicados-empty">Nenhuma pesquisa recente.</p>';
+                        return;
+                    }
+
+                    recentList.innerHTML = items.map(function (item) {
+                        const label = escapeHtml((item.nome || 'Nome não informado') + ' - ' + (item.rg || item.query || '-'));
+                        return '<button class="consulta-recente-btn" type="button" data-query="' + escapeHtml(item.query || '') + '">' + label + '</button>';
+                    }).join('');
+
+                    recentList.querySelectorAll('.consulta-recente-btn').forEach(function (button) {
+                        button.addEventListener('click', function () {
+                            const query = button.getAttribute('data-query') || '';
+                            input.value = query;
+                            form.requestSubmit();
+                        });
+                    });
+                };
+
+                const pushRecente = function (item) {
+                    if (!item || !item.query) return;
+                    const normalizedQuery = String(item.query).trim();
+                    if (!normalizedQuery) return;
+                    const next = loadRecentes().filter(function (entry) {
+                        return String(entry.query || '').trim().toLowerCase() !== normalizedQuery.toLowerCase();
+                    });
+                    next.unshift({
+                        query: normalizedQuery,
+                        nome: item.nome || 'Nome não informado',
+                        rg: item.rg || ''
+                    });
+                    saveRecentes(next);
+                    renderRecentes();
+                };
+
+                const showEmpty = function (text) {
+                    closeSuggestions();
+                    results.classList.add('is-hidden');
+                    empty.classList.remove('is-hidden');
+                    setStatus(text, false);
+                };
+
+                const renderCopyablePre = function (text) {
+                    return '<pre class="consulta-registro-texto">' + escapeHtml(text) + '</pre>';
+                };
+
+                const openModal = function () {
+                    if (!modal) return;
+                    modal.classList.add('is-active');
+                    modal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('publicados-modal-open');
+                };
+
+                const closeModal = function () {
+                    if (!modal) return;
+                    modal.classList.remove('is-active');
+                    modal.setAttribute('aria-hidden', 'true');
+                    document.body.classList.remove('publicados-modal-open');
+                };
+
+                const buildBouText = function (payload) {
+                    const original = payload && typeof payload === 'object'
+                        ? (payload.texto_original || (payload.campos ? payload.campos.texto_original : '') || payload.texto || '')
+                        : '';
+                    const rawOriginal = String(original || '').trim();
+                    if (rawOriginal) {
+                        if (rawOriginal.startsWith('{') && rawOriginal.endsWith('}')) {
+                            try {
+                                const parsedOriginal = JSON.parse(rawOriginal);
+                                return buildBouText(parsedOriginal);
+                            } catch (e) {
+                                /* ignore */
+                            }
+                        }
+                        return String(original);
+                    }
+
+                    return [
+                        'BOLETIM DE OCORRÊNCIA UNIFICADO (BOU) - ' + (payload.bou_prf || '-'),
+                        '',
+                        'Unidade: ' + (payload.unidade || '-'),
+                        'Equipe: ' + (payload.equipe || '-'),
+                        'Motorista: ' + (payload.motorista || '-'),
+                        'Chefe da viatura: ' + (payload.chefe_viatura || '-'),
+                        'Auxiliar 1: ' + (payload.terceiro_homem || '-'),
+                        'Auxiliar 2: ' + (payload.quarto_homem || '-'),
+                        '',
+                        'DADOS DO CUSTODIADO:',
+                        '',
+                        'Custodiado: ' + (payload.acusado_nome || '-'),
+                        'RG custodiado: ' + (payload.acusado_rg || '-'),
+                        'Natureza: ' + (payload.natureza || '-'),
+                        ...(payload.acusado2_nome || payload.acusado2_rg || payload.acusado2_natureza ? [
+                            '',
+                            'SEGUNDO CUSTODIADO:',
+                            '',
+                            'Custodiado: ' + (payload.acusado2_nome || '-'),
+                            'RG custodiado: ' + (payload.acusado2_rg || '-'),
+                            'Natureza: ' + (payload.acusado2_natureza || '-')
+                        ] : []),
+                        '',
+                        'DADOS DA OCORRÊNCIA:',
+                        '',
+                        'Relato da ocorrência: ' + (payload.relato || '-'),
+                        'Data e hora: ' + (payload.data_hora || '-'),
+                        'Local: ' + (payload.local || '-'),
+                        'Envolvidos: ' + (payload.envolvidos || '-'),
+                        'Resultado: ' + (payload.resultado || '-'),
+                        'Material apreendido: ' + (payload.material || '-'),
+                        'Veículo: ' + (payload.veiculo || '-'),
+                        'Emplacamento: ' + (payload.coloracao || '-'),
+                        'Assinatura: ' + (payload.assinatura || '-')
+                    ].join('\n');
+                };
+
+                const buildAitText = function (payload) {
+                    const original = payload && typeof payload === 'object'
+                        ? (payload.texto_original || (payload.campos ? payload.campos.texto_original : '') || payload.texto || '')
+                        : '';
+                    const rawOriginal = String(original || '').trim();
+                    if (rawOriginal) {
+                        if (rawOriginal.startsWith('{') && rawOriginal.endsWith('}')) {
+                            try {
+                                const parsedOriginal = JSON.parse(rawOriginal);
+                                return buildAitText(parsedOriginal);
+                            } catch (e) {
+                                /* ignore */
+                            }
+                        }
+                        return String(original);
+                    }
+
+                    return [
+                        'AUTO DE INFRACAO DE TRANSITO (AIT):',
+                        '',
+                        'Número do AIT: ' + (payload.numero_ait || payload.numeroAIT || '-'),
+                        'Responsável: ' + (payload.policial_responsavel || payload.responsavel || '-'),
+                        'Infrator: ' + (payload.infrator_nome || payload.nome_infrator || payload.infrator || '-'),
+                        'RG: ' + (payload.infrator_rg || payload.rg_infrator || payload.rg || '-'),
+                        'Infrações: ' + (payload.infracoes || payload.infracao || '-'),
+                        'Multa: ' + (payload.valor_multa || payload.multa || '-'),
+                        'Apreensão do veículo: ' + (payload.apreensao_veiculo || payload.apreensao || '-'),
+                        'Data e hora: ' + (payload.data_hora || payload.datahora || '-'),
+                        'Local: ' + (payload.local || '-'),
+                        'Veículo: ' + (payload.veiculo || payload.marca_modelo || payload.modelo || '-'),
+                        'Placa: ' + (payload.placa || payload.emplacamento || '-')
+                    ].join('\n');
+                };
+
+                const openRegistroModal = async function (tipo, registroId) {
+                    if (!tipo || !registroId || !modalTitle || !modalMeta || !modalContent) return;
+                    const upperTipo = String(tipo).toUpperCase();
+                    const cacheKey = upperTipo + ':' + String(registroId);
+                    const registroCache = state.registrosPorChave[cacheKey] || null;
+                    modalTitle.textContent = upperTipo;
+                    modalMeta.textContent = 'Carregando...';
+                    modalContent.innerHTML = '';
+                    openModal();
+
+                    if (registroCache && registroCache.dados && typeof registroCache.dados === 'object') {
+                        const payload = registroCache.dados;
+                        modalTitle.textContent = upperTipo === 'AIT'
+                            ? (payload.numero_ait || payload.numeroAIT || ('AIT #' + registroId))
+                            : (payload.titulo || payload.bou_prf || ('BOU #' + registroId));
+                        modalMeta.textContent = 'Registro #' + registroId + ' • ' + formatDate(registroCache.criado_em);
+                        const plainText = upperTipo === 'AIT' ? buildAitText(payload) : buildBouText(payload);
+                        modalContent.innerHTML = renderCopyablePre(plainText);
+                        modalContent.setAttribute('data-copy-text', plainText);
+                        return;
+                    }
+
+                    try {
+                        const table = upperTipo === 'AIT' ? 'aits' : 'bous';
+                        const result = await client
+                            .from(table)
+                            .select('id,titulo,numero_ait,conteudo_completo,data_criacao,created_at')
+                            .eq('id', registroId)
+                            .maybeSingle();
+
+                        if (result.error || !result.data) {
+                            throw result.error || new Error('Registro não encontrado');
+                        }
+
+                        let payload = result.data.conteudo_completo || {};
+                        if (typeof payload === 'string') {
+                            try {
+                                payload = JSON.parse(payload);
+                            } catch (e) {
+                                payload = {};
+                            }
+                        }
+
+                        modalTitle.textContent = upperTipo === 'AIT'
+                            ? (payload.numero_ait || payload.numeroAIT || ('AIT #' + result.data.id))
+                            : (payload.titulo || payload.bou_prf || ('BOU #' + result.data.id));
+                        modalMeta.textContent = 'Registro #' + result.data.id + ' • ' + formatDate(result.data.data_criacao || result.data.created_at);
+                        const plainText = upperTipo === 'AIT' ? buildAitText(payload) : buildBouText(payload);
+                        modalContent.innerHTML = renderCopyablePre(plainText);
+                        modalContent.setAttribute('data-copy-text', plainText);
+                    } catch (error) {
+                        modalMeta.textContent = 'Falha ao carregar';
+                        modalContent.innerHTML = '<p class="publicados-empty">Não foi possível abrir este registro.</p>';
+                        modalContent.removeAttribute('data-copy-text');
+                    }
+                };
+
+                const renderHistorico = function (items) {
+                    state.registrosPorChave = {};
+                    (Array.isArray(items) ? items : []).forEach(function (item) {
+                        const tipo = String(item && item.tipo_registro || '').toUpperCase();
+                        const id = item && item.registro_id ? String(item.registro_id) : '';
+                        if (tipo && id) {
+                            state.registrosPorChave[tipo + ':' + id] = item;
+                        }
+                    });
+
+                    const filtered = (Array.isArray(items) ? items : []).filter(function (item) {
+                        const tipo = String(item && item.tipo_registro || '').toUpperCase();
+                        if (state.filter === 'bou') return tipo === 'BOU';
+                        if (state.filter === 'ait') return tipo === 'AIT';
+                        return tipo === 'BOU' || tipo === 'AIT';
+                    });
+
+                    if (!filtered.length) {
+                        historyNode.innerHTML = '<p class="publicados-empty">Nenhum registro encontrado para este filtro.</p>';
+                        return;
+                    }
+
+                    historyNode.innerHTML = filtered.map(function (item) {
+                        const dados = item && item.dados && typeof item.dados === 'object' ? item.dados : {};
+                        const tipo = String(item && item.tipo_registro || '').toUpperCase();
+                        const titulo = tipo === 'AIT'
+                            ? escapeHtml(dados.numero_ait || item.resumo || 'AIT sem número')
+                            : escapeHtml(dados.titulo || dados.bou_prf || item.resumo || 'BOU sem título');
+                        const artigos = tipo === 'AIT'
+                            ? escapeHtml(dados.infracoes || item.resumo || '-')
+                            : escapeHtml(dados.natureza || item.resumo || '-');
+                        const registroId = escapeHtml(item.registro_id || '-');
+                        const criadoEm = escapeHtml(formatDate(item.criado_em));
+
+                        return [
+                            '<article class="consulta-history-item">',
+                            `<div class="consulta-history-item-top"><span class="consulta-history-badge is-${tipo.toLowerCase()}">${tipo}</span><strong>Registro #${registroId}</strong><span>${criadoEm}</span></div>`,
+                            `<h4>${titulo}</h4>`,
+                            `<p><strong>Data:</strong> ${criadoEm}</p>`,
+                            `<p><strong>${tipo === 'AIT' ? 'Infrações' : 'Artigos'}:</strong> ${artigos}</p>`,
+                            `<div class="consulta-history-actions"><button class="consulta-history-open" type="button" data-id="${registroId}" data-tipo="${tipo}"><i class="fas fa-up-right-and-down-left-from-center"></i> Expandir ${tipo}</button></div>`,
+                            '</article>'
+                        ].join('');
+                    }).join('');
+
+                    historyNode.querySelectorAll('.consulta-history-open').forEach(function (button) {
+                        button.addEventListener('click', function () {
+                            openRegistroModal(button.getAttribute('data-tipo'), button.getAttribute('data-id'));
+                        });
+                    });
+                };
+
+                const renderPerfil = function (perfil, historico, normalizedRg) {
+                    const nome = perfil && perfil.nome_atual ? perfil.nome_atual : 'Nome não informado';
+                    nameNode.textContent = nome + ' - ' + (normalizedRg || '-');
+                    totalBousNode.textContent = String(perfil && perfil.total_bous ? perfil.total_bous : 0);
+                    totalAitsNode.textContent = String(perfil && perfil.total_aits ? perfil.total_aits : 0);
+                    lastDateNode.textContent = formatDate(perfil && perfil.ultima_ocorrencia_em);
+
+                    const ultimoTipo = perfil && perfil.ultima_ocorrencia_tipo ? String(perfil.ultima_ocorrencia_tipo) : '';
+                    badgeNode.textContent = ultimoTipo ? 'Último registro: ' + ultimoTipo : 'Sem ocorrências';
+                    badgeNode.classList.toggle('is-bou', ultimoTipo === 'BOU');
+                    badgeNode.classList.toggle('is-ait', ultimoTipo === 'AIT');
+
+                    state.historico = Array.isArray(historico) ? historico : [];
+                    renderHistorico(historico);
+                    empty.classList.add('is-hidden');
+                    results.classList.remove('is-hidden');
+                };
+
+                form.addEventListener('submit', async function (event) {
+                    event.preventDefault();
+                    if (state.suggestions.length && state.highlightedSuggestion >= 0) {
+                        const selected = state.suggestions[state.highlightedSuggestion];
+                        if (selected) {
+                            input.value = selected.nome || selected.rg || input.value;
+                        }
+                    }
+                    closeSuggestions();
+                    const rawQuery = normalizeText(input.value);
+                    const normalizedRg = normalizeRg(rawQuery);
+                    const normalizedName = rawQuery;
+
+                    if (!rawQuery) {
+                        showEmpty('Informe um RG ou nome válido para pesquisar.');
+                        return;
+                    }
+
+                    submit.disabled = true;
+                    setStatus('Consultando histórico...', false);
+
+                    try {
+                        let perfilResult = null;
+                        let perfil = null;
+                        let historico = [];
+                        let displayLabel = rawQuery;
+                        let recentNome = 'Nome não informado';
+                        let recentRg = normalizedRg || '';
+
+                        if (normalizedRg) {
+                            input.value = normalizedRg;
+                            perfilResult = await client
+                                .from('acusados_infratores')
+                                .select('*')
+                                .eq('rg', normalizedRg)
+                                .maybeSingle();
+
+                            if (perfilResult.error) throw perfilResult.error;
+                            perfil = perfilResult.data || null;
+                            displayLabel = normalizedRg;
+                            if (perfil && perfil.nome_atual) recentNome = perfil.nome_atual;
+                            if (perfil && perfil.rg) recentRg = perfil.rg;
+                        } else {
+                            input.value = normalizedName;
+                            perfilResult = await client
+                                .from('acusados_infratores')
+                                .select('*')
+                                .ilike('nome_atual', '%' + normalizedName + '%')
+                                .order('ultima_ocorrencia_em', { ascending: false })
+                                .limit(1)
+                                .maybeSingle();
+
+                            if (perfilResult.error) throw perfilResult.error;
+                            perfil = perfilResult.data || null;
+                            if (perfil && perfil.rg) {
+                                displayLabel = perfil.rg;
+                                recentRg = perfil.rg;
+                            }
+                            if (perfil && perfil.nome_atual) {
+                                recentNome = perfil.nome_atual;
+                            }
+                        }
+
+                        if (perfil && perfil.rg) {
+                            const historicoResult = await client
+                                .from('acusados_infratores_historico')
+                                .select('tipo_registro,registro_id,nome_informado,resumo,dados,criado_em')
+                                .eq('rg', perfil.rg)
+                                .order('criado_em', { ascending: false });
+
+                            if (historicoResult.error) throw historicoResult.error;
+                            historico = Array.isArray(historicoResult.data) ? historicoResult.data : [];
+                        } else if (!normalizedRg) {
+                            const historicoResult = await client
+                                .from('acusados_infratores_historico')
+                                .select('tipo_registro,registro_id,nome_informado,resumo,dados,criado_em,rg')
+                                .ilike('nome_informado', '%' + normalizedName + '%')
+                                .order('criado_em', { ascending: false })
+                                .limit(20);
+
+                            if (historicoResult.error) throw historicoResult.error;
+                            historico = Array.isArray(historicoResult.data) ? historicoResult.data : [];
+
+                            if (historico.length) {
+                                displayLabel = historico[0].rg || displayLabel;
+                                recentRg = historico[0].rg || recentRg;
+                                recentNome = historico[0].nome_informado || recentNome;
+                            }
+                        }
+
+                        if (!perfil && !historico.length) {
+                            showEmpty('Nenhum perfil encontrado para esta pesquisa.');
+                            return;
+                        }
+
+                        renderPerfil(perfil, historico, displayLabel);
+                        pushRecente({
+                            query: rawQuery,
+                            nome: recentNome,
+                            rg: recentRg || displayLabel
+                        });
+                        setStatus('Consulta realizada com sucesso.', false);
+                    } catch (error) {
+                        showEmpty('Não foi possível consultar os dados.');
+                        setStatus('Falha ao consultar: ' + (error.message || error.details || error.hint || 'erro desconhecido'), true);
+                    } finally {
+                        submit.disabled = false;
+                    }
+                });
+
+                if (modalClose) modalClose.addEventListener('click', closeModal);
+                if (modalCopy) {
+                    modalCopy.addEventListener('click', async function () {
+                        const text = modalContent ? (modalContent.getAttribute('data-copy-text') || '') : '';
+                        if (!text) return;
+                        try {
+                            await navigator.clipboard.writeText(text);
+                            modalCopy.innerHTML = '<i class="fas fa-check"></i><span>Copiado</span>';
+                            setTimeout(function () {
+                                modalCopy.innerHTML = '<i class="fas fa-copy"></i><span>Copiar texto</span>';
+                            }, 1400);
+                        } catch (e) {
+                            modalCopy.innerHTML = '<i class="fas fa-xmark"></i><span>Falhou</span>';
+                            setTimeout(function () {
+                                modalCopy.innerHTML = '<i class="fas fa-copy"></i><span>Copiar texto</span>';
+                            }, 1400);
+                        }
+                    });
+                }
+                if (modal) {
+                    modal.addEventListener('click', function (event) {
+                        if (event.target === modal) closeModal();
+                    });
+                }
+                filterButtons.forEach(function (button) {
+                    button.addEventListener('click', function () {
+                        state.filter = button.getAttribute('data-filter') || 'all';
+                        filterButtons.forEach(function (btn) {
+                            btn.classList.toggle('is-active', btn === button);
+                        });
+                        renderHistorico(state.historico);
+                    });
+                });
+                input.addEventListener('input', function () {
+                    fetchSuggestions(input.value);
+                });
+                input.addEventListener('keydown', function (event) {
+                    if (!state.suggestions.length) return;
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        state.highlightedSuggestion = Math.min(state.highlightedSuggestion + 1, state.suggestions.length - 1);
+                        renderSuggestions();
+                    } else if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        state.highlightedSuggestion = Math.max(state.highlightedSuggestion - 1, 0);
+                        renderSuggestions();
+                    } else if (event.key === 'Escape') {
+                        closeSuggestions();
+                    }
+                });
+                input.addEventListener('blur', function () {
+                    setTimeout(closeSuggestions, 120);
+                });
+                renderRecentes();
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function setupInicioShiftControl() {
+                if (window.__shiftControl && window.__shiftControlUserId) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                const sessionResult = await client.auth.getSession();
+                const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                const user = session ? session.user : null;
+                const userId = user ? user.id : null;
+                if (!userId) return;
+                window.__inicioSupabaseClient = client;
+                window.__inicioUserId = String(userId);
+
+                const listeners = [];
+                let currentState = { status: 'idle', startAt: null, shiftId: null, totalMs: null };
+
+                const formatHms = function (totalMs) {
+                    const safeMs = Math.max(0, Number(totalMs || 0));
+                    const totalSec = Math.floor(safeMs / 1000);
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    const s = totalSec % 60;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+                };
+
+                const emit = function () {
+                    const payload = Object.assign({}, currentState);
+                    listeners.forEach(function (fn) {
+                        try { fn(payload); } catch (e) {}
+                    });
+                    try {
+                        window.dispatchEvent(new CustomEvent('shift-state-changed', { detail: payload }));
+                    } catch (e) {}
+                };
+
+                const setState = function (next) {
+                    currentState = Object.assign({}, currentState, next);
+                    emit();
+                };
+
+                const fetchOpen = async function () {
+                    const result = await client
+                        .from('agent_pontos')
+                        .select('id,inicio_at')
+                        .eq('user_id', userId)
+                        .is('fim_at', null)
+                        .order('inicio_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    return result && result.data ? result.data : null;
+                };
+
+                const refresh = async function () {
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const latestResult = await client
+                        .from('agent_pontos')
+                        .select('status,duracao_min')
+                        .eq('user_id', userId)
+                        .order('created_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    const latest = latestResult && latestResult.data ? latestResult.data : null;
+
+                    if (latest && String(latest.status || '') === 'encerrado') {
+                        setState({
+                            status: 'closed',
+                            shiftId: null,
+                            startAt: null,
+                            totalMs: Math.max(0, Number(latest.duracao_min || 0)) * 60000
+                        });
+                    } else {
+                        setState({ status: 'idle', shiftId: null, startAt: null, totalMs: null });
+                    }
+                    return Object.assign({}, currentState);
+                };
+
+                const start = async function () {
+                    if (currentState.status === 'active') return Object.assign({}, currentState);
+                    const openRow = await fetchOpen();
+                    if (openRow) {
+                        setState({
+                            status: 'active',
+                            shiftId: openRow.id,
+                            startAt: openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now(),
+                            totalMs: null
+                        });
+                        return Object.assign({}, currentState);
+                    }
+
+                    const nowIso = new Date().toISOString();
+                    const insert = await client
+                        .from('agent_pontos')
+                        .insert({ user_id: userId, inicio_at: nowIso, status: 'em_servico' })
+                        .select('id,inicio_at')
+                        .single();
+
+                    if (insert.error || !insert.data) return refresh();
+
+                    setState({
+                        status: 'active',
+                        shiftId: insert.data.id,
+                        startAt: insert.data.inicio_at ? new Date(insert.data.inicio_at).getTime() : Date.now(),
+                        totalMs: null
+                    });
+                    return Object.assign({}, currentState);
+                };
+
+                const stop = async function () {
+                    let shiftId = currentState.shiftId;
+                    let startAt = currentState.startAt;
+
+                    if (!shiftId || !startAt) {
+                        const openRow = await fetchOpen();
+                        if (!openRow) return refresh();
+                        shiftId = openRow.id;
+                        startAt = openRow.inicio_at ? new Date(openRow.inicio_at).getTime() : Date.now();
+                    }
+
+                    const totalMs = Math.max(0, Date.now() - Number(startAt));
+                    await client
+                        .from('agent_pontos')
+                        .update({
+                            fim_at: new Date().toISOString(),
+                            duracao_min: Math.floor(totalMs / 60000),
+                            status: 'encerrado'
+                        })
+                        .eq('id', shiftId)
+                        .eq('user_id', userId);
+
+                    setState({ status: 'closed', shiftId: null, startAt: null, totalMs: totalMs });
+                    return Object.assign({}, currentState);
+                };
+
+                const toggle = async function () {
+                    return currentState.status === 'active' ? stop() : start();
+                };
+
+                const subscribe = function (fn) {
+                    if (typeof fn !== 'function') return function () {};
+                    listeners.push(fn);
+                    try { fn(Object.assign({}, currentState)); } catch (e) {}
+                    return function () {
+                        const idx = listeners.indexOf(fn);
+                        if (idx >= 0) listeners.splice(idx, 1);
+                    };
+                };
+
+                window.__shiftControl = {
+                    getState: function () { return Object.assign({}, currentState); },
+                    refresh: refresh,
+                    start: start,
+                    stop: stop,
+                    toggle: toggle,
+                    subscribe: subscribe,
+                    formatHms: formatHms
+                };
+                window.__shiftControlUserId = userId;
+                await refresh();
+            })();
+            (async function setupInicioShiftButton() {
+                function byId(id) { return document.getElementById(id); }
+                const btn = byId('inicio-shift-btn');
+                if (!btn) return;
+
+                const waitShiftControl = async () => {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__shiftControl && typeof window.__shiftControl.toggle === 'function') {
+                            return window.__shiftControl;
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                const shiftControl = await waitShiftControl();
+                if (!shiftControl) return;
+                let showClosedState = false;
+
+                const render = (state) => {
+                    const s = state || shiftControl.getState();
+                    btn.classList.remove('plantao-shift-btn--idle', 'plantao-shift-btn--active', 'plantao-shift-btn--closed');
+
+                    if (s.status === 'active' && s.startAt) {
+                        btn.classList.add('plantao-shift-btn--active');
+                        btn.textContent = 'Em serviço ' + shiftControl.formatHms(Date.now() - Number(s.startAt));
+                        return;
+                    }
+
+                    if (s.status === 'closed') {
+                        if (!showClosedState) {
+                            btn.classList.add('plantao-shift-btn--idle');
+                            btn.textContent = 'Entrar em serviço';
+                            return;
+                        }
+                        btn.classList.add('plantao-shift-btn--closed');
+                        btn.textContent = s.totalMs
+                            ? ('Serviço encerrado ' + shiftControl.formatHms(s.totalMs))
+                            : 'Serviço encerrado';
+                        return;
+                    }
+
+                    btn.classList.add('plantao-shift-btn--idle');
+                    btn.textContent = 'Entrar em serviço';
+                };
+
+                btn.addEventListener('click', async function () {
+                    const current = shiftControl.getState();
+                    showClosedState = current.status === 'active';
+                    await shiftControl.toggle();
+                });
+
+                shiftControl.subscribe((state) => render(state));
+                setInterval(() => render(shiftControl.getState()), 1000);
+                render(shiftControl.getState());
+            })();
+
+            (function setupInicioOnDutyList() {
+                function byId(id) { return document.getElementById(id); }
+                const listNode = byId('inicio-on-duty-list');
+                const countNode = byId('inicio-on-duty-count');
+                if (!listNode) return;
+
+                if (!window.supabase || !window.supabase.createClient) return;
+                const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+                let refreshTimer = null;
+                let busy = false;
+
+                const safe = function (v, fallback) {
+                    const s = (v || '').toString().trim();
+                    return s || (fallback || '-');
+                };
+
+                const initials = function (name) {
+                    const parts = safe(name, '').split(' ').filter(Boolean);
+                    if (!parts.length) return 'PRF';
+                    const first = parts[0][0] || '';
+                    const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+                    return (first + last).toUpperCase();
+                };
+
+                const render = function (items) {
+                    const total = items.length;
+                    if (countNode) countNode.textContent = String(total);
+                    if (!total) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nenhum agente em serviço.</p>';
+                        return;
+                    }
+                    const selfId = window.__shiftControlUserId ? String(window.__shiftControlUserId) : '';
+                    const isSelfActive = !!(window.__shiftControl && window.__shiftControl.getState && window.__shiftControl.getState().status === 'active');
+                    listNode.innerHTML = items.map(function (agent) {
+                        const nome = safe(agent.nome_guerra, 'Agente');
+                        const cargo = safe(agent.cargo, 'Cargo não definido');
+                        const grupamentoRaw = safe(agent.grupamento, 'Grupamento não definido');
+                        const grupamento = grupamentoRaw.includes(' || ')
+                            ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                            : grupamentoRaw;
+                        const foto = safe(agent.foto_url, 'assets/img/prf.png');
+                        const isSelf = selfId && agent && String(agent.id || '') === selfId;
+                        const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
+                        const fallback = initials(nome);
+                        return (
+                            '<article class="plantao-item' + destaque + '">' +
+                            '<div class="plantao-avatar">' +
+                            '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
+                            '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
+                            '</div>' +
+                            '<div class="plantao-body">' +
+                            '<h3>' + nome + '</h3>' +
+                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '</div>' +
+                            '</article>'
+                        );
+                    }).join('');
+                };
+
+                const fetchList = async function () {
+                    if (busy) return;
+                    busy = true;
+                    try {
+                        let activeRows = [];
+
+                        // Prefer RPC sem filtro por grupamento (security definer no banco).
+                        const rpcActive = await client.rpc('list_all_on_duty');
+                        if (!rpcActive.error && Array.isArray(rpcActive.data)) {
+                            activeRows = rpcActive.data;
+                        }
+
+                        // Fallback: consulta direta (pode sofrer RLS e mostrar so o proprio).
+                        if (!activeRows.length) {
+                            const active = await client
+                                .from('agent_pontos')
+                                .select('user_id,inicio_at')
+                                .is('fim_at', null)
+                                .order('inicio_at', { ascending: true });
+
+                            if (active.error || !Array.isArray(active.data)) {
+                                listNode.innerHTML = '<p class="plantao-empty">Nao foi possivel carregar.</p>';
+                                if (countNode) countNode.textContent = '0';
+                                return;
+                            }
+                            activeRows = active.data;
+                        }
+
+                        const orderedIds = [];
+                        const seen = new Set();
+                        activeRows.forEach(function (row) {
+                            const id = row && (row.user_id || row.id || row.profile_id)
+                                ? String(row.user_id || row.id || row.profile_id)
+                                : '';
+                            if (!id || seen.has(id)) return;
+                            seen.add(id);
+                            orderedIds.push(id);
+                        });
+
+                        if (!orderedIds.length) {
+                            render([]);
+                            return;
+                        }
+
+                        let profiles = await client
+                            .from('profiles')
+                            .select('id,nome_guerra,cargo,grupamento,foto_url')
+                            .in('id', orderedIds);
+
+                        if (!profiles || profiles.error || !Array.isArray(profiles.data)) {
+                            const fallback = await client.rpc('list_visible_team_profiles_for_current_user');
+                            if (!fallback.error && Array.isArray(fallback.data)) {
+                                profiles = { data: fallback.data.filter(function (p) { return orderedIds.includes(String(p.id)); }) };
+                            }
+                        }
+
+                        const map = new Map();
+                        if (profiles && Array.isArray(profiles.data)) {
+                            profiles.data.forEach(function (p) {
+                                if (p && p.id) map.set(String(p.id), p);
+                            });
+                        }
+
+                        const items = orderedIds.map(function (id) {
+                            return map.get(id) || {
+                                id: id,
+                                nome_guerra: 'Agente em servico',
+                                cargo: 'Em servico',
+                                grupamento: 'Grupamento nao disponivel',
+                                foto_url: 'assets/img/prf.png'
+                            };
+                        });
+                        render(items);
+                    } catch (e) {
+                        listNode.innerHTML = '<p class="plantao-empty">Nao foi possivel carregar.</p>';
+                        if (countNode) countNode.textContent = '0';
+                    } finally {
+                        busy = false;
+                    }
+                };
+
+                const scheduleRefresh = function () {
+                    if (refreshTimer) clearTimeout(refreshTimer);
+                    refreshTimer = setTimeout(fetchList, 300);
+                };
+
+                fetchList();
+                try {
+                    client
+                        .channel('agent_pontos_live_inicio')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_pontos' }, scheduleRefresh)
+                        .subscribe();
+                } catch (e) {
+                    /* ignore */
+                }
+
+                window.addEventListener('shift-state-changed', scheduleRefresh);
+            })();
+        });
+    </script>
+    <script>
+        window.addEventListener('load', function () {
+            (async function loadInicioProfile() {
+                const nameNode = document.getElementById('inicio-user-name');
+                const cargoNode = document.getElementById('inicio-user-cargo');
+                const photoNode = document.getElementById('inicio-user-photo');
+                const cargoImgNode = document.getElementById('inicio-user-cargo-img');
+                if (!nameNode || !cargoNode) return;
+                if (!window.supabase || !window.supabase.createClient) return;
+
+                const waitClient = async function () {
+                    for (let i = 0; i < 40; i += 1) {
+                        if (window.__inicioSupabaseClient && window.__inicioUserId) {
+                            return { client: window.__inicioSupabaseClient, userId: window.__inicioUserId };
+                        }
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+                    }
+                    return null;
+                };
+
+                let client = window.__inicioSupabaseClient || null;
+                let userId = window.__inicioUserId || null;
+                if (!client || !userId) {
+                    const ready = await waitClient();
+                    if (ready) {
+                        client = ready.client;
+                        userId = ready.userId;
+                    }
+                }
+                if (!client || !userId) {
+                    client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+                    const sessionResult = await client.auth.getSession();
+                    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    const user = session ? session.user : null;
+                    if (!user || !user.id) return;
+                    userId = String(user.id);
+                }
+
+                const profileResult = await client
+                    .from('profiles')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const profile = profileResult ? profileResult.data : null;
+                if (!profile) return;
+                document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
+                document.body.classList.toggle('is-not-admin', !profile.is_admin);
+
+                const nome = (profile.nome_guerra || 'Usuario').toString();
+                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const rgNode = document.getElementById('inicio-user-rg');
+                const gruposNode = document.getElementById('inicio-user-grupamentos');
+                const cursosNode = document.getElementById('inicio-user-cursos');
+                nameNode.textContent = nome;
+                cargoNode.textContent = cargo;
+                if (rgNode) rgNode.textContent = 'RG: ' + (profile.rg || '-');
+                if (gruposNode) {
+                    const grupamentoRaw = String(profile.grupamento || '').trim();
+                    const grupos = grupamentoRaw
+                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
+                        : 'Grupamento';
+                    gruposNode.textContent = grupos;
+                }
+                if (cursosNode) {
+                    const rawCursos = String(profile.cursos || '').trim();
+                    if (!rawCursos) {
+                        cursosNode.textContent = '-';
+                    } else {
+                        const parts = rawCursos.split('||').map(function (p) { return p.trim(); }).filter(Boolean);
+                        cursosNode.innerHTML = parts.length ? parts.map(function (p) { return p.replace(/</g, '&lt;'); }).join('<br>') : '-';
+                    }
+                }
+
+                if (photoNode && profile.foto_url) {
+                    photoNode.src = profile.foto_url;
+                }
+                const footerAvatar = document.getElementById('inicio-footer-avatar');
+                const footerName = document.getElementById('inicio-footer-name');
+                if (footerAvatar && profile.foto_url) {
+                    footerAvatar.src = profile.foto_url;
+                }
+                if (footerName) {
+                    footerName.textContent = nome;
+                }
+
+                const cargoKey = cargo.toLowerCase().trim();
+                const cargoMap = {
+                    'diretor-geral': 'diretor.png',
+                    'superintendente': 'superintendente.png',
+                    'coordenador': 'coordenador.png',
+                    'chefe de divisão': 'chefededivisao.png',
+                    'chefe de servico': 'chefedeservico.png',
+                    'chefe de serviço': 'chefedeservico.png',
+                    'chefe de núcleo': 'chefedenucleo.png',
+                    'chefe de nucleo': 'chefedenucleo.png',
+                    'agente de classe especial': 'classeespecial.png',
+                    'agente de primeira classe': 'primeiraclasse.png',
+                    'agente de segunda classe': 'terceiraclasse.png',
+                    'agente aluno': 'aluno.png'
+                };
+                const cargoImg = cargoMap[cargoKey];
+                if (cargoImg && cargoImgNode) {
+                    cargoImgNode.src = 'assets/img/' + cargoImg;
+                    cargoImgNode.classList.remove('is-hidden');
+                }
+
+                const medalsNode = document.getElementById('inicio-user-medals');
+                const resolveMedalImage = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'assets/img/mencaoelogio.png';
+                    const lower = raw.toLowerCase();
+                    if (lower.startsWith('http://') || lower.startsWith('https://')) return raw;
+                    if (raw.startsWith('/') || raw.startsWith('assets/')) return raw;
+                    return 'assets/img/' + raw;
+                };
+
+                if (medalsNode) {
+                    try {
+                        const medalResult = await client
+                            .from('profile_medals')
+                            .select('medal_image, medal_name')
+                    .eq('user_id', userId)
+                            .order('awarded_at', { ascending: false })
+                            .limit(24);
+                        const medals = medalResult && Array.isArray(medalResult.data) ? medalResult.data : [];
+                        if (medals.length) {
+                            medalsNode.innerHTML = medals.map(function (medal) {
+                                const src = resolveMedalImage(medal.medal_image);
+                                const alt = medal.medal_name ? String(medal.medal_name) : 'condecoração do Usuário';
+                                return `<img src="${src}" alt="${alt}" class="inicio-user-medal" onerror="this.src='assets/img/mencaoelogio.png'">`;
+                            }).join('');
+                            medalsNode.classList.remove('is-hidden');
+                        } else {
+                            medalsNode.classList.add('is-hidden');
+                        }
+                    } catch (e) {
+                        medalsNode.classList.add('is-hidden');
+                    }
+                }
+            })();
+        });
+    </script>
+<script>
+    window.addEventListener('load', function () {
+        setTimeout(function () {
+            document.body.classList.add('inicio-loaded');
+        }, 700);
+    });
+</script>
+</body>
+</html>
+
+
