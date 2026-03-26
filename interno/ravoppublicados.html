@@ -247,6 +247,13 @@
                 return text || (fallback || '-');
             };
 
+            const normalizeAeronave = function (value) {
+                const raw = String(value || '').trim();
+                if (raw === 'Patrulha 13' || raw === 'Orion 01') return 'DOA Alpha';
+                if (raw === 'Patrulha 15' || raw === 'Orion 02') return 'DOA Bravo';
+                return raw;
+            };
+
             const normalizeText = function (value) {
                 return String(value || '')
                     .toLowerCase()
@@ -318,7 +325,9 @@
                         const label = item[1];
                         const value = key === 'tripulacao'
                             ? getTripulacao(normalized)
-                            : safe(getConteudoField(normalized, key), '');
+                            : (key === 'aeronave'
+                                ? normalizeAeronave(getConteudoField(normalized, key))
+                                : safe(getConteudoField(normalized, key), ''));
                         if (!value) return '';
                         return (
                             '<div class="publicados-detail-row">' +
@@ -336,7 +345,9 @@
                         const label = item[1];
                         const value = key === 'tripulacao'
                             ? getTripulacao(normalized)
-                            : safe(getConteudoField(normalized, key), '');
+                            : (key === 'aeronave'
+                                ? normalizeAeronave(getConteudoField(normalized, key))
+                                : safe(getConteudoField(normalized, key), ''));
                         if (!value) return '';
                         return label + ': ' + value;
                     })
@@ -415,7 +426,7 @@
                     const numero = safe(getConteudoField(conteudo, 'numero'), '');
                     const piloto = safe(getConteudoField(conteudo, 'piloto'), '');
                     const tripulacao = getTripulacao(conteudo) || '';
-                    const aeronave = safe(getConteudoField(conteudo, 'aeronave'), '');
+                    const aeronave = normalizeAeronave(getConteudoField(conteudo, 'aeronave'));
                     const author = state.authors[item.user_id] || {};
                     const authorName = safe(author.nome_guerra, 'Autor');
                     const authorPhoto = safe(author.foto_url, 'assets/img/prf.png');

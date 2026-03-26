@@ -614,18 +614,15 @@
 
                 const aircraftTriggerIcon = document.querySelector('.ravop-aircraft-select .ravop-aircraft-icon');
                 const aircraftOptions = [
-                    { value: 'Patrulha 13', label: 'Patrulha 13', icon: 'helicopter' },
-                    { value: 'Patrulha 15', label: 'Patrulha 15', icon: 'helicopter' },
-                    { value: 'Orion 01', label: 'Orion 01', icon: 'shield' },
-                    { value: 'Orion 02', label: 'Orion 02', icon: 'shield' }
+                    { value: 'DOA Alpha', label: 'DOA Alpha', iconClass: 'fa-helicopter' },
+                    { value: 'DOA Bravo', label: 'DOA Bravo', iconClass: 'fa-helicopter' }
                 ].map(function (item) {
-                    const iconClass = item.icon === 'helicopter' ? 'fa-helicopter' : 'fa-shield';
                     return {
                         value: item.value,
                         label: item.label,
-                        iconClass: iconClass,
+                        iconClass: item.iconClass,
                         optionClass: 'bou-text-option ravop-aircraft-option',
-                        html: '<i class="fas ' + iconClass + '"></i><span>' + item.label + '</span>'
+                        html: '<i class="fas ' + item.iconClass + '"></i><span>' + item.label + '</span>'
                     };
                 });
 
