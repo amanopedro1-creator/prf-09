@@ -460,10 +460,11 @@
                     }).join('');
 
                     recentList.querySelectorAll('.consulta-recente-btn').forEach(function (button) {
-                        button.addEventListener('click', function () {
+                        button.addEventListener('click', async function () {
                             const query = button.getAttribute('data-query') || '';
                             input.value = query;
-                            form.requestSubmit();
+                            closeSuggestions();
+                            await runSearch(query);
                         });
                     });
                 };
@@ -491,6 +492,108 @@
                     setStatus(text, false);
                 };
 
+                const runSearch = async function (queryOverride) {
+                    const rawQuery = normalizeText(queryOverride != null ? queryOverride : input.value);
+                    const normalizedRg = normalizeRg(rawQuery);
+                    const normalizedName = rawQuery;
+
+                    if (!rawQuery) {
+                        showEmpty('Informe um RG ou nome válido para pesquisar.');
+                        return;
+                    }
+
+                    submit.disabled = true;
+                    setStatus('Consultando histórico...', false);
+
+                    try {
+                        let perfilResult = null;
+                        let perfil = null;
+                        let historico = [];
+                        let displayLabel = rawQuery;
+                        let recentNome = 'Nome não informado';
+                        let recentRg = normalizedRg || '';
+
+                        if (normalizedRg) {
+                            input.value = normalizedRg;
+                            perfilResult = await client
+                                .from('acusados_infratores')
+                                .select('*')
+                                .eq('rg', normalizedRg)
+                                .maybeSingle();
+
+                            if (perfilResult.error) throw perfilResult.error;
+                            perfil = perfilResult.data || null;
+                            displayLabel = normalizedRg;
+                            if (perfil && perfil.nome_atual) recentNome = perfil.nome_atual;
+                            if (perfil && perfil.rg) recentRg = perfil.rg;
+                        } else {
+                            input.value = normalizedName;
+                            perfilResult = await client
+                                .from('acusados_infratores')
+                                .select('*')
+                                .ilike('nome_atual', '%' + normalizedName + '%')
+                                .order('ultima_ocorrencia_em', { ascending: false })
+                                .limit(1)
+                                .maybeSingle();
+
+                            if (perfilResult.error) throw perfilResult.error;
+                            perfil = perfilResult.data || null;
+                            if (perfil && perfil.rg) {
+                                displayLabel = perfil.rg;
+                                recentRg = perfil.rg;
+                            }
+                            if (perfil && perfil.nome_atual) {
+                                recentNome = perfil.nome_atual;
+                            }
+                        }
+
+                        if (perfil && perfil.rg) {
+                            const historicoResult = await client
+                                .from('acusados_infratores_historico')
+                                .select('tipo_registro,registro_id,nome_informado,resumo,dados,criado_em')
+                                .eq('rg', perfil.rg)
+                                .order('criado_em', { ascending: false });
+
+                            if (historicoResult.error) throw historicoResult.error;
+                            historico = Array.isArray(historicoResult.data) ? historicoResult.data : [];
+                        } else if (!normalizedRg) {
+                            const historicoResult = await client
+                                .from('acusados_infratores_historico')
+                                .select('tipo_registro,registro_id,nome_informado,resumo,dados,criado_em,rg')
+                                .ilike('nome_informado', '%' + normalizedName + '%')
+                                .order('criado_em', { ascending: false })
+                                .limit(20);
+
+                            if (historicoResult.error) throw historicoResult.error;
+                            historico = Array.isArray(historicoResult.data) ? historicoResult.data : [];
+
+                            if (historico.length) {
+                                displayLabel = historico[0].rg || displayLabel;
+                                recentRg = historico[0].rg || recentRg;
+                                recentNome = historico[0].nome_informado || recentNome;
+                            }
+                        }
+
+                        if (!perfil && !historico.length) {
+                            showEmpty('Nenhum perfil encontrado para esta pesquisa.');
+                            return;
+                        }
+
+                        renderPerfil(perfil, historico, displayLabel);
+                        pushRecente({
+                            query: rawQuery,
+                            nome: recentNome,
+                            rg: recentRg || displayLabel
+                        });
+                        setStatus('Consulta realizada com sucesso.', false);
+                    } catch (error) {
+                        showEmpty('Não foi possível consultar os dados.');
+                        setStatus('Falha ao consultar: ' + (error.message || error.details || error.hint || 'erro desconhecido'), true);
+                    } finally {
+                        submit.disabled = false;
+                    }
+                };
+
                 const renderCopyablePre = function (text) {
                     return '<pre class="consulta-registro-texto">' + escapeHtml(text) + '</pre>';
                 };
@@ -514,6 +617,9 @@
                         ? (payload.texto_original || (payload.campos ? payload.campos.texto_original : '') || payload.texto || '')
                         : '';
                     const rawOriginal = String(original || '').trim();
+                    const bouHeaderTitle = payload && typeof payload === 'object'
+                        ? (payload.titulo || payload.bou_prf || '-')
+                        : '-';
                     if (rawOriginal) {
                         if (rawOriginal.startsWith('{') && rawOriginal.endsWith('}')) {
                             try {
@@ -523,11 +629,15 @@
                                 /* ignore */
                             }
                         }
-                        return String(original);
+                        const lines = String(original).replace(/\r\n/g, '\n').split('\n');
+                        if (lines.length && /^BOLETIM DE OCORRÊNCIA UNIFICADO \(BOU\)\s*-/i.test(lines[0])) {
+                            lines[0] = 'BOLETIM DE OCORRÊNCIA UNIFICADO (BOU) - ' + bouHeaderTitle;
+                        }
+                        return lines.join('\n');
                     }
 
                     return [
-                        'BOLETIM DE OCORRÊNCIA UNIFICADO (BOU) - ' + (payload.bou_prf || '-'),
+                        'BOLETIM DE OCORRÊNCIA UNIFICADO (BOU) - ' + bouHeaderTitle,
                         '',
                         'Unidade: ' + (payload.unidade || '-'),
                         'Equipe: ' + (payload.equipe || '-'),
@@ -734,105 +844,7 @@
                         }
                     }
                     closeSuggestions();
-                    const rawQuery = normalizeText(input.value);
-                    const normalizedRg = normalizeRg(rawQuery);
-                    const normalizedName = rawQuery;
-
-                    if (!rawQuery) {
-                        showEmpty('Informe um RG ou nome válido para pesquisar.');
-                        return;
-                    }
-
-                    submit.disabled = true;
-                    setStatus('Consultando histórico...', false);
-
-                    try {
-                        let perfilResult = null;
-                        let perfil = null;
-                        let historico = [];
-                        let displayLabel = rawQuery;
-                        let recentNome = 'Nome não informado';
-                        let recentRg = normalizedRg || '';
-
-                        if (normalizedRg) {
-                            input.value = normalizedRg;
-                            perfilResult = await client
-                                .from('acusados_infratores')
-                                .select('*')
-                                .eq('rg', normalizedRg)
-                                .maybeSingle();
-
-                            if (perfilResult.error) throw perfilResult.error;
-                            perfil = perfilResult.data || null;
-                            displayLabel = normalizedRg;
-                            if (perfil && perfil.nome_atual) recentNome = perfil.nome_atual;
-                            if (perfil && perfil.rg) recentRg = perfil.rg;
-                        } else {
-                            input.value = normalizedName;
-                            perfilResult = await client
-                                .from('acusados_infratores')
-                                .select('*')
-                                .ilike('nome_atual', '%' + normalizedName + '%')
-                                .order('ultima_ocorrencia_em', { ascending: false })
-                                .limit(1)
-                                .maybeSingle();
-
-                            if (perfilResult.error) throw perfilResult.error;
-                            perfil = perfilResult.data || null;
-                            if (perfil && perfil.rg) {
-                                displayLabel = perfil.rg;
-                                recentRg = perfil.rg;
-                            }
-                            if (perfil && perfil.nome_atual) {
-                                recentNome = perfil.nome_atual;
-                            }
-                        }
-
-                        if (perfil && perfil.rg) {
-                            const historicoResult = await client
-                                .from('acusados_infratores_historico')
-                                .select('tipo_registro,registro_id,nome_informado,resumo,dados,criado_em')
-                                .eq('rg', perfil.rg)
-                                .order('criado_em', { ascending: false });
-
-                            if (historicoResult.error) throw historicoResult.error;
-                            historico = Array.isArray(historicoResult.data) ? historicoResult.data : [];
-                        } else if (!normalizedRg) {
-                            const historicoResult = await client
-                                .from('acusados_infratores_historico')
-                                .select('tipo_registro,registro_id,nome_informado,resumo,dados,criado_em,rg')
-                                .ilike('nome_informado', '%' + normalizedName + '%')
-                                .order('criado_em', { ascending: false })
-                                .limit(20);
-
-                            if (historicoResult.error) throw historicoResult.error;
-                            historico = Array.isArray(historicoResult.data) ? historicoResult.data : [];
-
-                            if (historico.length) {
-                                displayLabel = historico[0].rg || displayLabel;
-                                recentRg = historico[0].rg || recentRg;
-                                recentNome = historico[0].nome_informado || recentNome;
-                            }
-                        }
-
-                        if (!perfil && !historico.length) {
-                            showEmpty('Nenhum perfil encontrado para esta pesquisa.');
-                            return;
-                        }
-
-                        renderPerfil(perfil, historico, displayLabel);
-                        pushRecente({
-                            query: rawQuery,
-                            nome: recentNome,
-                            rg: recentRg || displayLabel
-                        });
-                        setStatus('Consulta realizada com sucesso.', false);
-                    } catch (error) {
-                        showEmpty('Não foi possível consultar os dados.');
-                        setStatus('Falha ao consultar: ' + (error.message || error.details || error.hint || 'erro desconhecido'), true);
-                    } finally {
-                        submit.disabled = false;
-                    }
+                    await runSearch(input.value);
                 });
 
                 if (modalClose) modalClose.addEventListener('click', closeModal);
@@ -1431,5 +1443,3 @@
 </script>
 </body>
 </html>
-
-
