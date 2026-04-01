@@ -140,16 +140,21 @@
                 </div>
             </aside>
 
-            <section class="plantao-panel" aria-label="Plantao">
+            <section class="plantao-panel" id="inicio-plantao-panel" aria-label="Plantao">
                 <header class="plantao-header">
-                    <div class="plantao-title">
-                        <h2>Plantão</h2>
-                        <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                    <div class="plantao-title-wrap">
+                        <div class="plantao-title">
+                            <h2>Plantão</h2>
+                            <span id="inicio-on-duty-count" class="plantao-count">0</span>
+                        </div>
+                        <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
+                            <i class="fas fa-user-clock"></i>
+                            Entrar em serviço
+                        </button>
                     </div>
-                    <button class="inicio-pill is-ghost" id="inicio-shift-btn" type="button">
-                        <i class="fas fa-user-clock"></i>
-                        Entrar em serviço
-                    </button>
+                    <div class="plantao-header-actions">
+                        <button class="plantao-toggle-btn" id="inicio-plantao-toggle" type="button" aria-expanded="true" aria-label="Minimizar plantão">-</button>
+                    </div>
                 </header>
                 <div class="plantao-list" id="inicio-on-duty-list">
                     <p class="plantao-empty">Carregando agentes...</p>
@@ -633,6 +638,9 @@
                 function byId(id) { return document.getElementById(id); }
                 const listNode = byId('inicio-on-duty-list');
                 const countNode = byId('inicio-on-duty-count');
+                const panelNode = byId('inicio-plantao-panel');
+                const toggleBtn = byId('inicio-plantao-toggle');
+                const bodyNode = document.querySelector('.inicio-body');
                 if (!listNode) return;
 
                 if (!window.supabase || !window.supabase.createClient) return;
@@ -640,6 +648,7 @@
 
                 let refreshTimer = null;
                 let busy = false;
+                let lastItems = [];
 
                 const safe = function (v, fallback) {
                     const s = (v || '').toString().trim();
@@ -655,6 +664,7 @@
                 };
 
                 const render = function (items) {
+                    lastItems = Array.isArray(items) ? items.slice() : [];
                     const total = items.length;
                     if (countNode) countNode.textContent = String(total);
                     if (!total) {
@@ -675,7 +685,7 @@
                         const destaque = isSelf && isSelfActive ? ' is-highlight' : '';
                         const fallback = initials(nome);
                         return (
-                            '<article class="plantao-item' + destaque + '">' +
+                            '<article class="plantao-item' + destaque + '" title="' + nome + '">' +
                             '<div class="plantao-avatar">' +
                             '<img src="' + foto + '" alt="' + nome + '" class="plantao-avatar-img" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'grid\'">' +
                             '<span class="plantao-avatar-fallback">' + fallback + '</span>' +
@@ -688,6 +698,36 @@
                         );
                     }).join('');
                 };
+
+                const setCollapsed = function (collapsed) {
+                    if (!panelNode || !toggleBtn) return;
+                    panelNode.classList.toggle('is-collapsed', !!collapsed);
+                    toggleBtn.textContent = collapsed ? '+' : '-';
+                    toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+                    toggleBtn.setAttribute('aria-label', collapsed ? 'Expandir plantão' : 'Minimizar plantão');
+                    try { localStorage.setItem('inicioPlantaoCollapsed', collapsed ? '1' : '0'); } catch (e) {}
+                    render(lastItems);
+                };
+
+                const animateCollapsed = function (collapsed) {
+                    if (!panelNode || !toggleBtn) return;
+                    if (bodyNode) bodyNode.classList.add('is-rail-animating');
+                    panelNode.classList.add('is-animating');
+                    window.setTimeout(function () { setCollapsed(collapsed); }, 120);
+                    window.setTimeout(function () {
+                        panelNode.classList.remove('is-animating');
+                        if (bodyNode) bodyNode.classList.remove('is-rail-animating');
+                    }, 340);
+                };
+
+                if (toggleBtn && panelNode) {
+                    let initialCollapsed = false;
+                    try { initialCollapsed = localStorage.getItem('inicioPlantaoCollapsed') === '1'; } catch (e) {}
+                    setCollapsed(initialCollapsed);
+                    toggleBtn.addEventListener('click', function () {
+                        animateCollapsed(!panelNode.classList.contains('is-collapsed'));
+                    });
+                }
 
                 const fetchList = async function () {
                     if (busy) return;
@@ -1665,6 +1705,4 @@
 </script>
 </body>
 </html>
-
-
 
