@@ -21,6 +21,84 @@
     </script>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .historia-page-content { background: #edf1f4; padding: 0 0 72px; }
+        .historia-shell { width: 100%; margin: 0 auto; }
+        .historia-hero { text-align: center; margin: 0 0 26px; }
+        .historia-hero h1 { margin: 0 0 12px; font-size: clamp(30px, 4.5vw, 48px); line-height: 1.08; color: #1e2733; }
+        .historia-hero p { max-width: 760px; margin: 0 auto; color: #697483; font-size: 16px; line-height: 1.7; }
+        .historia-mapa-card { position: relative; overflow: hidden; margin: 0 0 34px; border-radius: 28px; background: linear-gradient(135deg, #0d2452 0%, #102f6b 56%, #0b3a78 100%); box-shadow: 0 28px 56px rgba(15, 23, 42, 0.14); color: #fff; }
+        .historia-mapa-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 180px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0)); clip-path: polygon(0 0, 100% 0, 72% 100%, 0 100%); }
+        .historia-mapa-top { display: flex; gap: 22px; align-items: center; padding: 28px 32px 24px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+        .historia-mapa-badge { flex: 0 0 84px; width: 84px; height: 84px; border-radius: 22px; background: rgba(255,255,255,0.08); display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+        .historia-mapa-badge img { width: 58px; height: auto; display: block; }
+        .historia-mapa-headline h3 { margin: 0 0 6px; font-size: clamp(28px, 4vw, 44px); line-height: 1; color: #fff; letter-spacing: 0.02em; }
+        .historia-mapa-headline p { margin: 0; color: rgba(255,255,255,0.84); font-size: 18px; }
+        .historia-mapa-headline strong { color: #f3c351; font-weight: 800; }
+        .historia-mapa-body { display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+        .historia-mapa-side { padding: 28px 28px 30px 32px; background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03)); }
+        .historia-mapa-side-block + .historia-mapa-side-block { margin-top: 22px; }
+        .historia-mapa-side-block h4 { margin: 0 0 8px; font-size: 18px; color: #f3c351; }
+        .historia-mapa-side-block p, .historia-mapa-side-block li { margin: 0; color: rgba(255,255,255,0.9); font-size: 14px; line-height: 1.6; }
+        .historia-mapa-side-block ul { margin: 0; padding-left: 18px; }
+        .historia-mapa-main { padding: 28px 30px 30px; background: #f8fafc; color: #173056; }
+        .historia-mapa-section + .historia-mapa-section { margin-top: 26px; }
+        .historia-mapa-section-title { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 17px; letter-spacing: 0.03em; text-transform: uppercase; color: #0b3a78; }
+        .historia-mapa-section-title i { color: #0f4fa5; }
+        .historia-mapa-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .historia-mapa-item { padding: 16px 16px 14px; border: 1px solid rgba(15, 79, 165, 0.14); border-radius: 18px; background: #fff; box-shadow: 0 12px 22px rgba(15, 23, 42, 0.06); }
+        .historia-mapa-item strong { display: block; margin: 0 0 8px; color: #0d2452; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+        .historia-mapa-item p { margin: 0; color: #4f5f74; font-size: 14px; line-height: 1.55; }
+        .historia-mapa-card .historia-timeline-panel { padding: 26px 30px 30px; background: #f8fafc; border-top: 1px solid rgba(15, 79, 165, 0.12); }
+        .historia-timeline-panel { padding-top: 6px; }
+        .historia-track-wrap { overflow-x: auto; padding: 92px 6px 28px; scrollbar-width: thin; }
+        .historia-track-wrap::-webkit-scrollbar { height: 10px; }
+        .historia-track-wrap::-webkit-scrollbar-thumb { background: rgba(30, 39, 51, 0.18); border-radius: 999px; }
+        .historia-track { position: relative; display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr)); min-width: 980px; min-height: 260px; align-items: center; }
+        .historia-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 6px; border-radius: 999px; background: linear-gradient(90deg, #9fb2c8 0%, #c8d3df 100%); transform: translateY(-50%); }
+        .historia-track-progress { position: absolute; left: 0; top: 50%; height: 6px; border-radius: 999px; background: linear-gradient(90deg, #0b3a78 0%, #0f4fa5 100%); width: 0; transition: width 0.42s ease; z-index: 0; transform: translateY(-50%); }
+        .historia-node { position: relative; z-index: 1; display: block; min-height: 260px; border: 0; background: transparent; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+        .historia-node-label { position: absolute; left: 50%; width: 164px; margin: 0; transform: translateX(-50%); text-align: center; font-size: 13px; line-height: 1.25; color: #7a8390; transition: color 0.25s ease; }
+        .historia-node:nth-of-type(odd) .historia-node-label { top: 18px; }
+        .historia-node:nth-of-type(even) .historia-node-label { bottom: 18px; }
+        .historia-node-dot { position: absolute; top: 50%; left: 50%; width: 28px; height: 28px; border-radius: 50%; border: 4px solid #cfd6df; background: #cfd6df; transform: translate(-50%, -50%); transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, width 0.25s ease, height 0.25s ease; }
+        .historia-node-year { position: absolute; left: 50%; margin: 0; transform: translateX(-50%); font-size: 15px; font-weight: 700; color: #65707f; transition: color 0.25s ease; white-space: nowrap; }
+        .historia-node:nth-of-type(odd) .historia-node-year { top: calc(50% + 26px); }
+        .historia-node:nth-of-type(even) .historia-node-year { bottom: calc(50% + 26px); }
+        .historia-node:hover .historia-node-label, .historia-node.is-active .historia-node-label, .historia-node.is-complete .historia-node-label { color: #0b3a78; }
+        .historia-node.is-complete .historia-node-dot { background: #0b3a78; border-color: #0b3a78; box-shadow: 0 0 0 6px rgba(11, 58, 120, 0.12); }
+        .historia-node:hover .historia-node-dot, .historia-node.is-active .historia-node-dot { background: #0b3a78; border-color: #0b3a78; width: 30px; height: 30px; box-shadow: 0 0 0 8px rgba(11, 58, 120, 0.16); }
+        .historia-node:hover .historia-node-year, .historia-node.is-active .historia-node-year, .historia-node.is-complete .historia-node-year { color: #0b3a78; }
+        .historia-details-shell { max-width: 880px; margin: 24px auto 0; }
+        .historia-details-card { background: #fff; border: 1px solid rgba(32, 50, 73, 0.08); border-radius: 26px; box-shadow: 0 24px 46px rgba(15, 23, 42, 0.08); overflow: hidden; transition: height 0.32s ease, opacity 0.24s ease, transform 0.24s ease; }
+        .historia-details-card.is-animating { overflow: hidden; }
+        .historia-details-card.is-collapsed { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+        .historia-details-inner { padding: 30px 34px 32px; }
+        .historia-details-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+        .historia-details-periodo { display: inline-flex; padding: 8px 14px; border-radius: 999px; background: #eef2f6; color: #5c6878; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+        .historia-details-ano { color: #203249; font-size: 14px; font-weight: 800; }
+        .historia-details-title { margin: 0 0 16px; font-size: clamp(24px, 3vw, 34px); line-height: 1.08; color: #1e2733; }
+        .historia-era-entry + .historia-era-entry { margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(32, 50, 73, 0.08); }
+        .historia-era-entry h4 { margin: 0 0 8px; font-size: 18px; color: #203249; line-height: 1.3; }
+        .historia-details-text, .historia-details-list { margin: 0; color: #566273; font-size: 16px; line-height: 1.7; }
+        .historia-details-list { padding-left: 18px; margin-top: 8px; }
+        .historia-details-list li + li { margin-top: 8px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }
+        @media (max-width: 900px) {
+            .historia-page-content { padding: 0 0 48px; }
+            .historia-shell { width: 100%; }
+            .historia-mapa-top { padding: 22px 20px 20px; }
+            .historia-mapa-body { grid-template-columns: 1fr; }
+            .historia-mapa-side { padding: 22px 20px; }
+            .historia-mapa-main { padding: 22px 20px 24px; }
+            .historia-mapa-grid { grid-template-columns: 1fr; }
+            .historia-mapa-card .historia-timeline-panel { padding: 22px 20px 24px; }
+            .historia-track-wrap { padding-top: 26px; }
+            .historia-track { min-width: 860px; grid-template-columns: repeat(6, minmax(136px, 1fr)); }
+            .historia-node-label { width: 128px; font-size: 12px; }
+            .historia-details-inner { padding: 22px 20px 24px; }
+        }
+    </style>
 </head>
 <body class="historia-page">
             <header class="top-header top-header--unified" id="menu">
@@ -91,183 +169,131 @@
         </div>
     </header>
 
-    <section class="latest-news info-section">
-        <div class="container">
-            <div class="news-header">
-                <h2>História e Valores</h2>
-                <div class="red-line-news"></div>
-            </div>
-            <div class="historia-layout">
+    <main class="historia-page-content" aria-label="Conteúdo da página">
+        <section class="latest-news info-section">
+            <div class="container">
+                <div class="historia-shell">
 
-                <div class="historia-main">
-                    <div class="historia-section">
-                        <div class="info-card-historia">
-                            <h3>HISTÓRIA</h3>
-                            <p>A Polícia Rodoviária Federal foi criada pelo presidente Washington Luiz no dia 24 de julho de 1928 (dia da Polícia Rodoviária Federal), com a denominação inicial de “Polícia de Estradas”. Em 1935 Antônio Felix Filho, o “Turquinho”, considerado o 1º Patrulheiro Rodoviário Federal, foi chamado para organizar a vigilância das rodovias Rio-Petropólis, Rio-São Paulo e União Indústria.
-
-                                Sua missão era percorrer e fiscalizar as três rodovias utilizando duas motocicletas Harley Davidson e nessa empreitada contava com a ajuda de cerca de 450 vigias da então Comissão de Estradas de Rodagem (CER).
-                            </p>
-                            <br>
-                            <p>
-                                   Em 23 de julho de 1935 (dia do Policial Rodoviário Federal), foi criado o primeiro quadro de policiais da hoje Polícia Rodoviária Federal, denominados, a época, “Inspetores de Tráfego”. No ano de 1945, já com a denominação de Polícia Rodoviária Federal, a corporação foi vinculada ao extinto Departamento Nacional de Estradas de Rodagem (DNER).
-                            </p>
-                            <br>
-                            <br>
-                        </div>
-                        <div class="historia-image">
-                            <img src="assets/img/prf_antigo.png" alt="Brasão Antigo PRF" subtitle>
-                        </div>  
-                    </div>
-                    <div class="small-line"></div>
-                    
-
-                    <img src="assets/img/azeredo_maria_alunos.png">
-                    <div class="text-section">
-                        <div class="info-card-historia">
-                            <p>
-                                Finalmente, em 1988, com o advento da Constituinte, a Polícia Rodoviária Federal foi integrada ao Sistema Nacional de Segurança Pública, recebendo como missão exercer o patrulhamento ostensivo das rodovias federais. Desde 1991, a Polícia Rodoviária Federal integra a estrutura organizacional do Ministério da Justiça, como Departamento de Polícia Rodoviária Federal
-                            </p>
-                            <br>
-                            <p>
-                                Atualmente, a Polícia Rodoviária Federal tem sob sua responsabilidade a segurança viária e a prevenção e repressão qualificada ao crime em mais de 75 mil quilômetros de rodovias e estradas federais em todos os estados brasileiros e nas áreas de interesse da União. Uma instituição que provê a pronta resposta federal  às mais diversas demandas de segurança pública do Brasil.
-                            </p>                            
-                        </div>
-                    </div>
-                    <div class="texto-section">
-                        <div class="info-card">
-                            <h3>ATUAÇÃO DA PRF</h3>
-                            <p>As áreas de atuação da PRF são fundamentais para a manutenção da segurança nas rodovias do Brasil. Cada área desempenha um papel específico, contribuindo para a eficiência e eficácia do trabalho policial. Entre essas áreas, destacam-se:</p>
-                            <br>
-                            <ul>
-                                <li> <strong>Fiscalização de Trânsito: </strong>Foca na aplicação das leis de trânsito, garantindo que motoristas e veículos sigam as normas estabelecidas.</li>
-                                <li><strong>Combate ao Crime: </strong>Envolvem ações para deter atividades ilegais nas estradas, como contrabando e tráfico de drogas.</li>
-                                <li><strong>Atividades de Resgate: </strong>Incluem intervenções em acidentes e assistência a vítimas, focando na segurança e bem-estar dos cidadãos.</li>
-                                <li><strong>Educação para o Trânsito: </strong>Promove campanhas educativas para conscientizar motoristas e pedestres sobre práticas seguras nas estradas.</li>
-                                <li><strong>Constatação de Infrações: </strong>Realiza a aplicação de multas e penalidades para infratores, garantindo um trânsito mais seguro.</li>
-                            </ul>
-                            <br>
-                            <p>
-                                Cada uma dessas áreas exige conhecimentos e habilidades específicas. Os profissionais da PRF devem estar preparados para lidar com situações diversas, por isso, investem em treinamentos permanentes e na atualização de conhecimentos.
-                                O papel da PRF é vital para a segurança pública, e a diversidade de áreas de atuação permite uma resposta ágil e adequada a diferentes desafios, promovendo a integridade nas rodovias.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <aside class="valores-section">
-                    <h3 class="timeline-title">MARCOS HISTÓRICOS</h3>
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-year">1928</div>
-                            <div class="timeline-card">
-                                <h4>Criação da Polícia de Estradas</h4>
-                                <p>Fundada como “Polícia de Estradas” por Washington Luís, marcando o início do policiamento rodoviário no Brasil.</p>
+                    <section class="historia-mapa-card" aria-label="Mapa Estratégico da PRF">
+                        <div class="historia-mapa-top">
+                            <div class="historia-mapa-badge">
+                                <img src="assets/img/prf.png" alt="Brasão PRF">
+                            </div>
+                            <div class="historia-mapa-headline">
+                                <h3>MAPA ESTRATÉGICO</h3>
+                                <p>Polícia Rodoviária Federal <strong>2021-2028</strong></p>
                             </div>
                         </div>
 
-                        <div class="timeline-item">
-                            <div class="timeline-year">1978</div>
-                            <div class="timeline-card">
-                                <h4>Ingresso de Mulheres</h4>
-                                <p>As primeiras mulheres ingressam na PRF, ampliando a representatividade da corporação.</p>
+                        <div class="historia-mapa-body">
+                            <aside class="historia-mapa-side">
+                                <div class="historia-mapa-side-block">
+                                    <h4>Missão</h4>
+                                    <p>Promover a segurança pública, protegendo vidas, garantindo a mobilidade nas rodovias federais e nas áreas de interesse da União.</p>
+                                </div>
+                                <div class="historia-mapa-side-block">
+                                    <h4>Visão</h4>
+                                    <p>Ser referência em inovação, conhecimento e efetividade na segurança pública.</p>
+                                </div>
+                                <div class="historia-mapa-side-block">
+                                    <h4>Valores</h4>
+                                    <ul>
+                                        <li>Transparência</li>
+                                        <li>Respeito</li>
+                                        <li>Integridade</li>
+                                        <li>Profissionalismo</li>
+                                        <li>Excelência</li>
+                                    </ul>
+                                </div>
+                            </aside>
+
+                            <div class="historia-mapa-main">
+                                <section class="historia-mapa-section">
+                                    <h4 class="historia-mapa-section-title"><i class="fas fa-shield-halved" aria-hidden="true"></i> Entregas Institucionais</h4>
+                                    <div class="historia-mapa-grid">
+                                        <div class="historia-mapa-item">
+                                            <strong>Sociedade e Governo</strong>
+                                            <p>Prevenção e combate qualificado ao crime e às organizações criminosas.</p>
+                                        </div>
+                                        <div class="historia-mapa-item">
+                                            <strong>Segurança Viária</strong>
+                                            <p>Garantia de trânsito seguro e livre mobilidade nas rodovias federais.</p>
+                                        </div>
+                                        <div class="historia-mapa-item">
+                                            <strong>Inteligência</strong>
+                                            <p>Aprimoramento tecnológico da inteligência e do conhecimento em segurança pública.</p>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section class="historia-mapa-section">
+                                    <h4 class="historia-mapa-section-title"><i class="fas fa-chart-line" aria-hidden="true"></i> Objetivos Estratégicos</h4>
+                                    <div class="historia-mapa-grid">
+                                        <div class="historia-mapa-item">
+                                            <strong>Processos Internos</strong>
+                                            <p>Aperfeiçoar estratégias e procedimentos para o enfrentamento à criminalidade.</p>
+                                        </div>
+                                        <div class="historia-mapa-item">
+                                            <strong>Pessoas e Recursos</strong>
+                                            <p>Promover a proteção, a valorização e o reconhecimento de nossos profissionais.</p>
+                                        </div>
+                                        <div class="historia-mapa-item">
+                                            <strong>Inovação Integrada</strong>
+                                            <p>Investir em soluções tecnológicas seguras, inteligentes e articuladas com as áreas de negócio.</p>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
                         </div>
 
-                        <div class="timeline-item">
-                            <div class="timeline-year">1988</div>
-                            <div class="timeline-card">
-                                <h4>Constituição Federal</h4>
-                                <p>A Constituição integra a PRF ao Sistema Nacional de Segurança Pública do Brasil.</p>
+                        <section class="historia-timeline-panel" aria-labelledby="historia-timeline-title">
+                        <h2 id="historia-timeline-title" class="sr-only">Linha do tempo horizontal</h2>
+                        <div class="historia-track-wrap">
+                            <div class="historia-track">
+                                <div class="historia-track-progress" id="historia-track-progress" aria-hidden="true"></div>
+                                <button class="historia-node is-active" type="button" data-id="era-1" data-index="0"><span class="historia-node-label">Fundação e primeiros passos</span><span class="historia-node-dot" aria-hidden="true"></span><span class="historia-node-year">1928–1950</span></button>
+                                <button class="historia-node" type="button" data-id="era-2" data-index="1"><span class="historia-node-label">Expansão e institucionalização</span><span class="historia-node-dot" aria-hidden="true"></span><span class="historia-node-year">1950–1988</span></button>
+                                <button class="historia-node" type="button" data-id="era-3" data-index="2"><span class="historia-node-label">Constitucionalização e identidade</span><span class="historia-node-dot" aria-hidden="true"></span><span class="historia-node-year">1988–2000</span></button>
+                                <button class="historia-node" type="button" data-id="era-4" data-index="3"><span class="historia-node-label">Profissionalização e estrutura</span><span class="historia-node-dot" aria-hidden="true"></span><span class="historia-node-year">2000–2010</span></button>
+                                <button class="historia-node" type="button" data-id="era-5" data-index="4"><span class="historia-node-label">Especialização e operações</span><span class="historia-node-dot" aria-hidden="true"></span><span class="historia-node-year">2010–2020</span></button>
+                                <button class="historia-node" type="button" data-id="era-6" data-index="5"><span class="historia-node-label">Era tecnológica e estratégica</span><span class="historia-node-dot" aria-hidden="true"></span><span class="historia-node-year">2020–Atualidade</span></button>
                             </div>
                         </div>
 
-                        <div class="timeline-item">
-                            <div class="timeline-year">2008</div>
-                            <div class="timeline-card">
-                                <h4>Nível Superior</h4>
-                                <p>O cargo passa a exigir nível superior, elevando o padrão de formação da corporação.</p>
+                        <div class="historia-details-shell">
+                            <div class="historia-details-card" id="historia-details-card">
+                                <div class="historia-details-inner" id="historia-details-content">
+                                    <div class="historia-details-meta">
+                                        <span class="historia-details-periodo">Fundação e primeiros passos</span>
+                                        <span class="historia-details-ano">1928–1950</span>
+                                    </div>
+                                    <h3 class="historia-details-title">Origens e primeiras bases da atuação rodoviária</h3>
+                                    <div class="historia-era-entry">
+                                        <h4>1928 — Criação da Polícia de Estradas</h4>
+                                        <p class="historia-details-text">A Polícia Rodoviária Federal tem sua origem com a criação da Polícia de Estradas durante o governo de Washington Luís, cujo lema era “governar é abrir estradas”. Nesse período inicial, a atuação era limitada, com poucos agentes e foco na fiscalização básica de veículos e na orientação de condutores em rodovias ainda em desenvolvimento.</p>
+                                    </div>
+                                    <div class="historia-era-entry">
+                                        <h4>1930 — Mudanças políticas nacionais</h4>
+                                        <p class="historia-details-text">Com a Revolução de 1930, o Brasil passa por profundas mudanças políticas e administrativas. Embora a fiscalização rodoviária ainda fosse incipiente, esse período contribuiu para a reorganização do Estado, impactando indiretamente a estrutura das forças públicas, incluindo a atividade nas estradas.</p>
+                                    </div>
+                                    <div class="historia-era-entry">
+                                        <h4>1940–1945 — Estruturação inicial da fiscalização</h4>
+                                        <p class="historia-details-text">Durante a década de 1940, a fiscalização rodoviária começa a ganhar forma mais estruturada, com a criação de postos fixos, ainda que rudimentares. Os agentes passam a ter funções mais definidas, incluindo controle de tráfego, segurança viária e apoio a motoristas em situações emergenciais.</p>
+                                    </div>
+                                    <div class="historia-era-entry">
+                                        <h4>1948 — Expansão da malha rodoviária</h4>
+                                        <p class="historia-details-text">Com o aumento significativo das rodovias no país, a necessidade de fiscalização se intensifica. Esse período marca a ampliação da presença policial nas estradas, ainda com recursos limitados, mas com maior alcance territorial.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="timeline-item">
-                            <div class="timeline-year">2025</div>
-                            <div class="timeline-card">
-                                <h4>Superintendência em São Paulo</h4>
-                                <p>A PRF  move sua Superintendência em São Paulo para a cidade de São Paulo.</p>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-                            </div>
-            <div class="small-line mvw-small-line"></div>
-            <div class="mvw-section scroll-fade">
-                <div class="mvw-card">
-                    <h4>Missão</h4>
-                    <p>Promover a segurança pública, protegendo vidas, garantindo a mobilidade nas rodovias federais e nas áreas de interesse da União.</p>
-                </div>
-                <div class="mvw-card">
-                    <h4>Visão</h4>
-                    <p>Ser referência em inovação, conhecimento e efetividade na segurança pública.</p>
-                </div>
-                <div class="mvw-card">
-                    <h4>Valores</h4>
-                    <ul>
-                        <li>Transparência</li>
-                        <li>Respeito</li>
-                        <li>Integridade</li>
-                        <li>Profissionalismo</li>
-                        <li>Excelência</li>
-                    </ul>
+                        </section>
+                    </section>
                 </div>
             </div>
-            <div class="uniprf-panels scroll-fade">
-                <div class="uniprf-panel">
-                    <div class="uniprf-panel-title">ENTREGAS INSTITUCIONAIS</div>
-                    <div class="uniprf-panel-grid">
-                        <div class="uniprf-panel-item">
-                            <h4>Sociedade e Governo</h4>
-                            <p>Prevenção e combate qualificado ao crime e às organizações criminosas.</p>
-                        </div>
-                        <div class="uniprf-panel-item">
-                            <h4>Segurança Viária</h4>
-                            <p>Garantia de trânsito seguro e livre mobilidade nas rodovias federais.</p>
-                        </div>
-                        <div class="uniprf-panel-item">
-                            <h4>Inteligência</h4>
-                            <p>Aprimoramento tecnológico da inteligência e do conhecimento em segurança pública.</p>
-                        </div>
-                        <div class="uniprf-panel-item">
-                            <h4>Educação e Cidadania</h4>
-                            <p>Promoção de campanhas educativas e ações de conscientização no trânsito.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="uniprf-panel">
-                    <div class="uniprf-panel-title">OBJETIVOS ESTRATÉGICOS</div>
-                    <div class="uniprf-panel-grid">
-                        <div class="uniprf-panel-item">
-                            <h4>Processos Internos</h4>
-                            <p>Aperfeiçoar estratégias e procedimentos no enfrentamento à criminalidade.</p>
-                        </div>
-                        <div class="uniprf-panel-item">
-                            <h4>Mobilidade Segura</h4>
-                            <p>Alavancar ações para promover segurança viária nas rodovias federais.</p>
-                        </div>
-                        <div class="uniprf-panel-item">
-                            <h4>Integração</h4>
-                            <p>Promover a cooperação entre áreas e integrações nacionais e internacionais.</p>
-                        </div>
-                        <div class="uniprf-panel-item">
-                            <h4>Inovação</h4>
-                            <p>Investir em soluções tecnológicas seguras, inteligentes e integradas.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
         <footer class="diario-footer">
         <div class="container">
@@ -291,12 +317,182 @@
             <div><span>Este site fornece informa&ccedil;&otilde;es fict&iacute;cias exclusivamente destinadas ao uso no jogo Grand Theft Auto V, no modo Role Play (RP). Todas as informa&ccedil;&otilde;es, personagens, eventos e situa&ccedil;&otilde;es descritas s&atilde;o puramente fict&iacute;cias e n&atilde;o t&ecirc;m conex&atilde;o com eventos ou indiv&iacute;duos reais. O prop&oacute;sito &eacute; proporcionar entretenimento aos participantes do jogo, e n&atilde;o deve ser interpretado como representa&ccedil;&atilde;o da realidade.</span></div>
         </div>
     </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const timelineData = {
+                'era-1': {
+                    periodo: 'Fundação e primeiros passos',
+                    ano: '1928–1950',
+                    titulo: 'Origens e primeiras bases da atuação rodoviária',
+                    eventos: [
+                        { ano: '1928', titulo: 'Criação da Polícia de Estradas', texto: 'A Polícia Rodoviária Federal tem sua origem com a criação da Polícia de Estradas durante o governo de Washington Luís, cujo lema era “governar é abrir estradas”. Nesse período inicial, a atuação era limitada, com poucos agentes e foco na fiscalização básica de veículos e na orientação de condutores em rodovias ainda em desenvolvimento.' },
+                        { ano: '1930', titulo: 'Reorganização administrativa nacional', texto: 'Com a Revolução de 1930, o Brasil passa por profundas mudanças políticas e administrativas. Embora a fiscalização rodoviária ainda fosse incipiente, esse período contribuiu para a reorganização do Estado, impactando indiretamente a estrutura das forças públicas, incluindo a atividade nas estradas.' },
+                        { ano: '1940–1945', titulo: 'Estruturação inicial da fiscalização', texto: 'Durante a década de 1940, a fiscalização rodoviária começa a ganhar forma mais estruturada, com a criação de postos fixos, ainda que rudimentares. Os agentes passam a ter funções mais definidas, incluindo controle de tráfego, segurança viária e apoio a motoristas em situações emergenciais.' },
+                        { ano: '1948', titulo: 'Crescimento da malha rodoviária', texto: 'Com o aumento significativo das rodovias no país, a necessidade de fiscalização se intensifica. Esse período marca a ampliação da presença policial nas estradas, ainda com recursos limitados, mas com maior alcance territorial.' }
+                    ]
+                },
+                'era-2': {
+                    periodo: 'Expansão e institucionalização',
+                    ano: '1950–1988',
+                    titulo: 'Crescimento institucional e ampliação de presença',
+                    eventos: [
+                        { ano: '1957–1960', titulo: 'Integração nacional e construção de Brasília', texto: 'A construção de Brasília impulsiona a integração rodoviária do país. A fiscalização passa a ser mais estratégica, acompanhando o crescimento das ligações entre regiões e exigindo maior organização da polícia nas rodovias federais.' },
+                        { ano: '1966', titulo: 'Vinculação ao DNER', texto: 'A corporação passa a integrar o Departamento Nacional de Estradas de Rodagem, o que fortalece sua estrutura administrativa e operacional. Esse vínculo traz maior padronização e suporte técnico às atividades desenvolvidas nas rodovias.' },
+                        { ano: '1973', titulo: 'Expansão do efetivo e presença operacional', texto: 'Com o aumento do fluxo de veículos, há reforço no efetivo e ampliação dos postos de fiscalização. A presença policial se torna mais constante, consolidando a imagem da PRF nas estradas brasileiras.' },
+                        { ano: '1978', titulo: 'Inclusão feminina na corporação', texto: 'A entrada das primeiras mulheres representa um marco histórico importante, ampliando a diversidade e contribuindo para a modernização institucional.' },
+                        { ano: '1985', titulo: 'Redemocratização e reflexos institucionais', texto: 'O processo de redemocratização do Brasil traz mudanças na estrutura do Estado, influenciando também a organização e atuação das forças de segurança pública, incluindo a PRF.' }
+                    ]
+                },
+                'era-3': {
+                    periodo: 'Constitucionalização e identidade',
+                    ano: '1988–2000',
+                    titulo: 'Afirmação constitucional e construção de identidade própria',
+                    eventos: [
+                        { ano: '1988', titulo: 'Constituição Federal', texto: 'A Constituição Federal de 1988 estabelece a PRF como órgão permanente da segurança pública, responsável pelo patrulhamento ostensivo das rodovias federais. Esse marco consolida juridicamente sua atuação em âmbito nacional.' },
+                        { ano: '1990', titulo: 'Autonomia institucional', texto: 'A PRF passa a se desvincular progressivamente de estruturas anteriores, adquirindo identidade própria dentro do sistema de segurança pública, com foco mais direto na atividade policial.' },
+                        { ano: '1994', titulo: 'Padronização visual e identidade', texto: 'É consolidada a identidade visual da corporação, com destaque para as viaturas amarelas, que se tornam símbolo reconhecido nacionalmente.' },
+                        { ano: '1998', titulo: 'Início da modernização tecnológica', texto: 'São introduzidos novos equipamentos de comunicação e melhorias operacionais, aumentando a eficiência das ações nas rodovias.' }
+                    ]
+                },
+                'era-4': {
+                    periodo: 'Profissionalização e estrutura',
+                    ano: '2000–2010',
+                    titulo: 'Reforço estrutural e qualificação profissional',
+                    eventos: [
+                        { ano: '2001', titulo: 'Reestruturação organizacional', texto: 'A PRF passa por ajustes internos visando maior eficiência administrativa e operacional, com foco na melhoria do atendimento e fiscalização.' },
+                        { ano: '2004', titulo: 'Ampliação de concursos públicos', texto: 'Há reforço significativo no efetivo por meio de novos concursos, permitindo maior cobertura das rodovias federais.' },
+                        { ano: '2008', titulo: 'Exigência de nível superior', texto: 'A exigência de formação superior para ingresso na corporação eleva o padrão técnico dos policiais, marcando um avanço importante na profissionalização da instituição.' }
+                    ]
+                },
+                'era-5': {
+                    periodo: 'Especialização e operações',
+                    ano: '2010–2020',
+                    titulo: 'Avanço tático, integração e grandes operações',
+                    eventos: [
+                        { ano: '2011', titulo: 'Fortalecimento de unidades especializadas', texto: 'São criados e ampliados grupos com atuação tática e especializada, aumentando a capacidade de resposta a crimes complexos.' },
+                        { ano: '2014', titulo: 'Atuação na Copa do Mundo', texto: 'Durante a Copa do Mundo FIFA 2014, a PRF desempenha papel fundamental na segurança e logística nas rodovias.' },
+                        { ano: '2016', titulo: 'Jogos Olímpicos do Rio', texto: 'A corporação atua de forma integrada durante os Jogos Olímpicos do Rio 2016, reforçando sua importância em eventos de grande escala.' },
+                        { ano: '2017', titulo: 'Integração tecnológica e inteligência', texto: 'A utilização de sistemas de inteligência e bancos de dados se intensifica, permitindo ações mais estratégicas.' },
+                        { ano: '2019', titulo: 'Intensificação no combate ao crime organizado', texto: 'A PRF amplia significativamente suas operações contra tráfico de drogas, armas e contrabando, alcançando resultados expressivos.' }
+                    ]
+                },
+                'era-6': {
+                    periodo: 'Era tecnológica e estratégica',
+                    ano: '2020–Atualidade',
+                    titulo: 'Digitalização, resposta estratégica e fortalecimento administrativo',
+                    eventos: [
+                        { ano: '2020', titulo: 'Atuação durante a pandemia', texto: 'Durante a crise da COVID-19, a PRF adapta suas operações para apoiar medidas sanitárias e manter a segurança nas rodovias.' },
+                        { ano: '2021', titulo: 'Digitalização e monitoramento', texto: 'Avanço no uso de tecnologia, incluindo sistemas de monitoramento e análise de dados.' },
+                        { ano: '2022', titulo: 'Recordes operacionais', texto: 'A corporação registra grandes apreensões de drogas, armas e valores ilícitos, consolidando sua atuação no combate ao crime.' },
+                        { ano: '2023', titulo: 'Integração entre forças de segurança', texto: 'A PRF amplia operações conjuntas com outras instituições, fortalecendo a segurança pública.' },
+                        { ano: '2024', titulo: 'Expansão tecnológica', texto: 'Uso de drones, leitura automática de placas e outras tecnologias avançadas passam a integrar as operações.' },
+                        { ano: '2025', titulo: 'Reforço institucional e reorganização', texto: 'A corporação passa por ajustes estratégicos, fortalecendo sua presença em regiões-chave como São Paulo e ampliando sua capacidade operacional.' }
+                    ]
+                }
+            };
+
+            const buttons = document.querySelectorAll('.historia-node');
+            const card = document.getElementById('historia-details-card');
+            const content = document.getElementById('historia-details-content');
+            const progress = document.getElementById('historia-track-progress');
+            let activeId = 'era-1';
+
+            function buildDetails(item) {
+                const eventosHtml = item.eventos.map(function (evento) {
+                    const lista = Array.isArray(evento.lista)
+                        ? '<ul class="historia-details-list">' + evento.lista.map(function (linha) { return '<li>' + linha + '</li>'; }).join('') + '</ul>'
+                        : '';
+                    return '<div class="historia-era-entry"><h4>' + evento.ano + ' — ' + evento.titulo + '</h4><p class="historia-details-text">' + evento.texto + '</p>' + lista + '</div>';
+                }).join('');
+
+                return '<div class="historia-details-meta"><span class="historia-details-periodo">' + item.periodo + '</span><span class="historia-details-ano">' + item.ano + '</span></div><h3 class="historia-details-title">' + item.titulo + '</h3>' + eventosHtml;
+            }
+
+            function animateCard(nextHtml) {
+                card.classList.remove('is-collapsed');
+                const startHeight = card.offsetHeight;
+                card.style.height = startHeight + 'px';
+                card.classList.add('is-animating');
+
+                requestAnimationFrame(function () {
+                    content.innerHTML = nextHtml;
+                    card.style.height = card.scrollHeight + 'px';
+                });
+
+                window.setTimeout(function () {
+                    card.style.height = '';
+                    card.classList.remove('is-animating');
+                }, 340);
+            }
+
+            function collapseCard() {
+                const startHeight = card.offsetHeight;
+                card.style.height = startHeight + 'px';
+                card.classList.add('is-animating');
+
+                requestAnimationFrame(function () {
+                    card.style.height = '0px';
+                    card.classList.add('is-collapsed');
+                });
+
+                window.setTimeout(function () {
+                    card.classList.remove('is-animating');
+                }, 340);
+            }
+
+            function updateProgress(index) {
+                const total = buttons.length - 1;
+                const percent = index < 0 || total <= 0 ? 0 : (index / total) * 100;
+                progress.style.width = percent + '%';
+            }
+
+            function updateNodeStates(activeIndex) {
+                buttons.forEach(function (node) {
+                    const nodeIndex = Number(node.dataset.index || -1);
+                    node.classList.remove('is-active', 'is-complete');
+
+                    if (activeIndex < 0) {
+                        return;
+                    }
+
+                    if (nodeIndex < activeIndex) {
+                        node.classList.add('is-complete');
+                    }
+
+                    if (nodeIndex === activeIndex) {
+                        node.classList.add('is-active');
+                    }
+                });
+            }
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const item = timelineData[button.dataset.id];
+                    if (!item) {
+                        return;
+                    }
+
+                    const currentIndex = Number(button.dataset.index || 0);
+
+                    if (activeId === button.dataset.id) {
+                        updateNodeStates(-1);
+                        activeId = null;
+                        updateProgress(-1);
+                        collapseCard();
+                        return;
+                    }
+
+                    updateNodeStates(currentIndex);
+                    activeId = button.dataset.id;
+                    updateProgress(currentIndex);
+                    animateCard(buildDetails(item));
+                });
+            });
+
+            updateNodeStates(0);
+            updateProgress(0);
+        });
+    </script>
     <script src="app.js" defer></script>
 </body>
 </html>
-
-
-
-
-
-
