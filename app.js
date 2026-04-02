@@ -1418,6 +1418,36 @@
     });
   };
 
+  const setupOrganogramaExpandables = () => {
+    const toggles = document.querySelectorAll('.org-expandable[aria-controls]');
+    if (!toggles.length) return;
+
+    toggles.forEach((toggle) => {
+      const targetId = toggle.getAttribute('aria-controls');
+      const panel = targetId ? byId(targetId) : null;
+      if (!panel) return;
+
+      const setExpanded = (expanded) => {
+        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        panel.hidden = !expanded;
+      };
+
+      setExpanded(toggle.getAttribute('aria-expanded') === 'true');
+
+      toggle.addEventListener('click', () => {
+        const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+        setExpanded(!isExpanded);
+      });
+
+      toggle.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggle.click();
+        }
+      });
+    });
+  };
+
   const setupAuthFloatingLabels = () => {
     const inputs = document.querySelectorAll('.auth-siga .input-field');
     if (!inputs.length) return;
@@ -1835,6 +1865,7 @@
     setupHeaderAuthState();
     setupModalClose();
     setupInfoCardDropdowns();
+    setupOrganogramaExpandables();
     setupAvisoDismissals();
     setupInternalNotifications();
     applyHighlightFromQuery();

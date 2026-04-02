@@ -59,7 +59,7 @@
                             <a href="concursos.html">Concursos</a>
                         </div>
                     </div>
-                    <a href="/corregedoria.html"><i class="fas fa-scale-balanced"></i> CORREGEDORIA</a>
+                    <a href="/corregedoria.html"><i class="fas fa-scale-balanced"></i>CORREGEDORIA</a>
                 </nav>
 
                 <div class="top-header-right">
@@ -97,18 +97,494 @@
                 <h2>Organograma</h2>
                 <div class="red-line-news"></div>
             </div>
-            <p>
-                No âmbito da Superintendência Regional da Polícia Rodoviária Federal em São Paulo (PRF/SP), a organização administrativa e operacional deve observar o Regimento Interno da PRF, aprovado por Portaria ministerial, com fundamento no art. 87, parágrafo único, inciso I, da Constituição Federal, e em conformidade com o Decreto nº 9.360, de 7 de maio de 2018, que disciplina estruturas regimentais e quadros demonstrativos de cargos e funções de confiança no âmbito da Administração Pública federal.
+            <p class="organograma-intro">
+                Estrutura visual da PRF São Paulo com os principais grupamentos, coordenações e divisões vinculadas à Superintendência.
             </p>
-            <br>
-            <p>Em consonância com esse arcabouço, o desenho organizacional institucional da PRF explicita as macroestruturas Diretoria-Executiva (DIREX) e Diretoria de Operações (DIOP), as quais, no plano regional, são reproduzidas como eixos de coordenação para a distribuição de competências e unidades vinculadas (gestão/execução e coordenação/emprego operacional), segundo organogramas oficiais vigentes.</p>
-            <br>
-            <div class="organograma-sheet-wrapper">
-                <img
-                    src="assets/img/organograma.png"
-                    alt="Organograma PRF SP"
-                    class="organograma-sheet-image"
-                    loading="lazy">
+            <div class="organograma-visual" aria-label="Organograma visual da PRF São Paulo">
+                <div class="org-top">
+                    <button
+                        type="button"
+                        class="org-node org-node--lead org-node--director org-expandable"
+                        aria-expanded="false"
+                        aria-controls="org-diretor-detail">
+                        <div class="org-node-icon org-node-icon--image">
+                            <img src="interno/assets/img/diretor.png" alt="Diretor">
+                        </div>
+                        <div class="org-node-content org-node-content--center">
+                            <span class="org-node-kicker">Direção</span>
+                            <h3>DIRETOR</h3>
+                        </div>
+                    </button>
+                    <div class="org-child-expand" id="org-diretor-detail" hidden>
+                        <div class="org-child-expand-card">
+                            <h4>Diretor</h4>
+                            <p>
+                                Autoridade máxima da estrutura, responsável pela condução estratégica, definição de diretrizes institucionais e supervisão geral das coordenações subordinadas.
+                            </p>
+                        </div>
+                    </div>
+
+                    <span class="org-top-line" aria-hidden="true"></span>
+
+                    <button
+                        type="button"
+                        class="org-node org-node--lead org-node--super org-expandable"
+                        aria-expanded="false"
+                        aria-controls="org-super-detail">
+                        <div class="org-node-icon org-node-icon--image">
+                            <img src="interno/assets/img/superintendente.png" alt="Superintendente">
+                        </div>
+                        <div class="org-node-content org-node-content--center">
+                            <span class="org-node-kicker">Comando regional</span>
+                            <h3>SUPERINTENDENTE</h3>
+                        </div>
+                    </button>
+                    <div class="org-child-expand" id="org-super-detail" hidden>
+                        <div class="org-child-expand-card">
+                            <h4>Superintendente</h4>
+                            <p>
+                                Responsável pelo comando regional, articulação entre áreas finalísticas e execução das diretrizes operacionais, administrativas e institucionais da regional.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="org-branches">
+                    <article class="org-branch org-branch--operacional">
+                        <div class="org-branch-connector" aria-hidden="true"></div>
+                        <button
+                            type="button"
+                            class="org-node org-node--branch org-expandable"
+                            aria-expanded="false"
+                            aria-controls="org-cggo-detail">
+                            <div class="org-node-icon">
+                                <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                            </div>
+                            <div class="org-node-content">
+                                <span class="org-node-kicker">CGGO · Coordenação</span>
+                                <h3>Coordenação-Geral de Gestão Operacional</h3>
+                            </div>
+                        </button>
+                        <div class="org-child-expand" id="org-cggo-detail" hidden>
+                            <div class="org-child-expand-card">
+                                <h4>Coordenação-Geral de Gestão Operacional</h4>
+                                <p>
+                                    Coordenação encarregada do planejamento e da supervisão das unidades de emprego operacional, patrulhamento e resposta tática da regional.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="org-children">
+                            <div class="org-child-group">
+                                <button
+                                    type="button"
+                                    class="org-child-node org-child-node--division org-child-node--expandable org-expandable"
+                                    aria-expanded="false"
+                                    aria-controls="org-rprf-detail">
+                                    <div class="org-child-icon org-child-icon--image">
+                                        <img src="interno/assets/img/rprf.png" alt="RPRF">
+                                    </div>
+                                    <div>
+                                        <small class="org-child-level">RPRF · Divisão</small>
+                                        <strong>Ronda PRF</strong>
+                                    </div>
+                                </button>
+                                <div class="org-child-expand" id="org-rprf-detail" hidden>
+                                    <div class="org-child-expand-card">
+                                        <h4>Ronda PRF</h4>
+                                        <p>
+                                            Unidade responsável pelo patrulhamento ostensivo de rotina, presença operacional nas rodovias e resposta inicial às principais ocorrências atendidas pela regional.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="org-child-subnodes">
+                                    <button
+                                        type="button"
+                                        class="org-child-node org-child-node--nested org-child-node--expandable org-expandable"
+                                        aria-expanded="false"
+                                        aria-controls="org-gpm-detail">
+                                        <div class="org-child-icon org-child-icon--image">
+                                            <img src="interno/assets/img/gpm.png" alt="GPM">
+                                        </div>
+                                        <div>
+                                            <small class="org-child-level">GPM · Núcleo</small>
+                                            <strong>Grupamento de Motociclismo Policial</strong>
+                                        </div>
+                                    </button>
+                                    <div class="org-child-expand" id="org-gpm-detail" hidden>
+                                        <div class="org-child-expand-card">
+                                            <h4>Grupamento de Motociclismo Policial</h4>
+                                            <p>
+                                                Núcleo voltado ao patrulhamento ágil em motocicletas, apoio em deslocamentos rápidos e atuação em corredores viários com maior fluidez operacional.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="org-child-node org-child-node--nested org-child-node--expandable org-expandable"
+                                        aria-expanded="false"
+                                        aria-controls="org-gpt-detail">
+                                        <div class="org-child-icon org-child-icon--image">
+                                            <img src="interno/assets/img/gpt.png" alt="GPT">
+                                        </div>
+                                        <div>
+                                            <small class="org-child-level">GPT · Núcleo</small>
+                                            <strong>Grupamento de Patrulhamento Tático</strong>
+                                        </div>
+                                    </button>
+                                    <div class="org-child-expand" id="org-gpt-detail" hidden>
+                                        <div class="org-child-expand-card">
+                                            <h4>Grupamento de Patrulhamento Tático</h4>
+                                            <p>
+                                                Núcleo empregado em abordagens de maior complexidade, reforço operacional e missões que exigem presença tática especializada.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="org-child-group">
+                                <button
+                                    type="button"
+                                    class="org-child-node org-child-node--division org-child-node--expandable org-expandable"
+                                    aria-expanded="false"
+                                    aria-controls="org-coe-detail">
+                                    <div class="org-child-icon org-child-icon--image">
+                                        <img src="interno/assets/img/coe.png" alt="COE">
+                                    </div>
+                                    <div>
+                                        <small class="org-child-level">COE · Divisão</small>
+                                        <strong>Comando de Operações Especiais</strong>
+                                    </div>
+                                </button>
+                                <div class="org-child-expand" id="org-coe-detail" hidden>
+                                    <div class="org-child-expand-card">
+                                        <h4>Comando de Operações Especiais</h4>
+                                        <p>
+                                            Divisão responsável por coordenar ações especiais, concentrando capacidades operacionais diferenciadas e apoio a ocorrências críticas.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="org-child-subnodes">
+                                    <button
+                                        type="button"
+                                        class="org-child-node org-child-node--nested org-child-node--expandable org-expandable"
+                                        aria-expanded="false"
+                                        aria-controls="org-noe-detail">
+                                        <div class="org-child-icon org-child-icon--image">
+                                            <img src="interno/assets/img/noe.png" alt="NOE">
+                                        </div>
+                                        <div>
+                                            <small class="org-child-level">NOE · Núcleo</small>
+                                            <strong>Núcleo de Operações Especiais</strong>
+                                        </div>
+                                    </button>
+                                    <div class="org-child-expand" id="org-noe-detail" hidden>
+                                        <div class="org-child-expand-card">
+                                            <h4>Núcleo de Operações Especiais</h4>
+                                            <p>
+                                                Núcleo dedicado ao emprego tático especializado, pronto para atuar em operações sensíveis, apoio a equipes e intervenções de maior risco.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="org-child-node org-child-node--nested org-child-node--expandable org-expandable"
+                                        aria-expanded="false"
+                                        aria-controls="org-doa-detail">
+                                        <div class="org-child-icon org-child-icon--image">
+                                            <img src="interno/assets/img/doa.png" alt="DOA">
+                                        </div>
+                                        <div>
+                                            <small class="org-child-level">DOA · Núcleo</small>
+                                            <strong>Divisão de Operações Aéreas</strong>
+                                        </div>
+                                    </button>
+                                    <div class="org-child-expand" id="org-doa-detail" hidden>
+                                        <div class="org-child-expand-card">
+                                            <h4>Divisão de Operações Aéreas</h4>
+                                            <p>
+                                                Núcleo voltado ao suporte aéreo das operações, ampliando a capacidade de monitoramento, deslocamento e resposta em grandes áreas.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="org-branch org-branch--inteligencia">
+                        <div class="org-branch-connector" aria-hidden="true"></div>
+                        <button
+                            type="button"
+                            class="org-node org-node--branch org-expandable"
+                            aria-expanded="false"
+                            aria-controls="org-cggi-detail">
+                            <div class="org-node-icon">
+                                <i class="fas fa-magnifying-glass-chart" aria-hidden="true"></i>
+                            </div>
+                            <div class="org-node-content">
+                                <span class="org-node-kicker">CGGI · Coordenação</span>
+                                <h3>Coordenação-Geral de Integração e Gestão de Inteligência</h3>
+                            </div>
+                        </button>
+                        <div class="org-child-expand" id="org-cggi-detail" hidden>
+                            <div class="org-child-expand-card">
+                                <h4>Coordenação-Geral de Integração e Gestão de Inteligência</h4>
+                                <p>
+                                    Coordenação voltada à integração de informações estratégicas, gestão de pessoas e produção de conhecimento para apoio à tomada de decisão.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="org-children">
+                            <button
+                                type="button"
+                                class="org-child-node org-child-node--expandable org-expandable"
+                                aria-expanded="false"
+                                aria-controls="org-dgp-detail">
+                                <div class="org-child-icon">
+                                    <i class="fas fa-users-gear" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small class="org-child-level">DGP · Divisão</small>
+                                    <strong>Divisão de Gestão de Pessoas</strong>
+                                </div>
+                            </button>
+                            <div class="org-child-expand" id="org-dgp-detail" hidden>
+                                <div class="org-child-expand-card">
+                                    <h4>Divisão de Gestão de Pessoas</h4>
+                                    <p>
+                                        Divisão responsável pela administração funcional, movimentação de efetivo, acompanhamento de pessoal e rotinas de gestão de recursos humanos.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="org-child-node org-child-node--expandable org-expandable"
+                                aria-expanded="false"
+                                aria-controls="org-diap-detail">
+                                <div class="org-child-icon">
+                                    <i class="fas fa-user-secret" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small class="org-child-level">DIAP · Divisão</small>
+                                    <strong>Divisão de Inteligência e Análise Policial</strong>
+                                </div>
+                            </button>
+                            <div class="org-child-expand" id="org-diap-detail" hidden>
+                                <div class="org-child-expand-card">
+                                    <h4>Divisão de Inteligência e Análise Policial</h4>
+                                    <p>
+                                        Divisão dedicada à coleta, análise e difusão de informações de interesse policial para orientar ações estratégicas e operacionais.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="org-child-node org-child-node--expandable org-expandable"
+                                aria-expanded="false"
+                                aria-controls="org-cg-detail">
+                                <div class="org-child-icon">
+                                    <i class="fas fa-scale-balanced" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small class="org-child-level">CG · Divisão</small>
+                                    <strong>Corregedoria Geral</strong>
+                                </div>
+                            </button>
+                            <div class="org-child-expand" id="org-cg-detail" hidden>
+                                <div class="org-child-expand-card">
+                                    <h4>Corregedoria Geral</h4>
+                                    <p>
+                                        Divisão responsável pelo controle disciplinar, apuração interna e preservação dos padrões de integridade institucional.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="org-branch org-branch--comunicacao">
+                        <div class="org-branch-connector" aria-hidden="true"></div>
+                        <button
+                            type="button"
+                            class="org-node org-node--branch org-expandable"
+                            aria-expanded="false"
+                            aria-controls="org-cgcom-detail">
+                            <div class="org-node-icon">
+                                <i class="fas fa-bullhorn" aria-hidden="true"></i>
+                            </div>
+                            <div class="org-node-content">
+                                <span class="org-node-kicker">CGCOM · Coordenação</span>
+                                <h3>Coordenação-Geral de Comunicação Institucional</h3>
+                            </div>
+                        </button>
+                        <div class="org-child-expand" id="org-cgcom-detail" hidden>
+                            <div class="org-child-expand-card">
+                                <h4>Coordenação-Geral de Comunicação Institucional</h4>
+                                <p>
+                                    Coordenação responsável pelo relacionamento institucional, comunicação pública, identidade visual e divulgação das ações da regional.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="org-children">
+                            <button
+                                type="button"
+                                class="org-child-node org-child-node--expandable org-expandable"
+                                aria-expanded="false"
+                                aria-controls="org-dcs-detail">
+                                <div class="org-child-icon">
+                                    <i class="fas fa-hashtag" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small class="org-child-level">DCS · Divisão</small>
+                                    <strong>Divisão de Comunicação Social</strong>
+                                </div>
+                            </button>
+                            <div class="org-child-expand" id="org-dcs-detail" hidden>
+                                <div class="org-child-expand-card">
+                                    <h4>Divisão de Comunicação Social</h4>
+                                    <p>
+                                        Divisão voltada ao contato com o público, produção de conteúdo institucional e fortalecimento da presença oficial da regional.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="org-child-node org-child-node--expandable org-expandable"
+                                aria-expanded="false"
+                                aria-controls="org-dpm-detail">
+                                <div class="org-child-icon">
+                                    <i class="fas fa-photo-film" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small class="org-child-level">DPM · Divisão</small>
+                                    <strong>Divisão de Publicidade e Mídias</strong>
+                                </div>
+                            </button>
+                            <div class="org-child-expand" id="org-dpm-detail" hidden>
+                                <div class="org-child-expand-card">
+                                    <h4>Divisão de Publicidade e Mídias</h4>
+                                    <p>
+                                        Divisão encarregada da produção audiovisual, campanhas, peças de divulgação e gestão dos canais de mídia institucional.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                class="org-child-node org-child-node--expandable org-expandable"
+                                aria-expanded="false"
+                                aria-controls="org-dgc-detail">
+                                <div class="org-child-icon">
+                                    <i class="fas fa-comments" aria-hidden="true"></i>
+                                </div>
+                                <div>
+                                    <small class="org-child-level">DGC · Divisão</small>
+                                    <strong>Divisão de Gestão Comunicacional</strong>
+                                </div>
+                            </button>
+                            <div class="org-child-expand" id="org-dgc-detail" hidden>
+                                <div class="org-child-expand-card">
+                                    <h4>Divisão de Gestão Comunicacional</h4>
+                                    <p>
+                                        Divisão que organiza fluxos de comunicação interna e externa, padronizando mensagens, posicionamentos e integração entre áreas.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="org-branch org-branch--ensino">
+                        <div class="org-branch-connector" aria-hidden="true"></div>
+                        <button
+                            type="button"
+                            class="org-node org-node--branch org-expandable"
+                            aria-expanded="false"
+                            aria-controls="org-cge-detail">
+                            <div class="org-node-icon">
+                                <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+                            </div>
+                            <div class="org-node-content">
+                                <span class="org-node-kicker">CGE · Coordenação</span>
+                                <h3>Coordenação-Geral de Ensino e Capacitação</h3>
+                            </div>
+                        </button>
+                        <div class="org-child-expand" id="org-cge-detail" hidden>
+                            <div class="org-child-expand-card">
+                                <h4>Coordenação-Geral de Ensino e Capacitação</h4>
+                                <p>
+                                    Coordenação responsável pelo desenvolvimento técnico, formação continuada e estrutura de ensino aplicada à qualificação do efetivo.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="org-children">
+                            <div class="org-child-group">
+                                <button
+                                    type="button"
+                                    class="org-child-node org-child-node--division org-child-node--expandable org-expandable"
+                                    aria-expanded="false"
+                                    aria-controls="org-uniprf-detail">
+                                    <div class="org-child-icon org-child-icon--image">
+                                        <img src="interno/assets/img/uniprf.png" alt="UniPRF">
+                                    </div>
+                                    <div>
+                                        <small class="org-child-level">UniPRF · Divisão</small>
+                                        <strong>Universidade Corporativa da Polícia Rodoviária Federal</strong>
+                                    </div>
+                                </button>
+                                <div class="org-child-expand" id="org-uniprf-detail" hidden>
+                                    <div class="org-child-expand-card">
+                                        <h4>Universidade Corporativa da Polícia Rodoviária Federal</h4>
+                                        <p>
+                                            Divisão voltada à coordenação do ensino corporativo, estruturação de cursos e difusão do conhecimento técnico e doutrinário.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="org-child-subnodes">
+                                    <button
+                                        type="button"
+                                        class="org-child-node org-child-node--nested org-child-node--expandable org-expandable"
+                                        aria-expanded="false"
+                                        aria-controls="org-nag-detail">
+                                        <div class="org-child-icon">
+                                            <i class="fas fa-handshake-angle" aria-hidden="true"></i>
+                                        </div>
+                                        <div>
+                                            <small class="org-child-level">NAG · Núcleo</small>
+                                            <strong>Núcleo de Apoio à Gestão</strong>
+                                        </div>
+                                    </button>
+                                    <div class="org-child-expand" id="org-nag-detail" hidden>
+                                        <div class="org-child-expand-card">
+                                            <h4>Núcleo de Apoio à Gestão</h4>
+                                            <p>
+                                                Núcleo de suporte administrativo e organizacional, voltado à sustentação das atividades acadêmicas e de gestão da UniPRF.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="org-child-node org-child-node--nested org-child-node--expandable org-expandable"
+                                        aria-expanded="false"
+                                        aria-controls="org-nee-detail">
+                                        <div class="org-child-icon">
+                                            <i class="fas fa-chalkboard-user" aria-hidden="true"></i>
+                                        </div>
+                                        <div>
+                                            <small class="org-child-level">NEE · Núcleo</small>
+                                            <strong>Núcleo de Ensino Especializado</strong>
+                                        </div>
+                                    </button>
+                                    <div class="org-child-expand" id="org-nee-detail" hidden>
+                                        <div class="org-child-expand-card">
+                                            <h4>Núcleo de Ensino Especializado</h4>
+                                            <p>
+                                                Núcleo destinado ao planejamento e à execução de conteúdos avançados, treinamentos específicos e capacitações temáticas.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
             </div>
 
         </div>
