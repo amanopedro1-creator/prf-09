@@ -23,6 +23,53 @@
     <script>
         window.SUPABASE_URL = 'https://pssujmmuachdymlwsiuj.supabase.co';
         window.SUPABASE_ANON_KEY = 'sb_publishable_PYQxZQr_TfVEesG7L4WI4g_-VjPHVpW';
+        window.__dgpNormalizeAccessValue = function (value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim()
+                .toLowerCase();
+        };
+        window.__dgpParseAccessList = function (value) {
+            return String(value || '')
+                .split('||')
+                .map(function (part) { return window.__dgpNormalizeAccessValue(part); })
+                .filter(Boolean);
+        };
+        window.__dgpBuildAccessState = function (profile) {
+            const normalize = window.__dgpNormalizeAccessValue;
+            const parseList = window.__dgpParseAccessList;
+            const cargo = normalize(profile && profile.cargo);
+            const coords = []
+                .concat(parseList(profile && profile.coordenacao_principal))
+                .concat(parseList(profile && profile.coordenacao_secundaria));
+            const divisions = []
+                .concat(parseList(profile && profile.divisao_principal))
+                .concat(parseList(profile && profile.divisao_secundaria))
+                .concat(parseList(profile && profile.grupamento_principal))
+                .concat(parseList(profile && profile.grupamento_secundario))
+                .concat(parseList(profile && profile.grupamento));
+            const nucleos = []
+                .concat(parseList(profile && profile.nucleo_principal))
+                .concat(parseList(profile && profile.nucleo_secundario));
+            const hasDivision = function (value) { return divisions.includes(normalize(value)); };
+            const hasCoord = function (value) { return coords.includes(normalize(value)); };
+            const hasNucleo = function (value) { return nucleos.includes(normalize(value)); };
+            const hasCargo = function (value) { return cargo === normalize(value); };
+            const modules = {
+                perfis: hasDivision('Divisão de Gestão de Pessoas'),
+                plantao: hasDivision('Divisão de Gestão de Pessoas') || hasCargo('Coordenador'),
+                relatorios: hasCargo('Coordenador') || hasCargo('Chefe de Divisão') || hasCargo('Chefe de Serviço') || hasCargo('Chefe de Setor') || hasCargo('Chefe de Núcleo'),
+                avisos: hasDivision('Divisão de Gestão de Pessoas'),
+                noticias: hasCoord('Coordenação-Geral de Comunicação Institucional'),
+                diario: hasCargo('Diretor-Geral') || hasCargo('Superintendente') || hasCargo('Coordenador'),
+                corregedoria: hasCargo('Diretor-Geral') || hasCargo('Superintendente') || hasDivision('Corregedoria Geral') || hasNucleo('Corregedoria Geral')
+            };
+            modules.any = Object.keys(modules).some(function (key) {
+                return key !== 'any' && modules[key];
+            });
+            return modules;
+        };
 
         (async function enforceAuth() {
             try {
@@ -41,7 +88,7 @@
 
                 const profileQuery = await client
                     .from('profiles')
-                    .select('aprovado,is_admin')
+                    .select('aprovado,is_admin,cargo,coordenacao_principal,coordenacao_secundaria,divisao_principal,divisao_secundaria,nucleo_principal,nucleo_secundario,grupamento_principal,grupamento_secundario,grupamento')
                     .eq('id', user.id)
                     .maybeSingle();
                 const profile = profileQuery ? profileQuery.data : null;
@@ -53,12 +100,19 @@
                     return;
                 }
 
+                const accessState = window.__dgpBuildAccessState(profile);
+
                 if (profile.is_admin === true) {
                     document.documentElement.classList.add('is-admin');
+                    document.documentElement.classList.add('has-dgp-access');
                 } else {
                     document.documentElement.classList.add('is-not-admin');
-                    window.location.replace('inicio.html');
-                    return;
+                    if (accessState.any) {
+                        document.documentElement.classList.add('has-dgp-access');
+                    } else {
+                        window.location.replace('inicio.html');
+                        return;
+                    }
                 }
             } catch (e) {
                 window.location.replace('../login.html');
@@ -200,117 +254,219 @@
             </header>
 
             <section class="inicio-content-card" aria-label="Conteudo">
-                <section class="dgp-section" id="dgp-perfis">
+                <div class="dgp-launcher-shell">
                     <div class="dgp-section-header">
                         <div>
-                            <h2>Perfis</h2>
-                            <p>Gerencie acesso, cargos, grupamentos, cursos e condecoracoes.</p>
-                        </div>
-                        <span id="dgp-profiles-count" class="dgp-count-pill">0 perfis</span>
-                    </div>
-                    <div id="dgp-profiles-grid" class="dgp-profiles-grid">
-                        <div class="dgp-empty">Carregando perfis...</div>
-                    </div>
-                </section>
-
-                <section class="dgp-section" id="dgp-plantao-admin">
-                    <div class="dgp-section-header">
-                        <div>
-                            <h2>Plantão em serviço</h2>
-                            <p>Visualize agentes em serviço e encerre o ponto quando necessário.</p>
-                        </div>
-                        <div class="dgp-duty-header-actions">
-                            <span id="dgp-on-duty-count" class="dgp-count-pill">0 em serviço</span>
-                            <button id="dgp-on-duty-refresh" class="dgp-secondary-btn" type="button">Atualizar</button>
+                            <h2>Painel Administrativo</h2>
+                            <p>Escolha um modulo para abrir o painel correspondente.</p>
                         </div>
                     </div>
-                    <div id="dgp-on-duty-list" class="dgp-duty-list">
-                        <div class="dgp-empty">Carregando agentes em serviço...</div>
+                    <div class="dgp-launcher-grid">
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-perfis-panel-modal">
+                            <i class="fas fa-id-card dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Editar perfil</span>
+                            <span class="dgp-panel-text">Gerencie acessos, cargos, lotacoes, cursos e condecoracoes.</span>
+                        </button>
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-plantao-panel-modal">
+                            <i class="fas fa-user-clock dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Plantão</span>
+                            <span class="dgp-panel-text">Visualize agentes em servico e encerre pontos abertos.</span>
+                        </button>
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-relatorios-panel-modal">
+                            <i class="fas fa-file-lines dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Relatorios Feitos</span>
+                            <span class="dgp-panel-text">Consulte e exclua relatorios de todos os usuarios.</span>
+                        </button>
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-avisos-panel-modal">
+                            <i class="fas fa-bullhorn dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Avisos</span>
+                            <span class="dgp-panel-text">Publique e administre avisos internos.</span>
+                        </button>
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-noticias-panel-modal">
+                            <i class="fas fa-newspaper dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Noticias</span>
+                            <span class="dgp-panel-text">Gerencie as noticias exibidas no site.</span>
+                        </button>
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-diario-panel-modal">
+                            <i class="fas fa-scale-balanced dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Diario Oficial</span>
+                            <span class="dgp-panel-text">Cadastre e acompanhe edicoes do Diario Oficial.</span>
+                        </button>
+                        <button class="dgp-panel-launcher" type="button" data-panel-modal="dgp-corregedoria-panel-modal">
+                            <i class="fas fa-gavel dgp-panel-icon"></i>
+                            <span class="dgp-panel-title">Corregedoria</span>
+                            <span class="dgp-panel-text">Publique comunicados e cite usuarios.</span>
+                        </button>
                     </div>
-                </section>
-
-                <section class="dgp-section" id="dgp-relatorios">
-                    <div class="dgp-section-header">
-                        <div>
-                            <h2>Relatorios feitos</h2>
-                            <p>Visualize e exclua relatorios de todos os usuarios.</p>
-                        </div>
-                    </div>
-                    <div class="dgp-report-grid" id="dgp-report-grid">
-                        <div class="dgp-report-card" data-report="bous">
-                            <h3>BOU</h3>
-                            <p id="dgp-bou-count">0</p>
-                            <button class="dgp-primary-btn" type="button">Ver</button>
-                        </div>
-                        <div class="dgp-report-card" data-report="aits">
-                            <h3>AIT</h3>
-                            <p id="dgp-ait-count">0</p>
-                            <button class="dgp-primary-btn" type="button">Ver</button>
-                        </div>
-                        <div class="dgp-report-card" data-report="ripat">
-                            <h3>RIPAT</h3>
-                            <p id="dgp-ripat-count">0</p>
-                            <button class="dgp-primary-btn" type="button">Ver</button>
-                        </div>
-                        <div class="dgp-report-card" data-report="ace">
-                            <h3>ACE</h3>
-                            <p id="dgp-ace-count">0</p>
-                            <button class="dgp-primary-btn" type="button">Ver</button>
-                        </div>
-                        <div class="dgp-report-card" data-report="ravop">
-                            <h3>RAVOP</h3>
-                            <p id="dgp-ravop-count">0</p>
-                            <button class="dgp-primary-btn" type="button">Ver</button>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="dgp-section" id="dgp-avisos">
-                    <div class="dgp-section-header">
-                        <div>
-                            <h2>Avisos</h2>
-                            <p>Publice avisos que aparecem em avisos internos e no inicio.</p>
-                        </div>
-                        <button id="dgp-open-aviso" class="dgp-primary-btn" type="button">Publicar aviso</button>
-                    </div>
-                    <div id="dgp-avisos-list" class="dgp-report-grid"></div>
-                </section>
-
-                <section class="dgp-section" id="dgp-noticias">
-                    <div class="dgp-section-header">
-                        <div>
-                            <h2>Noticias</h2>
-                            <p>Publice noticias exibidas no site.</p>
-                        </div>
-                        <button id="dgp-open-noticia" class="dgp-primary-btn" type="button">Publicar noticia</button>
-                    </div>
-                    <div id="dgp-noticias-list" class="dgp-report-grid"></div>
-                </section>
-
-                <section class="dgp-section" id="dgp-diario">
-                    <div class="dgp-section-header">
-                        <div>
-                            <h2>Diario Oficial</h2>
-                            <p>Publice edicoes do Diario Oficial.</p>
-                        </div>
-                        <button id="dgp-open-diario" class="dgp-primary-btn" type="button">Publicar diario</button>
-                    </div>
-                    <div id="dgp-diarios-list" class="dgp-report-grid"></div>
-                </section>
-
-                <section class="dgp-section" id="dgp-corregedoria">
-                    <div class="dgp-section-header">
-                        <div>
-                            <h2>Corregedoria</h2>
-                            <p>Publice comunicados da corregedoria e cite usuarios.</p>
-                        </div>
-                        <button id="dgp-open-corregedoria" class="dgp-primary-btn" type="button">Publicar corregedoria</button>
-                    </div>
-                </section>
+                </div>
             </section>
         </main>
      </div>
 </div>
+
+    <div class="modal" id="dgp-perfis-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar perfil</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-perfis">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Perfis</h2>
+                        <p>Gerencie acesso, cargos, coordenacoes, divisoes, nucleos, cursos e condecoracoes.</p>
+                    </div>
+                    <span id="dgp-profiles-count" class="dgp-count-pill">0 perfis</span>
+                </div>
+                <div id="dgp-profiles-grid" class="dgp-profiles-grid">
+                    <div class="dgp-empty">Carregando perfis...</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-plantao-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Plantão</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-plantao-admin">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Plantão em serviço</h2>
+                        <p>Visualize agentes em serviço e encerre o ponto quando necessário.</p>
+                    </div>
+                    <div class="dgp-duty-header-actions">
+                        <span id="dgp-on-duty-count" class="dgp-count-pill">0 em serviço</span>
+                        <button id="dgp-on-duty-refresh" class="dgp-secondary-btn" type="button">Atualizar</button>
+                    </div>
+                </div>
+                <div id="dgp-on-duty-list" class="dgp-duty-list">
+                    <div class="dgp-empty">Carregando agentes em serviço...</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-relatorios-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Relatorios Feitos</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-relatorios">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Relatorios feitos</h2>
+                        <p>Visualize e exclua relatorios de todos os usuarios.</p>
+                    </div>
+                </div>
+                <div class="dgp-report-grid" id="dgp-report-grid">
+                    <div class="dgp-report-card" data-report="bous">
+                        <h3>BOU</h3>
+                        <p id="dgp-bou-count">0</p>
+                        <button class="dgp-primary-btn" type="button">Ver</button>
+                    </div>
+                    <div class="dgp-report-card" data-report="aits">
+                        <h3>AIT</h3>
+                        <p id="dgp-ait-count">0</p>
+                        <button class="dgp-primary-btn" type="button">Ver</button>
+                    </div>
+                    <div class="dgp-report-card" data-report="ripat">
+                        <h3>RIPAT</h3>
+                        <p id="dgp-ripat-count">0</p>
+                        <button class="dgp-primary-btn" type="button">Ver</button>
+                    </div>
+                    <div class="dgp-report-card" data-report="ace">
+                        <h3>ACE</h3>
+                        <p id="dgp-ace-count">0</p>
+                        <button class="dgp-primary-btn" type="button">Ver</button>
+                    </div>
+                    <div class="dgp-report-card" data-report="ravop">
+                        <h3>RAVOP</h3>
+                        <p id="dgp-ravop-count">0</p>
+                        <button class="dgp-primary-btn" type="button">Ver</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-avisos-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Avisos</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-avisos">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Avisos</h2>
+                        <p>Publice avisos que aparecem em avisos internos e no inicio.</p>
+                    </div>
+                    <button id="dgp-open-aviso" class="dgp-primary-btn" type="button">Publicar aviso</button>
+                </div>
+                <div id="dgp-avisos-list" class="dgp-report-grid"></div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-noticias-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Noticias</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-noticias">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Noticias</h2>
+                        <p>Publice noticias exibidas no site.</p>
+                    </div>
+                    <button id="dgp-open-noticia" class="dgp-primary-btn" type="button">Publicar noticia</button>
+                </div>
+                <div id="dgp-noticias-list" class="dgp-report-grid"></div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-diario-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Diario Oficial</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-diario">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Diario Oficial</h2>
+                        <p>Publice edicoes do Diario Oficial.</p>
+                    </div>
+                    <button id="dgp-open-diario" class="dgp-primary-btn" type="button">Publicar diario</button>
+                </div>
+                <div id="dgp-diarios-list" class="dgp-report-grid"></div>
+            </section>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-corregedoria-panel-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal dgp-modal-wide">
+            <div class="modal-header">
+                <h2 class="modal-title">Corregedoria</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <section class="dgp-section" id="dgp-corregedoria">
+                <div class="dgp-section-header">
+                    <div>
+                        <h2>Corregedoria</h2>
+                        <p>Publice comunicados da corregedoria e cite usuarios.</p>
+                    </div>
+                    <button id="dgp-open-corregedoria" class="dgp-primary-btn" type="button">Publicar corregedoria</button>
+                </div>
+            </section>
+        </div>
+    </div>
 
     <div class="modal" id="dgp-cursos-modal" aria-hidden="true">
         <div class="modal-content dgp-modal">
@@ -334,6 +490,76 @@
             <div id="dgp-medals-body" class="dgp-modal-body"></div>
             <div class="dgp-modal-actions">
                 <button id="dgp-medal-add" class="dgp-primary-btn" type="button">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="dgp-profile-actions-modal" aria-hidden="true">
+        <div class="modal-content dgp-modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar perfil</h2>
+                <button class="modal-close" type="button" data-modal-close>&times;</button>
+            </div>
+            <div class="dgp-modal-body">
+                <section id="dgp-profile-summary" class="dgp-profile-summary"></section>
+                <section class="dgp-profile-group">
+                    <h3 class="dgp-profile-group-title">Principais</h3>
+                    <div class="dgp-modal-grid">
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-cargo-select">Cargo</label>
+                            <select id="dgp-profile-cargo-select" class="dgp-select"></select>
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-status">Status</label>
+                            <input id="dgp-profile-status" type="text" readonly>
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-coord-primary">Coordenacao principal</label>
+                            <select id="dgp-profile-coord-primary" class="dgp-select"></select>
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-div-primary">Divisao principal</label>
+                            <select id="dgp-profile-div-primary" class="dgp-select"></select>
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-nucleo-primary">Nucleo principal</label>
+                            <select id="dgp-profile-nucleo-primary" class="dgp-select"></select>
+                        </div>
+                    </div>
+                </section>
+                <section class="dgp-profile-group">
+                    <h3 class="dgp-profile-group-title">Secundarios</h3>
+                    <div class="dgp-modal-grid">
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-coord-secondary">Coordenacoes secundarias</label>
+                            <div id="dgp-profile-coord-secondary" class="dgp-multi-dropdown"></div>
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-div-secondary">Divisoes secundarias</label>
+                            <div id="dgp-profile-div-secondary" class="dgp-multi-dropdown"></div>
+                        </div>
+                        <div class="modal-form-group">
+                            <label for="dgp-profile-nucleo-secondary">Nucleos secundarios</label>
+                            <div id="dgp-profile-nucleo-secondary" class="dgp-multi-dropdown"></div>
+                        </div>
+                    </div>
+                </section>
+                <div class="dgp-profile-modal-actions">
+                    <button id="dgp-profile-toggle-aprovacao" class="dgp-secondary-btn" type="button">Aprovar perfil</button>
+                    <button id="dgp-profile-open-cursos" class="dgp-secondary-btn" type="button">Cursos</button>
+                    <button id="dgp-profile-open-medals" class="dgp-secondary-btn" type="button">Condecoracoes</button>
+                    <button id="dgp-profile-delete" class="dgp-secondary-btn is-danger" type="button">Recusar e apagar</button>
+                </div>
+                <div id="dgp-profile-delete-confirm" class="dgp-delete-confirm is-hidden">
+                    <p class="dgp-delete-confirm-text">Confirmar recusa e exclusao permanente deste perfil?</p>
+                    <div class="dgp-delete-confirm-actions">
+                        <button id="dgp-profile-delete-confirm-btn" class="dgp-secondary-btn is-danger" type="button">Confirmar</button>
+                        <button id="dgp-profile-delete-cancel-btn" class="dgp-secondary-btn" type="button">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+            <div class="dgp-modal-actions">
+                <button id="dgp-profile-save" class="dgp-primary-btn" type="button">Salvar alteracoes</button>
             </div>
         </div>
     </div>
@@ -967,14 +1193,16 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,grupamento_principal,grupamento_secundario,coordenacao_principal,coordenacao_secundaria,divisao_principal,divisao_secundaria,nucleo_principal,nucleo_secundario,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
+                const accessState = window.__dgpBuildAccessState(profile);
                 document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
                 document.body.classList.toggle('is-not-admin', !profile.is_admin);
+                document.body.classList.toggle('has-dgp-access', Boolean(profile.is_admin) || accessState.any);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
@@ -1088,6 +1316,24 @@
                 const medalsModal = document.getElementById('dgp-medals-modal');
                 const medalsBody = document.getElementById('dgp-medals-body');
                 const medalAdd = document.getElementById('dgp-medal-add');
+                const profileActionsModal = document.getElementById('dgp-profile-actions-modal');
+                const profileSummary = document.getElementById('dgp-profile-summary');
+                const profileCargoSelect = document.getElementById('dgp-profile-cargo-select');
+                const profileStatusInput = document.getElementById('dgp-profile-status');
+                const profileCoordPrimary = document.getElementById('dgp-profile-coord-primary');
+                const profileDivPrimary = document.getElementById('dgp-profile-div-primary');
+                const profileNucleoPrimary = document.getElementById('dgp-profile-nucleo-primary');
+                const profileCoordSecondary = document.getElementById('dgp-profile-coord-secondary');
+                const profileDivSecondary = document.getElementById('dgp-profile-div-secondary');
+                const profileNucleoSecondary = document.getElementById('dgp-profile-nucleo-secondary');
+                const profileToggleAprovacaoBtn = document.getElementById('dgp-profile-toggle-aprovacao');
+                const profileOpenCursosBtn = document.getElementById('dgp-profile-open-cursos');
+                const profileOpenMedalsBtn = document.getElementById('dgp-profile-open-medals');
+                const profileDeleteBtn = document.getElementById('dgp-profile-delete');
+                const profileDeleteConfirmBox = document.getElementById('dgp-profile-delete-confirm');
+                const profileDeleteConfirmBtn = document.getElementById('dgp-profile-delete-confirm-btn');
+                const profileDeleteCancelBtn = document.getElementById('dgp-profile-delete-cancel-btn');
+                const profileSaveBtn = document.getElementById('dgp-profile-save');
                 const reportModal = document.getElementById('dgp-report-modal');
                 const reportTitle = document.getElementById('dgp-report-title');
                 const reportBody = document.getElementById('dgp-report-body');
@@ -1119,39 +1365,76 @@
 
                 let profiles = [];
                 let profileMap = new Map();
+                let currentUserProfile = null;
                 let activeCursosUser = null;
                 let activeMedalsUser = null;
+                let activeProfileUser = null;
                 let editingAvisoId = null;
                 let editingNoticiaId = null;
                 let editingDiarioId = null;
+                let isDeletingProfile = false;
 
                 const cargos = [
-                    '',
-                    'Diretor-Geral',
-                    'Superintendente',
-                    'Coordenador',
-                    'Chefe de Divisão',
-                    'Chefe de Serviço',
-                    'Chefe de Núcleo',
-                    'Agente de Classe Especial',
-                    'Agente de Primeira Classe',
-                    'Agente de Segunda Classe',
-                    'Agente de Terceira Classe',
-                    'Agente Aluno'
+                    { value: '', label: 'Sem cargo' },
+                    { value: 'diretor-geral', label: 'Diretor-Geral' },
+                    { value: 'superintendente', label: 'Superintendente' },
+                    { value: 'coordenador', label: 'Coordenador' },
+                    { value: 'chefe de divisao', label: 'Chefe de Divisão' },
+                    { value: 'chefe de servico', label: 'Chefe de Serviço' },
+                    { value: 'chefe de nucleo', label: 'Chefe de Núcleo' },
+                    { value: 'agente de classe especial', label: 'Agente de Classe Especial' },
+                    { value: 'agente de primeira classe', label: 'Agente de Primeira Classe' },
+                    { value: 'agente de segunda classe', label: 'Agente de Segunda Classe' },
+                    { value: 'agente aluno', label: 'Agente Aluno' }
                 ];
 
-                const grupamentos = [
+                const cargoAliases = {
+                    'diretor geral': 'diretor-geral',
+                    'diretor-geral': 'diretor-geral',
+                    'superintendente': 'superintendente',
+                    'coordenador': 'coordenador',
+                    'chefe de divisao': 'chefe de divisao',
+                    'chefe de divisão': 'chefe de divisao',
+                    'chefe de servico': 'chefe de servico',
+                    'chefe de serviço': 'chefe de servico',
+                    'chefe de setor': 'chefe de servico',
+                    'chefe de nucleo': 'chefe de nucleo',
+                    'chefe de núcleo': 'chefe de nucleo',
+                    'chefe de equipe': 'chefe de servico',
+                    'agente de classe especial': 'agente de classe especial',
+                    'agente de primeira classe': 'agente de primeira classe',
+                    'agente de segunda classe': 'agente de segunda classe',
+                    'agente de terceira classe': 'agente de segunda classe',
+                    'agente aluno': 'agente aluno'
+                };
+
+                const coordenacoes = [
                     '',
                     'Diretoria Executiva',
-                    'Diretoria Operacional',
-                    'Diretoria de Gestão de Pessoas',
+                    'Coordenação-Geral de Gestão Operacional',
+                    'Coordenação-Geral de Integração e Gestão de Inteligência',
+                    'Coordenação-Geral de Comunicação Institucional',
+                    'Coordenação-Geral de Ensino e Capacitação',
+                ];
+
+                const divisoes = [
+                    '',
                     'Ronda PRF',
+                    'Universidade Corporativa da PRF',
+                    'Divisão de Gestão de Pessoas',
+                    'Divisão de Inteligência e Análise Policial',
+                    'Corregedoria Geral',
+                    'Comando de Operações Especiais',
+
+                ];
+                const nucleos = [
+                    '',
                     'Grupo Patrulhamento Motorizado',
                     'Grupo de Patrulhamento Tático',
                     'Divisão de Operações Aéreas',
                     'Núcleo de Operações Especiais',
-                    'Universidade Corporativa da PRF',
-                    'Corregedoria'
+                    'Núcleo de Apoio à Gestão',
+                    'Núcleo de Ensino Especializado',
                 ];
 
                 const cursos = [
@@ -1178,10 +1461,32 @@
                     { code: 'TPCC', label: 'Técnicas Policiais de Combate ao Crime', image: 'TPCC.png' }
                 ];
 
+                const medalCatalog = [
+                    { code: 'MEDALHA_MERITO', name: 'Medalha Merito', image: 'medalhamerito.png' },
+                    { code: 'MEDALHA_WASHINGTON', name: 'Medalha Washington', image: 'medalhawashington.png' },
+                    { code: 'MOEDA_ANTONIO_FELIX_BRONZE', name: 'Moeda Antonio Felix Bronze', image: 'moedaantoniofelixbronze.png' },
+                    { code: 'MOEDA_ANTONIO_FELIX_OURO', name: 'Moeda Antonio Felix Ouro', image: 'moedaantoniofelixouro.png' },
+                    { code: 'MOEDA_ANTONIO_FELIX_PRATA', name: 'Moeda Antonio Felix Prata', image: 'moedaantoniofelixprata.png' },
+                    { code: 'MEDALHA_ANTONIO_FELIX', name: 'Medalha Antonio Felix', image: 'medalhaantoniofelix.png' },
+                    { code: 'MEDALHA_BRAVURA', name: 'Medalha Bravura', image: 'medalhabravura.png' },
+                    { code: 'MEDALHA_CRUZ_WASHINGTON', name: 'Medalha Cruz Washington', image: 'medalhagracruzwashington.png' },
+                    { code: 'MEDALHA_HEROI_DAS_ESTRADAS', name: 'Medalha Heroi das Estradas', image: 'medalhaheroiestradas.png' }
+                ];
+
                 const COURSE_CODE_ALIASES = {
                     'CAFIT': 'CAFIT-TRANSITO',
                     'CAFIT-TRNSITO': 'CAFIT-TRANSITO',
                     'CAFIT-TRÂNSITO': 'CAFIT-TRANSITO'
+                };
+
+                const panelPermissionMap = {
+                    'dgp-perfis-panel-modal': 'perfis',
+                    'dgp-plantao-panel-modal': 'plantao',
+                    'dgp-relatorios-panel-modal': 'relatorios',
+                    'dgp-avisos-panel-modal': 'avisos',
+                    'dgp-noticias-panel-modal': 'noticias',
+                    'dgp-diario-panel-modal': 'diario',
+                    'dgp-corregedoria-panel-modal': 'corregedoria'
                 };
 
                 const openModal = function (modal) {
@@ -1196,15 +1501,74 @@
                     document.body.classList.remove('publicados-modal-open');
                 };
 
+                const setDeleteConfirmVisible = function (visible) {
+                    if (!profileDeleteConfirmBox) return;
+                    profileDeleteConfirmBox.classList.toggle('is-hidden', !visible);
+                };
+
+                const canDeleteProfiles = function () {
+                    return Boolean(currentUserProfile && currentUserProfile.is_admin);
+                };
+
+                const applyPanelPermissions = function (profile) {
+                    const accessState = window.__dgpBuildAccessState(profile || {});
+                    document.querySelectorAll('[data-panel-modal]').forEach(function (btn) {
+                        const modalId = btn.getAttribute('data-panel-modal') || '';
+                        const permissionKey = panelPermissionMap[modalId] || '';
+                        const allowed = Boolean(profile && profile.is_admin) || Boolean(permissionKey && accessState[permissionKey]);
+                        btn.disabled = !allowed;
+                        btn.classList.toggle('is-locked', !allowed);
+                        btn.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+                        btn.title = allowed ? '' : 'Acesso restrito';
+                    });
+                };
+
+                document.querySelectorAll('[data-panel-modal]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        if (btn.disabled || btn.classList.contains('is-locked')) return;
+                        const modalId = btn.getAttribute('data-panel-modal');
+                        const modal = modalId ? document.getElementById(modalId) : null;
+                        openModal(modal);
+                    });
+                });
+
+                const closeAuxiliaryProfileModal = function (modal) {
+                    if (!modal) return;
+                    closeModal(modal);
+                    if (activeProfileUser && (modal === cursosModal || modal === medalsModal)) {
+                        openProfileActions(activeProfileUser);
+                    }
+                };
+
                 document.querySelectorAll('[data-modal-close]').forEach(function (btn) {
                     btn.addEventListener('click', function () {
-                        closeModal(btn.closest('.modal'));
+                        const modal = btn.closest('.modal');
+                        if (modal === cursosModal || modal === medalsModal) {
+                            closeAuxiliaryProfileModal(modal);
+                            return;
+                        }
+                        closeModal(modal);
                     });
                 });
 
                 document.querySelectorAll('.modal').forEach(function (modal) {
                     modal.addEventListener('click', function (event) {
-                        if (event.target === modal) closeModal(modal);
+                        if (event.target !== modal) return;
+                        if (modal === cursosModal || modal === medalsModal) {
+                            closeAuxiliaryProfileModal(modal);
+                            return;
+                        }
+                        closeModal(modal);
+                    });
+                });
+
+                document.addEventListener('click', function (event) {
+                    if (event.target.closest('.dgp-multi-dropdown')) return;
+                    document.querySelectorAll('.dgp-multi-menu').forEach(function (node) {
+                        node.classList.add('is-hidden');
+                    });
+                    document.querySelectorAll('.dgp-multi-trigger').forEach(function (node) {
+                        node.setAttribute('aria-expanded', 'false');
                     });
                 });
 
@@ -1262,6 +1626,342 @@
                         return item ? (item.code + ' | ' + item.label) : code;
                     }).join(' || ');
                 };
+
+                const getCargoLabel = function (value) {
+                    const canonical = cargoAliases[normalizeCompare(value)] || safe(value, '');
+                    const match = cargos.find(function (item) {
+                        return normalizeCompare(item.value) === normalizeCompare(canonical);
+                    });
+                    return match ? match.label : safe(value, '-');
+                };
+
+                const canonicalizeCargoValue = function (value) {
+                    return cargoAliases[normalizeCompare(value)] || '';
+                };
+
+                const isKnownCargoValue = function (value) {
+                    return !!canonicalizeCargoValue(value);
+                };
+
+                const getSafeCargoValue = function (value, fallbackValue) {
+                    const canonicalValue = canonicalizeCargoValue(value);
+                    if (!canonicalValue) return null;
+                    const canonicalFallback = canonicalizeCargoValue(fallbackValue);
+                    if (canonicalFallback && canonicalFallback === canonicalValue) {
+                        return canonicalFallback;
+                    }
+                    return canonicalValue;
+                };
+
+                const cleanPayload = function (payload) {
+                    const next = {};
+                    Object.keys(payload || {}).forEach(function (key) {
+                        if (payload[key] !== undefined) next[key] = payload[key];
+                    });
+                    return next;
+                };
+
+                const normalizeCompare = function (value) {
+                    return String(value || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim()
+                        .toLowerCase();
+                };
+
+                const parseMultiValue = function (raw) {
+                    if (Array.isArray(raw)) {
+                        return raw.map(function (item) { return safe(item, ''); }).filter(Boolean);
+                    }
+                    const text = String(raw || '').trim();
+                    if (!text) return [];
+                    return text.split('||').map(function (part) {
+                        return safe(part, '');
+                    }).filter(Boolean);
+                };
+
+                const uniqueValues = function (items) {
+                    const seen = new Set();
+                    return items.filter(function (item) {
+                        const key = normalizeCompare(item);
+                        if (!key || seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                };
+
+                const formatMultiValue = function (items) {
+                    return uniqueValues(items).join(' || ');
+                };
+
+                const listHasValue = function (list, value) {
+                    const target = normalizeCompare(value);
+                    return list.some(function (item) { return normalizeCompare(item) === target; });
+                };
+
+                const getLegacyAssignments = function (profile, list) {
+                    const combined = parseMultiValue(
+                        [
+                            profile.grupamento_principal,
+                            profile.grupamento_secundario,
+                            profile.grupamento
+                        ].filter(Boolean).join(' || ')
+                    );
+                    return uniqueValues(combined.filter(function (item) {
+                        return listHasValue(list, item);
+                    }));
+                };
+
+                const resolvePrimarySecondary = function (profile, primaryKey, secondaryKey, legacyList) {
+                    const directPrimary = safe(profile[primaryKey], '');
+                    const directSecondary = parseMultiValue(profile[secondaryKey]);
+                    if (directPrimary || directSecondary.length) {
+                        return {
+                            primary: directPrimary,
+                            secondary: uniqueValues(directSecondary.filter(function (item) {
+                                return normalizeCompare(item) !== normalizeCompare(directPrimary);
+                            }))
+                        };
+                    }
+                    const legacyMatches = getLegacyAssignments(profile, legacyList);
+                    return {
+                        primary: legacyMatches[0] || '',
+                        secondary: legacyMatches.slice(1)
+                    };
+                };
+
+                const getProfileAssignments = function (profile) {
+                    const coordenacao = resolvePrimarySecondary(profile, 'coordenacao_principal', 'coordenacao_secundaria', coordenacoes);
+                    const divisao = resolvePrimarySecondary(profile, 'divisao_principal', 'divisao_secundaria', divisoes);
+                    const nucleo = resolvePrimarySecondary(profile, 'nucleo_principal', 'nucleo_secundario', nucleos);
+                    return {
+                        coordenacaoPrincipal: coordenacao.primary,
+                        coordenacoesSecundarias: coordenacao.secondary,
+                        divisaoPrincipal: divisao.primary,
+                        divisoesSecundarias: divisao.secondary,
+                        nucleoPrincipal: nucleo.primary,
+                        nucleosSecundarios: nucleo.secondary
+                    };
+                };
+
+                const syncLegacyGroupingFields = function (payload) {
+                    const coordPrincipal = safe(payload.coordenacao_principal, '');
+                    const divPrincipal = safe(payload.divisao_principal, '');
+                    const nucleoPrincipal = safe(payload.nucleo_principal, '');
+                    const coordSec = parseMultiValue(payload.coordenacao_secundaria);
+                    const divSec = parseMultiValue(payload.divisao_secundaria);
+                    const nucleoSec = parseMultiValue(payload.nucleo_secundario);
+                    return Object.assign({}, payload, {
+                        grupamento_principal: formatMultiValue([coordPrincipal, divPrincipal, nucleoPrincipal]),
+                        grupamento_secundario: formatMultiValue(coordSec.concat(divSec, nucleoSec))
+                    });
+                };
+
+                const buildSelectOptions = function (items, currentValue, emptyLabel) {
+                    return items.map(function (item) {
+                        const optionValue = typeof item === 'object' && item ? safe(item.value, '') : item;
+                        const optionLabel = typeof item === 'object' && item ? safe(item.label, emptyLabel) : (item || emptyLabel);
+                        return '<option value="' + optionValue + '"' + (normalizeCompare(optionValue) === normalizeCompare(currentValue) ? ' selected' : '') + '>' + optionLabel + '</option>';
+                    }).join('');
+                };
+
+                const buildMultiDropdown = function (items, selectedItems, emptyLabel) {
+                    const selected = uniqueValues((selectedItems || []).filter(Boolean));
+                    const summary = selected.length ? selected.join(', ') : emptyLabel;
+                    const options = items.filter(Boolean).map(function (item) {
+                        const checked = listHasValue(selected, item) ? ' checked' : '';
+                        return (
+                            '<label class="dgp-multi-option">' +
+                            '<input type="checkbox" value="' + item + '"' + checked + '>' +
+                            '<span>' + item + '</span>' +
+                            '</label>'
+                        );
+                    }).join('');
+                    return (
+                        '<button type="button" class="dgp-multi-trigger" aria-expanded="false">' + summary + '</button>' +
+                        '<div class="dgp-multi-menu is-hidden">' + options + '</div>'
+                    );
+                };
+
+                const setupMultiDropdown = function (container, emptyLabel) {
+                    if (!container) return;
+                    const trigger = container.querySelector('.dgp-multi-trigger');
+                    const menu = container.querySelector('.dgp-multi-menu');
+                    if (!trigger || !menu) return;
+                    const updateSummary = function () {
+                        const selected = uniqueValues(Array.from(menu.querySelectorAll('input[type="checkbox"]')).filter(function (input) {
+                            return input.checked;
+                        }).map(function (input) {
+                            return safe(input.value, '');
+                        }).filter(Boolean));
+                        trigger.textContent = selected.length ? selected.join(', ') : emptyLabel;
+                    };
+                    trigger.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const willOpen = menu.classList.contains('is-hidden');
+                        document.querySelectorAll('.dgp-multi-menu').forEach(function (node) {
+                            node.classList.add('is-hidden');
+                        });
+                        document.querySelectorAll('.dgp-multi-trigger').forEach(function (node) {
+                            node.setAttribute('aria-expanded', 'false');
+                        });
+                        menu.classList.toggle('is-hidden', !willOpen);
+                        trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                    });
+                    menu.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+                        input.addEventListener('change', updateSummary);
+                    });
+                    updateSummary();
+                };
+
+                const getMultiSelectValues = function (container) {
+                    if (!container) return [];
+                    return uniqueValues(Array.from(container.querySelectorAll('input[type="checkbox"]')).filter(function (input) {
+                        return input.checked;
+                    }).map(function (input) {
+                        return safe(input.value, '');
+                    }).filter(Boolean));
+                };
+
+                const renderProfileSummary = function (profile) {
+                    if (!profileSummary) return;
+                    const assignments = getProfileAssignments(profile);
+                    const nome = safe(profile.nome_guerra, 'Usuario');
+                    const rg = safe(profile.rg, '-');
+                    const cargo = getCargoLabel(profile.cargo);
+                    const photo = safe(profile.foto_url, 'assets/img/prf.png');
+                    const status = profile.aprovado === true ? 'Aprovado' : 'Recusado';
+                    profileSummary.innerHTML =
+                        '<div class="dgp-profile-summary-card">' +
+                        '<img class="dgp-profile-photo" src="' + photo + '" alt="' + nome + '">' +
+                        '<div class="dgp-profile-summary-text">' +
+                        '<div class="dgp-profile-name-row">' +
+                        '<h3 class="dgp-profile-name">' + nome + '</h3>' +
+                        '<span class="dgp-tag">' + status + '</span>' +
+                        '</div>' +
+                        '<p class="dgp-profile-summary-line">' + cargo + ' · RG ' + rg + '</p>' +
+                        '<p class="dgp-profile-summary-line">Coordenação principal: ' + safe(assignments.coordenacaoPrincipal, '-') + '</p>' +
+                        '<p class="dgp-profile-summary-line">Divisão principal: ' + safe(assignments.divisaoPrincipal, '-') + '</p>' +
+                        '<p class="dgp-profile-summary-line">Nucleo principal: ' + safe(assignments.nucleoPrincipal, '-') + '</p>' +
+                        '</div>' +
+                        '</div>';
+                };
+
+                const openProfileActions = function (profile) {
+                    if (!profile || !profileActionsModal) return;
+                    activeProfileUser = profile;
+                    setDeleteConfirmVisible(false);
+                    if (profileDeleteBtn) {
+                        const allowed = canDeleteProfiles();
+                        profileDeleteBtn.disabled = !allowed;
+                        profileDeleteBtn.setAttribute('aria-disabled', allowed ? 'false' : 'true');
+                        profileDeleteBtn.title = allowed ? '' : 'Apenas administradores podem apagar perfis.';
+                    }
+                    const assignments = getProfileAssignments(profile);
+                    renderProfileSummary(profile);
+                    if (profileCargoSelect) {
+                        const currentCargo = canonicalizeCargoValue(profile.cargo);
+                        const selectedCargo = isKnownCargoValue(currentCargo) ? currentCargo : '';
+                        profileCargoSelect.innerHTML = buildSelectOptions(cargos, selectedCargo, 'Sem cargo');
+                    }
+                    if (profileStatusInput) profileStatusInput.value = profile.aprovado === true ? 'Aprovado' : 'Recusado';
+                    if (profileCoordPrimary) profileCoordPrimary.innerHTML = buildSelectOptions(coordenacoes, assignments.coordenacaoPrincipal, 'Sem coordenacao principal');
+                    if (profileDivPrimary) profileDivPrimary.innerHTML = buildSelectOptions(divisoes, assignments.divisaoPrincipal, 'Sem divisao principal');
+                    if (profileNucleoPrimary) profileNucleoPrimary.innerHTML = buildSelectOptions(nucleos, assignments.nucleoPrincipal, 'Sem nucleo principal');
+                    if (profileCoordSecondary) {
+                        profileCoordSecondary.innerHTML = buildMultiDropdown(coordenacoes, assignments.coordenacoesSecundarias, 'Selecionar coordenacoes');
+                        setupMultiDropdown(profileCoordSecondary, 'Selecionar coordenacoes');
+                    }
+                    if (profileDivSecondary) {
+                        profileDivSecondary.innerHTML = buildMultiDropdown(divisoes, assignments.divisoesSecundarias, 'Selecionar divisoes');
+                        setupMultiDropdown(profileDivSecondary, 'Selecionar divisoes');
+                    }
+                    if (profileNucleoSecondary) {
+                        profileNucleoSecondary.innerHTML = buildMultiDropdown(nucleos, assignments.nucleosSecundarios, 'Selecionar nucleos');
+                        setupMultiDropdown(profileNucleoSecondary, 'Selecionar nucleos');
+                    }
+                    if (profileToggleAprovacaoBtn) profileToggleAprovacaoBtn.textContent = profile.aprovado === true ? 'Recusar perfil' : 'Aprovar perfil';
+                    openModal(profileActionsModal);
+                };
+
+                const persistProfileAssignments = async function (profile) {
+                    if (!profile) return;
+                    const coordPrincipal = safe(profileCoordPrimary ? profileCoordPrimary.value : '', '');
+                    const divPrincipal = safe(profileDivPrimary ? profileDivPrimary.value : '', '');
+                    const nucleoPrincipal = safe(profileNucleoPrimary ? profileNucleoPrimary.value : '', '');
+                    if (!coordPrincipal || !divPrincipal || !nucleoPrincipal) {
+                        try { window.alert('Defina a coordenacao principal, a divisao principal e o nucleo principal antes de salvar.'); } catch (e) {}
+                        return;
+                    }
+                    const coordSecondary = getMultiSelectValues(profileCoordSecondary).filter(function (item) {
+                        return normalizeCompare(item) !== normalizeCompare(coordPrincipal);
+                    });
+                    const divSecondary = getMultiSelectValues(profileDivSecondary).filter(function (item) {
+                        return normalizeCompare(item) !== normalizeCompare(divPrincipal);
+                    });
+                    const nucleoSecondary = getMultiSelectValues(profileNucleoSecondary).filter(function (item) {
+                        return normalizeCompare(item) !== normalizeCompare(nucleoPrincipal);
+                    });
+                    const rawCurrentCargo = safe(profile.cargo, '');
+                    const currentCargo = canonicalizeCargoValue(rawCurrentCargo);
+                    const rawCargoSelection = safe(profileCargoSelect ? profileCargoSelect.value : '', '');
+                    const nextCargo = getSafeCargoValue(rawCargoSelection, currentCargo);
+                    let cargoForPayload;
+                    if (!rawCargoSelection) {
+                        cargoForPayload = null;
+                    } else if (nextCargo && safe(rawCurrentCargo, '').trim() !== safe(nextCargo, '').trim()) {
+                        cargoForPayload = nextCargo;
+                    } else if (normalizeCompare(nextCargo) === normalizeCompare(currentCargo) && isKnownCargoValue(currentCargo)) {
+                        cargoForPayload = undefined;
+                    } else {
+                        cargoForPayload = nextCargo;
+                    }
+                    const payload = syncLegacyGroupingFields({
+                        cargo: cargoForPayload,
+                        coordenacao_principal: coordPrincipal || null,
+                        coordenacao_secundaria: formatMultiValue(coordSecondary) || null,
+                        divisao_principal: divPrincipal || null,
+                        divisao_secundaria: formatMultiValue(divSecondary) || null,
+                        nucleo_principal: nucleoPrincipal || null,
+                        nucleo_secundario: formatMultiValue(nucleoSecondary) || null
+                    });
+                    const cleanedPayload = cleanPayload(payload);
+                    const legacyPayload = cleanPayload({
+                        cargo: payload.cargo,
+                        grupamento_principal: payload.grupamento_principal || null,
+                        grupamento_secundario: payload.grupamento_secundario || null
+                    });
+                    const hasNewOrgFields =
+                        Object.prototype.hasOwnProperty.call(profile, 'coordenacao_principal') ||
+                        Object.prototype.hasOwnProperty.call(profile, 'divisao_principal') ||
+                        Object.prototype.hasOwnProperty.call(profile, 'nucleo_principal');
+
+                    let result = hasNewOrgFields
+                        ? await client.from('profiles').update(cleanedPayload).eq('id', profile.id)
+                        : await client.from('profiles').update(legacyPayload).eq('id', profile.id);
+
+                    if (result.error && /(column .* does not exist|could not find .* column|schema cache|invalid column|unknown column)/i.test(String(result.error.message || ''))) {
+                        result = await client.from('profiles').update(legacyPayload).eq('id', profile.id);
+                    }
+                    if (!result.error) {
+                        Object.assign(profile, payload);
+                        profileMap.set(String(profile.id), profile);
+                        renderProfiles();
+                        renderProfileSummary(profile);
+                        try { window.alert('Alteracoes salvas com sucesso.'); } catch (e) {}
+                        return;
+                    }
+                    try { window.alert('Nao foi possivel salvar as alteracoes: ' + safe(result.error && result.error.message, 'erro desconhecido')); } catch (e) {}
+                };
+
+                const currentProfileResult = await client
+                    .from('profiles')
+                    .select('is_admin,cargo,coordenacao_principal,coordenacao_secundaria,divisao_principal,divisao_secundaria,nucleo_principal,nucleo_secundario,grupamento,grupamento_principal,grupamento_secundario')
+                    .eq('id', user.id)
+                    .maybeSingle();
+                currentUserProfile = currentProfileResult && currentProfileResult.data ? currentProfileResult.data : null;
+                applyPanelPermissions(currentUserProfile);
 
                 const loadAvisoImages = async function () {
                     if (!avisoImages) return;
@@ -1604,255 +2304,199 @@
                 const renderProfiles = function () {
                     if (!profilesGrid) return;
                     if (!profiles.length) {
+                        if (profilesCount) profilesCount.textContent = '0 perfis';
                         profilesGrid.innerHTML = '<div class="dgp-empty">Nenhum perfil encontrado.</div>';
                         return;
                     }
                     if (profilesCount) profilesCount.textContent = profiles.length + ' perfis';
                     profilesGrid.innerHTML = profiles.map(function (profile) {
+                        const assignments = getProfileAssignments(profile);
                         const nome = safe(profile.nome_guerra, 'Usuario');
-                        const cargo = safe(profile.cargo, '-');
                         const rg = safe(profile.rg, '-');
-                        const gp = safe(profile.grupamento_principal, '-');
-                        const gs = safe(profile.grupamento_secundario, '-');
+                        const coordPrincipal = safe(assignments.coordenacaoPrincipal, '-');
+                        const divPrincipal = safe(assignments.divisaoPrincipal, '-');
+                        const nucleoPrincipal = safe(assignments.nucleoPrincipal, '-');
                         const photo = safe(profile.foto_url, 'assets/img/prf.png');
                         const aprovado = profile.aprovado === true;
                         const status = aprovado ? 'Aprovado' : 'Recusado';
                         return (
-                            '<article class="dgp-profile-card" data-user-id="' + profile.id + '">' +
-                            '<div class="dgp-profile-head">' +
+                            '<article class="dgp-profile-row" data-user-id="' + profile.id + '">' +
+                            '<div class="dgp-profile-row-main">' +
                             '<img class="dgp-profile-photo" src="' + photo + '" alt="' + nome + '">' +
-                            '<div>' +
-                            '<div class="dgp-profile-name">' + nome + '</div>' +
-                            '<div class="dgp-profile-meta">' + cargo + ' · RG ' + rg + '</div>' +
-                            '<div class="dgp-profile-meta">Principal: ' + gp + '</div>' +
-                            '<div class="dgp-profile-meta">Secundario: ' + gs + '</div>' +
-                            '<div class="dgp-profile-meta"><span class="dgp-tag">' + status + '</span></div>' +
+                            '<div class="dgp-profile-row-top">' +
+                            '<div class="dgp-profile-row-top-item">' +
+                            '<span class="dgp-profile-row-label">Nome</span>' +
+                            '<strong class="dgp-profile-row-top-value">' + nome + '</strong>' +
+                            '</div>' +
+                            '<div class="dgp-profile-row-top-item">' +
+                            '<span class="dgp-profile-row-label">RG</span>' +
+                            '<strong class="dgp-profile-row-top-value">' + rg + '</strong>' +
                             '</div>' +
                             '</div>' +
-                            '<div class="dgp-profile-actions">' +
-                            '<button class="dgp-secondary-btn dgp-toggle-aprovacao" type="button">' + (aprovado ? 'Recusar perfil' : 'Aprovar perfil') + '</button>' +
-                            '<button class="dgp-secondary-btn is-danger dgp-delete-profile" type="button">Recusar e apagar</button>' +
                             '</div>' +
-                            '<div class="dgp-profile-actions">' +
-                            '<select class="dgp-select dgp-cargo-select">' +
-                            cargos.map(function (c) {
-                                const label = c ? c : 'Sem cargo';
-                                return '<option value="' + c + '"' + (c === profile.cargo ? ' selected' : '') + '>' + label + '</option>';
-                            }).join('') +
-                            '</select>' +
-                            '<select class="dgp-select dgp-gp-select">' +
-                            grupamentos.map(function (g) {
-                                const label = g ? g : 'Sem grupamento';
-                                return '<option value="' + g + '"' + (g === profile.grupamento_principal ? ' selected' : '') + '>' + label + '</option>';
-                            }).join('') +
-                            '</select>' +
+                            '<div class="dgp-profile-row-grid">' +
+                            '<div class="dgp-profile-row-item">' +
+                            '<span class="dgp-profile-row-label">Coordenação principal</span>' +
+                            '<strong class="dgp-profile-row-value">' + coordPrincipal + '</strong>' +
                             '</div>' +
-                            '<div class="dgp-profile-actions">' +
-                            '<select class="dgp-select dgp-gs-select">' +
-                            grupamentos.map(function (g) {
-                                const label = g ? g : 'Sem grupamento';
-                                return '<option value="' + g + '"' + (g === profile.grupamento_secundario ? ' selected' : '') + '>' + label + '</option>';
-                            }).join('') +
-                            '</select>' +
-                            '<button class="dgp-secondary-btn dgp-cursos-btn" type="button">Cursos</button>' +
+                            '<div class="dgp-profile-row-item">' +
+                            '<span class="dgp-profile-row-label">Divisão principal</span>' +
+                            '<strong class="dgp-profile-row-value">' + divPrincipal + '</strong>' +
                             '</div>' +
-                            '<div class="dgp-profile-actions">' +
-                            '<button class="dgp-secondary-btn dgp-medals-btn" type="button">Condecoracoes</button>' +
+                            '<div class="dgp-profile-row-item">' +
+                            '<span class="dgp-profile-row-label">Nucleo principal</span>' +
+                            '<strong class="dgp-profile-row-value">' + nucleoPrincipal + '</strong>' +
+                            '</div>' +
+                            '</div>' +
+                            '<div class="dgp-profile-row-side">' +
+                            '<span class="dgp-tag">' + status + '</span>' +
+                            '<button class="dgp-primary-btn dgp-open-profile-actions" type="button">Editar perfil</button>' +
                             '</div>' +
                             '</article>'
                         );
                     }).join('');
 
-                    profilesGrid.querySelectorAll('.dgp-toggle-aprovacao').forEach(function (btn) {
-                        btn.addEventListener('click', async function () {
-                            const card = btn.closest('.dgp-profile-card');
-                            if (!card) return;
-                            const userId = card.getAttribute('data-user-id');
-                            const profile = profileMap.get(userId);
-                            if (!profile) return;
-                            const next = !(profile.aprovado === true);
-                            const result = await client
-                                .from('profiles')
-                                .update({ aprovado: next })
-                                .eq('id', userId);
-                            if (!result.error) {
-                                profile.aprovado = next;
-                                renderProfiles();
-                            }
-                        });
-                    });
-
-                    profilesGrid.querySelectorAll('.dgp-delete-profile').forEach(function (btn) {
-                        btn.addEventListener('click', async function () {
-                            const card = btn.closest('.dgp-profile-card');
-                            if (!card) return;
-                            const userId = card.getAttribute('data-user-id');
-                            if (!userId) return;
-                            const result = await client.rpc('admin_delete_profile', { p_user_id: userId });
-                            if (!result.error) {
-                                profiles = profiles.filter(function (p) { return p.id !== userId; });
-                                profileMap.delete(userId);
-                                renderProfiles();
-                            }
-                        });
-                    });
-
-                    profilesGrid.querySelectorAll('.dgp-cargo-select').forEach(function (select) {
-                        select.addEventListener('change', async function () {
-                            const card = select.closest('.dgp-profile-card');
-                            if (!card) return;
-                            const userId = card.getAttribute('data-user-id');
-                            const value = select.value || null;
-                            const result = await client.from('profiles').update({ cargo: value }).eq('id', userId);
-                            if (!result.error) {
-                                const profile = profileMap.get(userId);
-                                if (profile) profile.cargo = value;
-                                renderProfiles();
-                            }
-                        });
-                    });
-
-                    profilesGrid.querySelectorAll('.dgp-gp-select').forEach(function (select) {
-                        select.addEventListener('change', async function () {
-                            const card = select.closest('.dgp-profile-card');
-                            if (!card) return;
-                            const userId = card.getAttribute('data-user-id');
-                            const value = select.value || null;
-                            const result = await client.from('profiles').update({ grupamento_principal: value }).eq('id', userId);
-                            if (!result.error) {
-                                const profile = profileMap.get(userId);
-                                if (profile) profile.grupamento_principal = value;
-                                renderProfiles();
-                            }
-                        });
-                    });
-
-                    profilesGrid.querySelectorAll('.dgp-gs-select').forEach(function (select) {
-                        select.addEventListener('change', async function () {
-                            const card = select.closest('.dgp-profile-card');
-                            if (!card) return;
-                            const userId = card.getAttribute('data-user-id');
-                            const value = select.value || null;
-                            const result = await client.from('profiles').update({ grupamento_secundario: value }).eq('id', userId);
-                            if (!result.error) {
-                                const profile = profileMap.get(userId);
-                                if (profile) profile.grupamento_secundario = value;
-                                renderProfiles();
-                            }
-                        });
-                    });
-
-                    profilesGrid.querySelectorAll('.dgp-cursos-btn').forEach(function (btn) {
+                    profilesGrid.querySelectorAll('.dgp-open-profile-actions').forEach(function (btn) {
                         btn.addEventListener('click', function () {
-                            const card = btn.closest('.dgp-profile-card');
+                            const card = btn.closest('.dgp-profile-row');
                             if (!card) return;
                             const userId = card.getAttribute('data-user-id');
                             const profile = profileMap.get(userId);
                             if (!profile) return;
-                            activeCursosUser = profile;
-                            const current = new Set(parseCursos(profile.cursos));
-                            cursosBody.innerHTML = cursos.map(function (course) {
-                                const checked = current.has(course.code) ? 'checked' : '';
-                                const fallbackAttr = course.fallbackImage ? ' data-fallback="assets/img/' + course.fallbackImage + '"' : '';
-                                return (
-                                    '<label class="dgp-report-item">' +
-                                    '<span class="dgp-course-option">' +
-                                    '<img class="dgp-course-icon" src="assets/img/' + course.image + '" alt="' + course.code + '"' + fallbackAttr + ' onerror="if(this.dataset.fallback && !this.dataset.tried){this.dataset.tried=\'1\';this.src=this.dataset.fallback;}else{this.style.display=\'none\';}">' +
-                                    '<span>' + course.code + ' - ' + course.label + '</span>' +
-                                    '</span>' +
-                                    '<input type="checkbox" data-code="' + course.code + '" ' + checked + '>' +
-                                    '</label>'
-                                );
-                            }).join('');
-                            openModal(cursosModal);
-                        });
-                    });
-
-                    profilesGrid.querySelectorAll('.dgp-medals-btn').forEach(function (btn) {
-                        btn.addEventListener('click', async function () {
-                            const card = btn.closest('.dgp-profile-card');
-                            if (!card) return;
-                            const userId = card.getAttribute('data-user-id');
-                            const profile = profileMap.get(userId);
-                            if (!profile) return;
-                            activeMedalsUser = profile;
-                            const result = await client
-                                .from('profile_medals')
-                                .select('id,medal_code,medal_name,medal_image')
-                                .eq('user_id', userId)
-                                .order('awarded_at', { ascending: false });
-                            const medals = result && Array.isArray(result.data) ? result.data : [];
-                            medalsBody.innerHTML = (
-                                '<div class="modal-form-group">' +
-                                '<label>Condecoracao</label>' +
-                                '<select id="dgp-medal-select" class="dgp-select">' +
-                                '<option value="">Selecionar...</option>' +
-                                '<option value="Medalha Merito" data-image="medalhamerito.png">Medalha Merito</option>' +
-                                '<option value="Medalha Washington" data-image="medalhawashington.png">Medalha Washington</option>' +
-                                '<option value="Moeda Antonio Felix Bronze" data-image="moedaantoniofelixbronze.png">Moeda Antonio Felix Bronze</option>' +
-                                '<option value="Moeda Antonio Felix Ouro" data-image="moedaantoniofelixouro.png">Moeda Antonio Felix Ouro</option>' +
-                                '<option value="Moeda Antonio Felix Prata" data-image="moedaantoniofelixprata.png">Moeda Antonio Felix Prata</option>' +
-                                '<option value="Medalha Antonio Felix" data-image="medalhaantoniofelix.png">Medalha Antonio Felix</option>' +
-                                '<option value="Medalha Bravura" data-image="medalhabravura.png">Medalha Bravura</option>' +
-                                '<option value="Medalha Cruz Washington" data-image="medalhagracruzwashington.png">Medalha Cruz Washington</option>' +
-                                '<option value="Medalha Heroi das Estradas" data-image="medalhaheroiestradas.png">Medalha Heroi das Estradas</option>' +
-                                '</select>' +
-                                '</div>' +
-                                '<div class="modal-form-group">' +
-                                '<label>Codigo</label><input id="dgp-medal-code" type="text" readonly>' +
-                                '</div>' +
-                                '<div class="modal-form-group">' +
-                                '<label>Nome</label><input id="dgp-medal-name" type="text" readonly>' +
-                                '</div>' +
-                                '<div class="modal-form-group">' +
-                                '<label>Imagem</label><input id="dgp-medal-image" type="text" readonly>' +
-                                '</div>' +
-                                '<div class="dgp-modal-body">' +
-                                medals.map(function (medal) {
-                                    return (
-                                        '<div class="dgp-report-item" data-medal-id="' + medal.id + '">' +
-                                        '<span>' + safe(medal.medal_name, medal.medal_code) + '</span>' +
-                                        '<button class="dgp-secondary-btn dgp-medal-remove" type="button">Remover</button>' +
-                                        '</div>'
-                                    );
-                                }).join('') +
-                                '</div>'
-                            );
-                            const medalSelect = medalsBody.querySelector('#dgp-medal-select');
-                            if (medalSelect) {
-                                medalSelect.addEventListener('change', function () {
-                                    const value = medalSelect.value || '';
-                                    const selected = medalSelect.options[medalSelect.selectedIndex];
-                                    const image = selected ? selected.getAttribute('data-image') : '';
-                                    const codeInput = medalsBody.querySelector('#dgp-medal-code');
-                                    const nameInput = medalsBody.querySelector('#dgp-medal-name');
-                                    const imageInput = medalsBody.querySelector('#dgp-medal-image');
-                                    if (nameInput) nameInput.value = value;
-                                    if (imageInput) imageInput.value = image || '';
-                                    if (codeInput) {
-                                        const code = value
-                                            .normalize('NFD')
-                                            .replace(/[\u0300-\u036f]/g, '')
-                                            .replace(/[^a-zA-Z0-9]+/g, '_')
-                                            .toUpperCase()
-                                            .replace(/^_+|_+$/g, '');
-                                        codeInput.value = code;
-                                    }
-                                });
-                            }
-                            medalsBody.querySelectorAll('.dgp-medal-remove').forEach(function (removeBtn) {
-                                removeBtn.addEventListener('click', async function () {
-                                    const row = removeBtn.closest('.dgp-report-item');
-                                    const medalId = row ? row.getAttribute('data-medal-id') : null;
-                                    if (!medalId) return;
-                                    await client.from('profile_medals').delete().eq('id', medalId);
-                                    row.remove();
-                                });
-                            });
-                            openModal(medalsModal);
+                            openProfileActions(profile);
                         });
                     });
                 };
+
+                const openCursosEditor = function (profile) {
+                    if (!profile) return;
+                    activeCursosUser = profile;
+                    const current = new Set(parseCursos(profile.cursos));
+                    cursosBody.innerHTML = cursos.map(function (course) {
+                        const checked = current.has(course.code) ? 'checked' : '';
+                        const fallbackAttr = course.fallbackImage ? ' data-fallback="assets/img/' + course.fallbackImage + '"' : '';
+                        return (
+                            '<label class="dgp-report-item">' +
+                            '<span class="dgp-course-option">' +
+                            '<img class="dgp-course-icon" src="assets/img/' + course.image + '" alt="' + course.code + '"' + fallbackAttr + ' onerror="if(this.dataset.fallback && !this.dataset.tried){this.dataset.tried=\'1\';this.src=this.dataset.fallback;}else{this.style.display=\'none\';}">' +
+                            '<span>' + course.code + ' - ' + course.label + '</span>' +
+                            '</span>' +
+                            '<input type="checkbox" data-code="' + course.code + '" ' + checked + '>' +
+                            '</label>'
+                        );
+                    }).join('');
+                    openModal(cursosModal);
+                };
+
+                const openMedalsEditor = async function (profile) {
+                    if (!profile) return;
+                    activeMedalsUser = profile;
+                    const result = await client
+                        .from('profile_medals')
+                        .select('id,medal_code,medal_name,medal_image')
+                        .eq('user_id', profile.id)
+                        .order('awarded_at', { ascending: false });
+                    const medals = result && Array.isArray(result.data) ? result.data : [];
+                    const current = new Set(medals.map(function (medal) {
+                        return safe(medal.medal_code, '').toUpperCase();
+                    }).filter(Boolean));
+                    medalsBody.innerHTML = medalCatalog.map(function (medal) {
+                        const checked = current.has(medal.code) ? 'checked' : '';
+                        return (
+                            '<label class="dgp-report-item">' +
+                            '<span class="dgp-course-option">' +
+                            '<img class="dgp-course-icon" src="assets/img/' + medal.image + '" alt="' + medal.name + '">' +
+                            '<span>' + medal.name + '</span>' +
+                            '</span>' +
+                            '<input type="checkbox" data-medal-code="' + medal.code + '" data-medal-name="' + medal.name + '" data-medal-image="' + medal.image + '" ' + checked + '>' +
+                            '</label>'
+                        );
+                    }).join('');
+                    openModal(medalsModal);
+                };
+
+                if (profileToggleAprovacaoBtn) {
+                    profileToggleAprovacaoBtn.addEventListener('click', async function () {
+                        if (!activeProfileUser) return;
+                        const next = !(activeProfileUser.aprovado === true);
+                        const result = await client.from('profiles').update({ aprovado: next }).eq('id', activeProfileUser.id);
+                        if (!result.error) {
+                            activeProfileUser.aprovado = next;
+                            profileMap.set(String(activeProfileUser.id), activeProfileUser);
+                            renderProfiles();
+                            openProfileActions(activeProfileUser);
+                        }
+                    });
+                }
+
+                if (profileDeleteBtn) {
+                    profileDeleteBtn.addEventListener('click', function () {
+                        if (!activeProfileUser || isDeletingProfile) return;
+                        if (!canDeleteProfiles()) {
+                            try { window.alert('Apenas administradores podem recusar e apagar perfis.'); } catch (e) {}
+                            return;
+                        }
+                        setDeleteConfirmVisible(true);
+                    });
+                }
+
+                if (profileDeleteCancelBtn) {
+                    profileDeleteCancelBtn.addEventListener('click', function () {
+                        if (isDeletingProfile) return;
+                        setDeleteConfirmVisible(false);
+                    });
+                }
+
+                if (profileDeleteConfirmBtn) {
+                    profileDeleteConfirmBtn.addEventListener('click', async function () {
+                        if (!activeProfileUser || isDeletingProfile) return;
+                        if (!canDeleteProfiles()) {
+                            setDeleteConfirmVisible(false);
+                            try { window.alert('Apenas administradores podem recusar e apagar perfis.'); } catch (e) {}
+                            return;
+                        }
+                        isDeletingProfile = true;
+                        profileDeleteConfirmBtn.disabled = true;
+                        if (profileDeleteCancelBtn) profileDeleteCancelBtn.disabled = true;
+                        const result = await client.rpc('admin_delete_profile', { p_user_id: activeProfileUser.id });
+                        isDeletingProfile = false;
+                        profileDeleteConfirmBtn.disabled = false;
+                        if (profileDeleteCancelBtn) profileDeleteCancelBtn.disabled = false;
+                        if (!result.error) {
+                            profiles = profiles.filter(function (p) { return p.id !== activeProfileUser.id; });
+                            profileMap.delete(String(activeProfileUser.id));
+                            setDeleteConfirmVisible(false);
+                            closeModal(profileActionsModal);
+                            activeProfileUser = null;
+                            renderProfiles();
+                            return;
+                        }
+                        try { window.alert('Nao foi possivel apagar o perfil: ' + safe(result.error && result.error.message, 'erro desconhecido')); } catch (e) {}
+                    });
+                }
+
+                if (profileOpenCursosBtn) {
+                    profileOpenCursosBtn.addEventListener('click', function () {
+                        if (!activeProfileUser) return;
+                        closeModal(profileActionsModal);
+                        openCursosEditor(activeProfileUser);
+                    });
+                }
+
+                if (profileOpenMedalsBtn) {
+                    profileOpenMedalsBtn.addEventListener('click', async function () {
+                        if (!activeProfileUser) return;
+                        closeModal(profileActionsModal);
+                        await openMedalsEditor(activeProfileUser);
+                    });
+                }
+
+                if (profileSaveBtn) {
+                    profileSaveBtn.addEventListener('click', async function () {
+                        if (!activeProfileUser) return;
+                        await persistProfileAssignments(activeProfileUser);
+                    });
+                }
 
                 if (cursosSave) {
                     cursosSave.addEventListener('click', async function () {
@@ -1880,7 +2524,7 @@
                         const mappedProfile = profileMap.get(String(activeCursosUser.id));
                         if (mappedProfile) mappedProfile.cursos = persistedCursos;
                         renderProfiles();
-                        closeModal(cursosModal);
+                        closeAuxiliaryProfileModal(cursosModal);
                         cursosSave.disabled = false;
                     });
                 }
@@ -1888,19 +2532,50 @@
                 if (medalAdd) {
                     medalAdd.addEventListener('click', async function () {
                         if (!activeMedalsUser) return;
-                        const code = document.getElementById('dgp-medal-code')?.value || '';
-                        const name = document.getElementById('dgp-medal-name')?.value || '';
-                        const image = document.getElementById('dgp-medal-image')?.value || '';
-                        if (!code || !name || !image) return;
-                        const insert = await client.from('profile_medals').insert({
-                            user_id: activeMedalsUser.id,
-                            medal_code: code,
-                            medal_name: name,
-                            medal_image: image
-                        });
-                        if (!insert.error) {
-                            closeModal(medalsModal);
+                        medalAdd.disabled = true;
+                        const selected = Array.from(medalsBody.querySelectorAll('input[type="checkbox"][data-medal-code]'))
+                            .filter(function (input) { return input.checked; })
+                            .map(function (input) {
+                                return {
+                                    code: input.getAttribute('data-medal-code') || '',
+                                    name: input.getAttribute('data-medal-name') || '',
+                                    image: input.getAttribute('data-medal-image') || ''
+                                };
+                            })
+                            .filter(function (item) { return item.code && item.name && item.image; });
+                        const currentResult = await client
+                            .from('profile_medals')
+                            .select('id,medal_code')
+                            .eq('user_id', activeMedalsUser.id);
+                        const currentRows = currentResult && Array.isArray(currentResult.data) ? currentResult.data : [];
+                        const currentByCode = new Map(currentRows.map(function (row) {
+                            return [safe(row.medal_code, '').toUpperCase(), row];
+                        }));
+                        const selectedCodes = new Set(selected.map(function (item) { return item.code.toUpperCase(); }));
+
+                        for (const row of currentRows) {
+                            const code = safe(row.medal_code, '').toUpperCase();
+                            if (!code || selectedCodes.has(code)) continue;
+                            await client.from('profile_medals').delete().eq('id', row.id);
                         }
+
+                        const toInsert = selected.filter(function (item) {
+                            return !currentByCode.has(item.code.toUpperCase());
+                        }).map(function (item) {
+                            return {
+                                user_id: activeMedalsUser.id,
+                                medal_code: item.code,
+                                medal_name: item.name,
+                                medal_image: item.image
+                            };
+                        });
+
+                        if (toInsert.length) {
+                            await client.from('profile_medals').insert(toInsert);
+                        }
+
+                        medalAdd.disabled = false;
+                        closeAuxiliaryProfileModal(medalsModal);
                     });
                 }
 
@@ -2407,7 +3082,7 @@
 
                 const profileResult = await client
                     .from('profiles')
-                    .select('id,nome_guerra,cargo,rg,grupamento_principal,grupamento_secundario,foto_url,aprovado,cursos')
+                    .select('*')
                     .order('nome_guerra', { ascending: true });
                 profiles = profileResult && Array.isArray(profileResult.data) ? profileResult.data : [];
                 profileMap = new Map(profiles.map(function (p) { return [String(p.id), p]; }));
@@ -2438,4 +3113,3 @@
     </script>
 </body>
 </html>
-
