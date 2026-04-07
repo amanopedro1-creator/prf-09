@@ -70,6 +70,19 @@
             });
             return modules;
         };
+        window.__dgpHasPanelAccess = function (profile) {
+            const normalize = window.__dgpNormalizeAccessValue;
+            const parseList = window.__dgpParseAccessList;
+            if (profile && profile.is_admin === true) return true;
+            const cargo = normalize(profile && profile.cargo);
+            const groups = []
+                .concat(parseList(profile && profile.grupamento))
+                .concat(parseList(profile && profile.grupamento_principal))
+                .concat(parseList(profile && profile.grupamento_secundario))
+                .concat(parseList(profile && profile.divisao_principal))
+                .concat(parseList(profile && profile.divisao_secundaria));
+            return cargo === normalize('Coordenador') || groups.includes(normalize('Divisão de Gestão de Pessoas'));
+        };
 
         (async function enforceAuth() {
             try {
@@ -100,14 +113,12 @@
                     return;
                 }
 
-                const accessState = window.__dgpBuildAccessState(profile);
-
                 if (profile.is_admin === true) {
                     document.documentElement.classList.add('is-admin');
                     document.documentElement.classList.add('has-dgp-access');
                 } else {
                     document.documentElement.classList.add('is-not-admin');
-                    if (accessState.any) {
+                    if (window.__dgpHasPanelAccess(profile)) {
                         document.documentElement.classList.add('has-dgp-access');
                     } else {
                         window.location.replace('inicio.html');
@@ -1199,10 +1210,9 @@
 
                 const profile = profileResult ? profileResult.data : null;
                 if (!profile) return;
-                const accessState = window.__dgpBuildAccessState(profile);
                 document.body.classList.toggle('is-admin', Boolean(profile.is_admin));
                 document.body.classList.toggle('is-not-admin', !profile.is_admin);
-                document.body.classList.toggle('has-dgp-access', Boolean(profile.is_admin) || accessState.any);
+                document.body.classList.toggle('has-dgp-access', window.__dgpHasPanelAccess(profile));
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
                 const cargo = (profile.cargo || 'Cargo do agente').toString();
