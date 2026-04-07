@@ -1671,6 +1671,11 @@
                     return next;
                 };
 
+                const isMissingRpcError = function (error) {
+                    const message = String(error && error.message || '');
+                    return /(function .* does not exist|Could not find the function|schema cache)/i.test(message);
+                };
+
                 const normalizeCompare = function (value) {
                     return String(value || '')
                         .normalize('NFD')
@@ -1947,9 +1952,25 @@
                         Object.prototype.hasOwnProperty.call(profile, 'divisao_principal') ||
                         Object.prototype.hasOwnProperty.call(profile, 'nucleo_principal');
 
-                    let result = hasNewOrgFields
-                        ? await client.from('profiles').update(cleanedPayload).eq('id', profile.id)
-                        : await client.from('profiles').update(legacyPayload).eq('id', profile.id);
+                    const rpcPayload = {
+                        p_target_user_id: profile.id,
+                        p_cargo: Object.prototype.hasOwnProperty.call(cleanedPayload, 'cargo') ? cleanedPayload.cargo : null,
+                        p_coordenacao_principal: cleanedPayload.coordenacao_principal || null,
+                        p_coordenacao_secundaria: cleanedPayload.coordenacao_secundaria || null,
+                        p_divisao_principal: cleanedPayload.divisao_principal || null,
+                        p_divisao_secundaria: cleanedPayload.divisao_secundaria || null,
+                        p_nucleo_principal: cleanedPayload.nucleo_principal || null,
+                        p_nucleo_secundario: cleanedPayload.nucleo_secundario || null,
+                        p_grupamento_principal: cleanedPayload.grupamento_principal || null,
+                        p_grupamento_secundario: cleanedPayload.grupamento_secundario || null
+                    };
+
+                    let result = await client.rpc('dgp_update_profile_assignments', rpcPayload);
+                    if (result.error && isMissingRpcError(result.error)) {
+                        result = hasNewOrgFields
+                            ? await client.from('profiles').update(cleanedPayload).eq('id', profile.id)
+                            : await client.from('profiles').update(legacyPayload).eq('id', profile.id);
+                    }
 
                     if (result.error && /(column .* does not exist|could not find .* column|schema cache|invalid column|unknown column)/i.test(String(result.error.message || ''))) {
                         result = await client.from('profiles').update(legacyPayload).eq('id', profile.id);
@@ -2186,20 +2207,29 @@
                 };
 
                 const closeUserOpenShifts = async function (targetUserId) {
+                    const rpcResult = await client.rpc('dgp_close_user_open_shifts', {
+                        p_target_user_id: targetUserId
+                    });
+                    if (!rpcResult.error) return { ok: true };
+                    if (!isMissingRpcError(rpcResult.error)) {
+                        return { ok: false, error: rpcResult.error };
+                    }
+
                     const openResult = await client
                         .from('agent_pontos')
                         .select('id,inicio_at')
                         .eq('user_id', targetUserId)
                         .is('fim_at', null);
                     const rows = openResult && Array.isArray(openResult.data) ? openResult.data : [];
-                    if (openResult.error || !rows.length) return;
+                    if (openResult.error) return { ok: false, error: openResult.error };
+                    if (!rows.length) return { ok: true };
 
                     const now = Date.now();
                     const nowIso = new Date(now).toISOString();
                     for (const row of rows) {
                         const start = row && row.inicio_at ? new Date(row.inicio_at).getTime() : now;
                         const durationMin = Math.floor(Math.max(0, now - start) / 60000);
-                        await client
+                        const updateResult = await client
                             .from('agent_pontos')
                             .update({
                                 fim_at: nowIso,
@@ -2208,7 +2238,9 @@
                             })
                             .eq('id', row.id)
                             .eq('user_id', targetUserId);
+                        if (updateResult.error) return { ok: false, error: updateResult.error };
                     }
+                    return { ok: true };
                 };
 
                 const loadOnDutyAdminList = async function () {
@@ -2305,7 +2337,13 @@
                             if (!targetUserId) return;
                             btn.disabled = true;
                             btn.textContent = 'Encerrando...';
-                            await closeUserOpenShifts(targetUserId);
+                            const closeResult = await closeUserOpenShifts(targetUserId);
+                            if (!closeResult || !closeResult.ok) {
+                                btn.disabled = false;
+                                btn.textContent = 'Encerrar ponto';
+                                try { window.alert('Nao foi possivel encerrar o ponto: ' + safe(closeResult && closeResult.error && closeResult.error.message, 'erro desconhecido')); } catch (e) {}
+                                return;
+                            }
                             await loadOnDutyAdminList();
                         });
                     });
@@ -2411,13 +2449,21 @@
                     profileToggleAprovacaoBtn.addEventListener('click', async function () {
                         if (!activeProfileUser) return;
                         const next = !(activeProfileUser.aprovado === true);
-                        const result = await client.from('profiles').update({ aprovado: next }).eq('id', activeProfileUser.id);
+                        let result = await client.rpc('dgp_set_profile_approval', {
+                            p_target_user_id: activeProfileUser.id,
+                            p_aprovado: next
+                        });
+                        if (result.error && isMissingRpcError(result.error)) {
+                            result = await client.from('profiles').update({ aprovado: next }).eq('id', activeProfileUser.id);
+                        }
                         if (!result.error) {
                             activeProfileUser.aprovado = next;
                             profileMap.set(String(activeProfileUser.id), activeProfileUser);
                             renderProfiles();
                             openProfileActions(activeProfileUser);
+                            return;
                         }
+                        try { window.alert('Nao foi possivel alterar a aprovacao: ' + safe(result.error && result.error.message, 'erro desconhecido')); } catch (e) {}
                     });
                 }
 
