@@ -1022,7 +1022,7 @@
                             '</div>' +
                             '<div class="plantao-body">' +
                             '<h3>' + nome + '</h3>' +
-                            '<p>' + grupamento + '<br>' + cargo + '</p>' +
+                            '<p>' + cargo + '</p>' +
                             '</div>' +
                             '</article>'
                         );
@@ -2320,12 +2320,8 @@
                     }
                     if (profilesCount) profilesCount.textContent = profiles.length + ' perfis';
                     profilesGrid.innerHTML = profiles.map(function (profile) {
-                        const assignments = getProfileAssignments(profile);
                         const nome = safe(profile.nome_guerra, 'Usuario');
                         const rg = safe(profile.rg, '-');
-                        const coordPrincipal = safe(assignments.coordenacaoPrincipal, '-');
-                        const divPrincipal = safe(assignments.divisaoPrincipal, '-');
-                        const nucleoPrincipal = safe(assignments.nucleoPrincipal, '-');
                         const photo = safe(profile.foto_url, 'assets/img/prf.png');
                         const aprovado = profile.aprovado === true;
                         const status = aprovado ? 'Aprovado' : 'Recusado';
@@ -2342,20 +2338,6 @@
                             '<span class="dgp-profile-row-label">RG</span>' +
                             '<strong class="dgp-profile-row-top-value">' + rg + '</strong>' +
                             '</div>' +
-                            '</div>' +
-                            '</div>' +
-                            '<div class="dgp-profile-row-grid">' +
-                            '<div class="dgp-profile-row-item">' +
-                            '<span class="dgp-profile-row-label">Coordenação principal</span>' +
-                            '<strong class="dgp-profile-row-value">' + coordPrincipal + '</strong>' +
-                            '</div>' +
-                            '<div class="dgp-profile-row-item">' +
-                            '<span class="dgp-profile-row-label">Divisão principal</span>' +
-                            '<strong class="dgp-profile-row-value">' + divPrincipal + '</strong>' +
-                            '</div>' +
-                            '<div class="dgp-profile-row-item">' +
-                            '<span class="dgp-profile-row-label">Nucleo principal</span>' +
-                            '<strong class="dgp-profile-row-value">' + nucleoPrincipal + '</strong>' +
                             '</div>' +
                             '</div>' +
                             '<div class="dgp-profile-row-side">' +
