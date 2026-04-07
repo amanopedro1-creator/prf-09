@@ -1644,6 +1644,51 @@
     }
   };
 
+  const setupDgpMenuAccess = async () => {
+    const dgpLinks = Array.from(document.querySelectorAll('.inicio-menu-item[href="paineldgp.html"]'));
+    if (!dgpLinks.length) return;
+
+    const normalize = (value) => String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+    const parseList = (value) => String(value || '')
+      .split('||')
+      .map((part) => normalize(part))
+      .filter(Boolean);
+    const hasDgpGrouping = (profile) => {
+      const values = []
+        .concat(parseList(profile && profile.grupamento))
+        .concat(parseList(profile && profile.grupamento_principal))
+        .concat(parseList(profile && profile.grupamento_secundario))
+        .concat(parseList(profile && profile.divisao_principal))
+        .concat(parseList(profile && profile.divisao_secundaria));
+      return values.includes(normalize('Divisão de Gestão de Pessoas'));
+    };
+    const hasCoordinatorCargo = (profile) => normalize(profile && profile.cargo) === normalize('Coordenador');
+
+    const client = await createSupabaseClient();
+    if (!client) return;
+
+    const sessionResult = await client.auth.getSession();
+    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+    const user = session ? session.user : null;
+    if (!user || !user.id) return;
+
+    const profileResult = await client
+      .from('profiles')
+      .select('is_admin,cargo,grupamento,grupamento_principal,grupamento_secundario,divisao_principal,divisao_secundaria')
+      .eq('id', user.id)
+      .maybeSingle();
+    const profile = profileResult && profileResult.data ? profileResult.data : null;
+    if (!profile) return;
+
+    const allowed = Boolean(profile.is_admin) || hasCoordinatorCargo(profile) || hasDgpGrouping(profile);
+    document.documentElement.classList.toggle('has-dgp-access', allowed);
+    document.body.classList.toggle('has-dgp-access', allowed);
+  };
+
   const setupInternalNotifications = async () => {
     if (window.__internalNotificationsSetup) return;
     window.__internalNotificationsSetup = true;
@@ -1862,6 +1907,7 @@
     setupAuthPageTransitions();
     setupScrollFades();
     setupRavopAccess();
+    setupDgpMenuAccess();
     setupHeaderAuthState();
     setupModalClose();
     setupInfoCardDropdowns();
