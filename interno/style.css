@@ -8792,6 +8792,14 @@ body.inicio-page.inicio-loaded .inicio-loader-logo {
     padding: 6px 0;
 }
 
+.perfil-grupos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+    row-gap: 18px;
+    align-items: start;
+}
+
 .perfil-grupo-logo {
     width: 80px;
     height: 80px;

@@ -259,99 +259,160 @@
                     });
                 };
 
-                const pickDisplayGroup = function (item) {
-                    const allowedDivisions = [
-                        'Ronda PRF',
-                        'Universidade Corporativa da PRF',
-                        'Grupo Patrulhamento Motorizado',
-                        'Grupo de Patrulhamento Tático',
-                        'Divisão de Operações Aéreas',
-                        'Núcleo de Operações Especiais'
-                    ];
-                    const commCoord = 'Coordenação-Geral de Comunicação Institucional';
-                    const executiveDir = 'Diretoria Executiva';
-                    const coordExceptions = [
-                        'Coordenação-Geral de Integração e Gestão de Inteligência',
-                        'Coordenação-Geral de Ensino e Capacitação'
-                    ];
-                    const divisions = uniqueList(
-                        []
-                            .concat(parseList(item.divisao_principal))
-                            .concat(parseList(item.divisao_secundaria))
-                            .concat(parseList(item.grupamento_principal))
-                            .concat(parseList(item.grupamento_secundario))
-                            .concat(parseList(item.grupamento))
-                    );
-                    const nucleos = uniqueList(
-                        []
-                            .concat(parseList(item.nucleo_principal))
-                            .concat(parseList(item.nucleo_secundario))
-                    );
-                    const coords = uniqueList(
-                        []
-                            .concat(parseList(item.coordenacao_principal))
-                            .concat(parseList(item.coordenacao_secundaria))
-                    );
-                    const hasValue = function (list, target) {
-                        const normalized = normalize(target);
-                        return list.some(function (itemValue) { return normalize(itemValue) === normalized; });
+                const formatCargo = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'Cargo nao definido';
+                    const normalized = normalize(raw);
+                    const cargoMap = {
+                        'diretor-geral': 'Diretor-Geral',
+                        'diretor geral': 'Diretor-Geral',
+                        'superintendente': 'Superintendente',
+                        'coordenador': 'Coordenador',
+                        'chefe de divisao': 'Chefe de Divisão',
+                        'chefe de divisão': 'Chefe de Divisão',
+                        'chefe de servico': 'Chefe de Serviço',
+                        'chefe de serviço': 'Chefe de Serviço',
+                        'chefe de nucleo': 'Chefe de Núcleo',
+                        'chefe de núcleo': 'Chefe de Núcleo',
+                        'chefe de equipe': 'Chefe de Equipe',
+                        'agente de classe especial': 'Agente de Classe Especial',
+                        'agente de primeira classe': 'Agente de Primeira Classe',
+                        'agente de segunda classe': 'Agente de Segunda Classe',
+                        'agente de terceira classe': 'Agente de Terceira Classe',
+                        'agente aluno': 'Agente Aluno'
                     };
-                    const findAllowed = function (list) {
-                        return allowedDivisions.find(function (target) { return hasValue(list, target); }) || '';
-                    };
-
-                    const primaryCoord = parseList(item.coordenacao_principal)[0] || '';
-                    const secondaryCoords = parseList(item.coordenacao_secundaria);
-                    const primaryNucleo = parseList(item.nucleo_principal)[0] || '';
-                    const primaryDivisao = parseList(item.divisao_principal)[0] || parseList(item.grupamento_principal)[0] || '';
-
-                    if (normalize(primaryCoord) === normalize(executiveDir)) return executiveDir;
-                    if (primaryCoord && secondaryCoords.length === 0 && coordExceptions.some(function (target) {
-                        return normalize(target) === normalize(primaryCoord);
-                    })) {
-                        return primaryCoord;
-                    }
-                    if (hasValue(divisions, executiveDir)) return executiveDir;
-                    if (hasValue(divisions, 'Coordenação-Geral de Integração e Gestão de Inteligência')) {
-                        return 'Coordenação-Geral de Integração e Gestão de Inteligência';
-                    }
-                    if (primaryNucleo && findAllowed([primaryNucleo])) return primaryNucleo;
-                    if (hasValue(divisions, 'Ronda PRF') && primaryNucleo) return primaryNucleo;
-                    if (hasValue(divisions, 'Comando de Operações Especiais') && primaryNucleo) return primaryNucleo;
-                    if (primaryDivisao && findAllowed([primaryDivisao])) return primaryDivisao;
-                    const anyAllowedNucleo = findAllowed(nucleos);
-                    if (anyAllowedNucleo) return anyAllowedNucleo;
-                    const anyAllowedDivision = findAllowed(divisions);
-                    if (anyAllowedDivision) return anyAllowedDivision;
-                    if (hasValue(coords, commCoord)) return commCoord;
-                    return '';
+                    return cargoMap[normalized] || raw;
                 };
 
-                const resolveGroupName = function (item) {
-                    return pickDisplayGroup(item) || 'Grupamento';
+                const knownCoordenacoes = [
+                    'Diretoria Executiva',
+                    'Coordenação-Geral de Gestão Operacional',
+                    'Coordenação-Geral de Integração e Gestão de Inteligência',
+                    'Coordenação-Geral de Comunicação Institucional',
+                    'Coordenação-Geral de Ensino e Capacitação'
+                ];
+
+                const knownDivisoes = [
+                    'Ronda PRF',
+                    'Universidade Corporativa da PRF',
+                    'Divisão de Gestão de Pessoas',
+                    'Divisão de Inteligência e Análise Policial',
+                    'Corregedoria Geral',
+                    'Corregedoria-Geral',
+                    'Comando de Operações Especiais'
+                ];
+
+                const knownNucleos = [
+                    'Grupo Patrulhamento Motorizado',
+                    'Grupo de Patrulhamento Tático',
+                    'Divisão de Operações Aéreas',
+                    'Núcleo de Operações Especiais',
+                    'Núcleo de Apoio à Gestão',
+                    'Núcleo de Ensino Especializado'
+                ];
+
+                const hasKnownValue = function (list, value) {
+                    const target = normalize(value);
+                    return list.some(function (item) { return normalize(item) === target; });
                 };
 
-                const resolvePrimaryGroup = function (item) {
-                    return pickDisplayGroup(item) || 'Sem grupamento';
+                const resolveAssignments = function (item) {
+                    const primaryLegacy = parseList(item.grupamento_principal);
+                    const secondaryLegacy = parseList(item.grupamento_secundario);
+                    const directPrimaryCoord = parseList(item.coordenacao_principal)[0] || '';
+                    const directPrimaryDivisao = parseList(item.divisao_principal)[0] || '';
+                    const directPrimaryNucleo = parseList(item.nucleo_principal)[0] || '';
+                    const directSecondaryDivisoes = parseList(item.divisao_secundaria);
+                    const directSecondaryNucleos = parseList(item.nucleo_secundario);
+
+                    const primaryCoord = directPrimaryCoord || primaryLegacy.find(function (value) {
+                        return hasKnownValue(knownCoordenacoes, value);
+                    }) || '';
+                    const primaryDivisao = directPrimaryDivisao || primaryLegacy.find(function (value) {
+                        return hasKnownValue(knownDivisoes, value);
+                    }) || '';
+                    const primaryNucleo = directPrimaryNucleo || primaryLegacy.find(function (value) {
+                        return hasKnownValue(knownNucleos, value);
+                    }) || '';
+
+                    const secondaryDivisoes = uniqueList((directSecondaryDivisoes.length ? directSecondaryDivisoes : secondaryLegacy.filter(function (value) {
+                        return hasKnownValue(knownDivisoes, value);
+                    }))).filter(function (value) {
+                        return normalize(value) !== normalize(primaryDivisao);
+                    });
+
+                    const secondaryNucleos = uniqueList((directSecondaryNucleos.length ? directSecondaryNucleos : secondaryLegacy.filter(function (value) {
+                        return hasKnownValue(knownNucleos, value);
+                    }))).filter(function (value) {
+                        return normalize(value) !== normalize(primaryNucleo);
+                    });
+
+                    return {
+                        primaryCoord: primaryCoord,
+                        primaryDivisao: primaryDivisao,
+                        primaryNucleo: primaryNucleo,
+                        secondaryDivisoes: secondaryDivisoes,
+                        secondaryNucleos: secondaryNucleos
+                    };
+                };
+
+                const getPrimaryGroupName = function (item) {
+                    const assignments = resolveAssignments(item);
+                    if (normalize(assignments.primaryCoord) === normalize('Diretoria Executiva')) {
+                        return 'Diretoria Executiva';
+                    }
+                    return assignments.primaryNucleo || assignments.primaryDivisao || assignments.primaryCoord || '';
+                };
+
+                const getSecondaryGroupNames = function (item) {
+                    const assignments = resolveAssignments(item);
+                    const filteredSecondaryDivisoes = assignments.secondaryDivisoes.filter(function (value) {
+                        return normalize(value) !== normalize('Ronda PRF');
+                    });
+                    return uniqueList([].concat(filteredSecondaryDivisoes, assignments.secondaryNucleos));
+                };
+
+                const resolveGroupNames = function (item) {
+                    const primary = getPrimaryGroupName(item);
+                    const secondary = getSecondaryGroupNames(item);
+                    const assignments = resolveAssignments(item);
+                    const coordinatorExtraGroup = normalize(formatCargo(item.cargo)) === normalize('Coordenador') && assignments.primaryCoord && normalize(assignments.primaryCoord) !== normalize('Diretoria Executiva')
+                        ? [assignments.primaryCoord]
+                        : [];
+                    return uniqueList([].concat(primary ? [primary] : [], coordinatorExtraGroup, secondary));
                 };
 
                 const resolveGroupLogo = function (groupName) {
                     const key = normalize(groupName);
+                    if (key.includes('diretoria executiva')) return '../assets/img/rprf.png';
+                    if (key.includes('coordenacao-geral de gestao operacional')) return 'assets/img/CGGO.png';
+                    if (key.includes('coordenacao-geral de integracao e gestao de inteligencia')) return 'assets/img/CGGI.png';
+                    if (key.includes('coordenacao-geral de comunicacao institucional')) return 'assets/img/CGCOM.png';
+                    if (key.includes('coordenacao-geral de ensino e capacitacao')) return 'assets/img/CGE.png';
+                    if (key.includes('corregedoria-geral') || key.includes('corregedoria geral')) return '../assets/img/CG.png';
+                    if (key.includes('divisao de comunicacao social')) return '../assets/img/DCS.png';
+                    if (key.includes('divisao de gestao comunicacional')) return '../assets/img/DGC.png';
+                    if (key.includes('divisao de gestao de pessoas')) return '../assets/img/DGP.png';
+                    if (key.includes('divisao de inteligencia e analise policial')) return '../assets/img/DIAP.png';
+                    if (key.includes('divisao de publicidade e midias')) return '../assets/img/DPM.png';
                     if (key.includes('ronda prf')) return 'assets/img/rprf.png';
                     if (key.includes('patrulhamento motorizado') || key.includes('gpm')) return 'assets/img/gpm.png';
-                    if (key.includes('universidade corporativa')) return 'assets/img/uniprf.jpg';
-                    if (key.includes('operações aéreas') || key.includes('operacoes aereas') || key.includes('doa')) return 'assets/img/doa.png';
+                    if (key.includes('universidade corporativa')) return '../assets/img/uniprf.jpg';
+                    if (key.includes('comando de operacoes especiais') || key.includes('coe')) return 'assets/img/coe.png';
+                    if (key.includes('operações aéreas') || key.includes('operacoes aereas') || key.includes('doa')) return '../assets/img/doa.png';
                     if (key.includes('patrulhamento tático') || key.includes('patrulhamento tatico') || key.includes('gpt')) return 'assets/img/gpt.png';
-                    if (key.includes('operações especiais') || key.includes('operacoes especiais') || key.includes('noe')) return 'assets/img/noe.png';
+                    if (key.includes('operações especiais') || key.includes('operacoes especiais') || key.includes('noe')) return '../assets/img/noe.png';
+                    if (key.includes('nucleo de apoio a gestao')) return '../assets/img/NAG.png';
+                    if (key.includes('nucleo de ensino especializado')) return '../assets/img/NEE.png';
                     if (key.includes('comunicacao institucional')) return 'assets/img/prf.png';
                     return 'assets/img/prf.png';
                 };
 
-                const renderCard = function (item) {
+                const renderCard = function (item, displayGroupName) {
                     const nome = escapeHtml(safe(item.nome_guerra, 'Agente'));
-                    const cargo = escapeHtml(safe(item.cargo, 'Cargo nao definido'));
+                    const cargo = escapeHtml(formatCargo(item.cargo));
                     const rg = escapeHtml(safe(item.rg, '-'));
-                    const groupRaw = resolveGroupName(item);
+                    const groupRaw = displayGroupName || getPrimaryGroupName(item) || 'Grupamento';
                     const groupName = escapeHtml(groupRaw);
                     const crest = resolveGroupLogo(groupRaw);
                     const foto = safe(item.foto_url, 'assets/img/prf.png');
@@ -384,14 +445,22 @@
 
                     const grouped = new Map();
                     items.forEach(function (item) {
-                        const key = resolvePrimaryGroup(item);
-                        if (!grouped.has(key)) grouped.set(key, []);
-                        grouped.get(key).push(item);
+                        resolveGroupNames(item).forEach(function (key) {
+                            if (!grouped.has(key)) grouped.set(key, []);
+                            const bucket = grouped.get(key);
+                            if (!bucket.some(function (member) { return String(member.id) === String(item.id); })) {
+                                bucket.push(item);
+                            }
+                        });
                     });
 
                     const groupNames = Array.from(grouped.keys()).sort(function (a, b) {
                         if (a === 'Diretoria Executiva' && b !== 'Diretoria Executiva') return -1;
                         if (b === 'Diretoria Executiva' && a !== 'Diretoria Executiva') return 1;
+                        const aIsCoord = knownCoordenacoes.some(function (value) { return normalize(value) === normalize(a); });
+                        const bIsCoord = knownCoordenacoes.some(function (value) { return normalize(value) === normalize(b); });
+                        if (aIsCoord && !bIsCoord) return -1;
+                        if (bIsCoord && !aIsCoord) return 1;
                         return String(a).localeCompare(String(b), 'pt-BR');
                     });
 
@@ -407,7 +476,7 @@
                             '<span>' + members.length + (members.length === 1 ? ' agente' : ' agentes') + '</span>' +
                             '</header>' +
                             '<div class="equipe-showcase-grid equipe-showcase-grid--section">' +
-                            members.map(renderCard).join('') +
+                            members.map(function (member) { return renderCard(member, groupName); }).join('') +
                             '</div>' +
                             '</section>'
                         );
@@ -480,7 +549,7 @@
                     }
 
                     render(items.filter(function (item) {
-                        return !!pickDisplayGroup(item);
+                        return resolveGroupNames(item).length > 0;
                     }));
                 } catch (e) {
                     grid.innerHTML = '<div class="equipe-showcase-loading">Não foi possível carregar a equipe.</div>';

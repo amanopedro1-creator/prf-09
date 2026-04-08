@@ -739,6 +739,39 @@
                     userId = String(user.id);
                 }
 
+                const normalizeCargoValue = function (value) {
+                    return String(value || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim()
+                        .toLowerCase();
+                };
+
+                const formatCargo = function (value) {
+                    const raw = String(value || '').trim();
+                    if (!raw) return 'Cargo do agente';
+                    const normalized = normalizeCargoValue(raw);
+                    const cargoMap = {
+                        'diretor-geral': 'Diretor-Geral',
+                        'diretor geral': 'Diretor-Geral',
+                        'superintendente': 'Superintendente',
+                        'coordenador': 'Coordenador',
+                        'chefe de divisao': 'Chefe de Divisão',
+                        'chefe de divisão': 'Chefe de Divisão',
+                        'chefe de servico': 'Chefe de Serviço',
+                        'chefe de serviço': 'Chefe de Serviço',
+                        'chefe de nucleo': 'Chefe de Núcleo',
+                        'chefe de núcleo': 'Chefe de Núcleo',
+                        'chefe de equipe': 'Chefe de Equipe',
+                        'agente de classe especial': 'Agente de Classe Especial',
+                        'agente de primeira classe': 'Agente de Primeira Classe',
+                        'agente de segunda classe': 'Agente de Segunda Classe',
+                        'agente de terceira classe': 'Agente de Terceira Classe',
+                        'agente aluno': 'Agente Aluno'
+                    };
+                    return cargoMap[normalized] || raw;
+                };
+
                 const profileResult = await client
                     .from('profiles')
                     .select('nome_guerra,cargo,foto_url,rg,grupamento,cursos,is_admin')
@@ -751,7 +784,7 @@
                 document.body.classList.toggle('is-not-admin', !profile.is_admin);
 
                 const nome = (profile.nome_guerra || 'Usuario').toString();
-                const cargo = (profile.cargo || 'Cargo do agente').toString();
+                const cargo = formatCargo(profile.cargo);
                 const rgNode = document.getElementById('inicio-user-rg');
                 const gruposNode = document.getElementById('inicio-user-grupamentos');
                 const cursosNode = document.getElementById('inicio-user-cursos');
