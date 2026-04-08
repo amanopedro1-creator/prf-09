@@ -703,9 +703,34 @@
                     userId = String(user.id);
                 }
 
+                const normalizeGroupValue = function (value) {
+                    return String(value || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim()
+                        .toLowerCase();
+                };
+
+                const parseGroupList = function (value) {
+                    return String(value || '')
+                        .split('||')
+                        .map(function (part) { return part.trim(); })
+                        .filter(Boolean);
+                };
+
+                const uniqueGroupList = function (items) {
+                    const seen = new Set();
+                    return items.filter(function (item) {
+                        const key = normalizeGroupValue(item);
+                        if (!key || seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                };
+
                 const profileResult = await client
                     .from('profiles')
-                    .select('nome_guerra,cargo,foto_url,rg,grupamento,grupamento_principal,grupamento_secundario,cursos,is_admin')
+                    .select('nome_guerra,cargo,foto_url,rg,grupamento,grupamento_principal,grupamento_secundario,coordenacao_principal,coordenacao_secundaria,divisao_principal,divisao_secundaria,nucleo_principal,nucleo_secundario,cursos,is_admin')
                     .eq('id', userId)
                     .maybeSingle();
 
@@ -731,33 +756,71 @@
                 if (perfilInputRg) perfilInputRg.value = profile.rg || '';
                 if (gruposNode || perfilGrupos) {
                     const grupamentoRaw = String(profile.grupamento || '').trim();
-                    const primario = String(profile.grupamento_principal || '').trim()
+                    const primaryCoord = parseGroupList(profile.coordenacao_principal)[0] || '';
+                    const primaryDivisao = parseGroupList(profile.divisao_principal)[0] || String(profile.grupamento_principal || '').trim() || '';
+                    const primaryNucleo = parseGroupList(profile.nucleo_principal)[0] || '';
+                    const secondaryDivisoes = uniqueGroupList(
+                        parseGroupList(profile.divisao_secundaria).concat(parseGroupList(profile.grupamento_secundario))
+                    ).filter(function (value) {
+                        return normalizeGroupValue(value) !== normalizeGroupValue(primaryDivisao);
+                    });
+                    const secondaryNucleos = uniqueGroupList(parseGroupList(profile.nucleo_secundario)).filter(function (value) {
+                        return normalizeGroupValue(value) !== normalizeGroupValue(primaryNucleo);
+                    });
+                    const gruposList = uniqueGroupList(
+                        []
+                            .concat(primaryCoord ? [primaryCoord] : [])
+                            .concat(primaryDivisao ? [primaryDivisao] : [])
+                            .concat(primaryNucleo ? [primaryNucleo] : [])
+                            .concat(secondaryDivisoes)
+                            .concat(secondaryNucleos)
+                    );
+                    const primario = primaryCoord || primaryDivisao || primaryNucleo || String(profile.grupamento_principal || '').trim()
                         || (grupamentoRaw ? grupamentoRaw.split('||')[0].trim() : '');
-                    const grupos = grupamentoRaw
-                        ? grupamentoRaw.split(' || ').map(function (g) { return g.trim(); }).filter(Boolean).join(' | ')
-                        : 'Grupamento';
+                    const grupos = gruposList.length ? gruposList.join(' | ') : 'Grupamento';
                     if (gruposNode) gruposNode.textContent = grupos;
                     if (perfilGrupos) {
                         const groupImageMap = {
                             'Diretoria de Gestão de Pessoas': 'rprf.png',
                             'Diretoria Executiva': 'rprf.png',
                             'Diretoria Operacional': 'rprf.png',
+                            'Coordenação-Geral de Gestão Operacional': 'prf.png',
+                            'Coordenação-Geral de Integração e Gestão de Inteligência': 'prf.png',
+                            'Coordenação-Geral de Comunicação Institucional': 'prf.png',
+                            'Coordenação-Geral de Ensino e Capacitação': 'prf.png',
                             'Ronda PRF': 'rprf.png',
                             'Universidade Corporativa da PRF': 'uniprf.png',
+                            'Corregedoria-Geral': 'CG.png',
+                            'Divisão de Comunicação Social': 'DCS.png',
+                            'Divisão de Gestão Comunicacional': 'DGC.png',
+                            'Divisão de Gestão de Pessoas': 'prf.png',
+                            'Divisão de Gestão de Pessoas': 'DGP.png',
+                            'Divisão de Inteligência e Análise Policial': 'prf.png',
+                            'Divisão de Inteligência e Análise Policial': 'DIAP.png',
+                            'Divisão de Publicidade e Mídias': 'DPM.png',
+                            'Corregedoria Geral': 'prf.png',
+                            'Comando de Operações Especiais': 'prf.png',
                             'Grupo de Patrulhamento Tático': 'gpt.png',
                             'Grupo de Resposta Rápida': 'grr.png',
                             'Grupo de Patrulhamento Motorizado': 'gpm.png',
-                            'Divisão de Operações Aéreas': 'doa.png'
+                            'Divisão de Operações Aéreas': 'doa.png',
+                            'Núcleo de Operações Especiais': 'noe.png',
+                            'Núcleo de Apoio à Gestão': 'NAG.png',
+                            'Núcleo de Ensino Especializado': 'NEE.png'
                         };
-                        const primLabel = primario || 'Grupamento';
-                        const img = groupImageMap[primLabel] || '';
-                        const imgTag = img
-                            ? '<img class="perfil-grupo-logo" src="assets/img/' + img + '" alt="' + primLabel + '">'
-                            : '';
+                        const visualGroups = gruposList.length ? gruposList : [primario || 'Grupamento'];
                         perfilGrupos.innerHTML =
-                            '<div class="perfil-grupo-wrap">' +
-                            imgTag +
-                            '<span class="perfil-grupo-name">' + primLabel.replace(/</g, '&lt;') + '</span>' +
+                            '<div class="perfil-grupos-grid">' +
+                            visualGroups.map(function (label) {
+                                const safeLabel = label.replace(/</g, '&lt;');
+                                const img = groupImageMap[label] || 'prf.png';
+                                return (
+                                    '<div class="perfil-grupo-wrap">' +
+                                    '<img class="perfil-grupo-logo" src="assets/img/' + img + '" alt="' + safeLabel + '" onerror="this.src=\'assets/img/prf.png\'">' +
+                                    '<span class="perfil-grupo-name">' + safeLabel + '</span>' +
+                                    '</div>'
+                                );
+                            }).join('') +
                             '</div>';
                     }
                 }
