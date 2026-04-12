@@ -1711,7 +1711,7 @@
                     const label = getCargoLabel(raw);
                     const lowerWithAccents = label.toLowerCase().trim();
                     const lowerWithoutAccents = normalizeCompare(label);
-                    const variants = [label, raw, lowerWithAccents, lowerWithoutAccents];
+                    const variants = [lowerWithoutAccents, lowerWithAccents, label, raw];
                     const seen = new Set();
                     return variants.filter(function (item) {
                         const key = String(item);
@@ -1719,6 +1719,11 @@
                         seen.add(key);
                         return true;
                     });
+                };
+
+                const getStoredCargoValue = function (value) {
+                    const canonical = canonicalizeCargoValue(value);
+                    return canonical ? normalizeCompare(canonical) : '';
                 };
 
                 const parseMultiValue = function (raw) {
@@ -1942,8 +1947,8 @@
                     const coordPrincipal = sanitizeAssignmentValue(profileCoordPrimary ? profileCoordPrimary.value : '');
                     const divPrincipal = sanitizeAssignmentValue(profileDivPrimary ? profileDivPrimary.value : '');
                     const nucleoPrincipal = sanitizeAssignmentValue(profileNucleoPrimary ? profileNucleoPrimary.value : '');
-                    if (!coordPrincipal || !divPrincipal || !nucleoPrincipal) {
-                        try { window.alert('Defina a coordenacao principal, a divisao principal e o nucleo principal antes de salvar.'); } catch (e) {}
+                    if (!coordPrincipal) {
+                        try { window.alert('Defina a coordenacao principal antes de salvar.'); } catch (e) {}
                         return;
                     }
                     const coordSecondary = sanitizeAssignmentList(getMultiSelectValues(profileCoordSecondary)).filter(function (item) {
@@ -1957,17 +1962,19 @@
                     });
                     const rawCurrentCargo = safe(profile.cargo, '');
                     const currentCargo = canonicalizeCargoValue(rawCurrentCargo);
+                    const currentStoredCargo = getStoredCargoValue(rawCurrentCargo);
                     const rawCargoSelection = safe(profileCargoSelect ? profileCargoSelect.value : '', '');
                     const nextCargo = getSafeCargoValue(rawCargoSelection, currentCargo);
+                    const nextStoredCargo = getStoredCargoValue(nextCargo);
                     let cargoForPayload;
                     if (!rawCargoSelection) {
                         cargoForPayload = null;
-                    } else if (nextCargo && safe(rawCurrentCargo, '').trim() !== safe(nextCargo, '').trim()) {
-                        cargoForPayload = nextCargo;
-                    } else if (normalizeCompare(nextCargo) === normalizeCompare(currentCargo) && isKnownCargoValue(currentCargo)) {
+                    } else if (nextStoredCargo && currentStoredCargo !== nextStoredCargo) {
+                        cargoForPayload = nextStoredCargo;
+                    } else if (nextStoredCargo && currentStoredCargo === nextStoredCargo && isKnownCargoValue(currentCargo)) {
                         cargoForPayload = undefined;
                     } else {
-                        cargoForPayload = nextCargo;
+                        cargoForPayload = nextStoredCargo || null;
                     }
                     const payload = syncLegacyGroupingFields({
                         cargo: cargoForPayload,
