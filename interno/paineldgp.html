@@ -1688,6 +1688,39 @@
                         .toLowerCase();
                 };
 
+                const sanitizeAssignmentValue = function (value) {
+                    const text = safe(value, '');
+                    const normalized = normalizeCompare(text);
+                    if (!normalized) return '';
+                    if (normalized === '-' || normalized === 'n/a' || normalized === 'na') return '';
+                    if (normalized.indexOf('sem ') === 0) return '';
+                    return text;
+                };
+
+                const sanitizeAssignmentList = function (items) {
+                    return uniqueValues((items || []).map(function (item) {
+                        return sanitizeAssignmentValue(item);
+                    }).filter(Boolean));
+                };
+
+                const buildCargoPersistenceVariants = function (value) {
+                    if (value === undefined) return [undefined];
+                    if (value === null) return [null];
+                    const raw = safe(value, '');
+                    if (!raw) return [null];
+                    const label = getCargoLabel(raw);
+                    const lowerWithAccents = label.toLowerCase().trim();
+                    const lowerWithoutAccents = normalizeCompare(label);
+                    const variants = [label, raw, lowerWithAccents, lowerWithoutAccents];
+                    const seen = new Set();
+                    return variants.filter(function (item) {
+                        const key = String(item);
+                        if (!key || seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                };
+
                 const parseMultiValue = function (raw) {
                     if (Array.isArray(raw)) {
                         return raw.map(function (item) { return safe(item, ''); }).filter(Boolean);
@@ -1906,20 +1939,20 @@
 
                 const persistProfileAssignments = async function (profile) {
                     if (!profile) return;
-                    const coordPrincipal = safe(profileCoordPrimary ? profileCoordPrimary.value : '', '');
-                    const divPrincipal = safe(profileDivPrimary ? profileDivPrimary.value : '', '');
-                    const nucleoPrincipal = safe(profileNucleoPrimary ? profileNucleoPrimary.value : '', '');
+                    const coordPrincipal = sanitizeAssignmentValue(profileCoordPrimary ? profileCoordPrimary.value : '');
+                    const divPrincipal = sanitizeAssignmentValue(profileDivPrimary ? profileDivPrimary.value : '');
+                    const nucleoPrincipal = sanitizeAssignmentValue(profileNucleoPrimary ? profileNucleoPrimary.value : '');
                     if (!coordPrincipal || !divPrincipal || !nucleoPrincipal) {
                         try { window.alert('Defina a coordenacao principal, a divisao principal e o nucleo principal antes de salvar.'); } catch (e) {}
                         return;
                     }
-                    const coordSecondary = getMultiSelectValues(profileCoordSecondary).filter(function (item) {
+                    const coordSecondary = sanitizeAssignmentList(getMultiSelectValues(profileCoordSecondary)).filter(function (item) {
                         return normalizeCompare(item) !== normalizeCompare(coordPrincipal);
                     });
-                    const divSecondary = getMultiSelectValues(profileDivSecondary).filter(function (item) {
+                    const divSecondary = sanitizeAssignmentList(getMultiSelectValues(profileDivSecondary)).filter(function (item) {
                         return normalizeCompare(item) !== normalizeCompare(divPrincipal);
                     });
-                    const nucleoSecondary = getMultiSelectValues(profileNucleoSecondary).filter(function (item) {
+                    const nucleoSecondary = sanitizeAssignmentList(getMultiSelectValues(profileNucleoSecondary)).filter(function (item) {
                         return normalizeCompare(item) !== normalizeCompare(nucleoPrincipal);
                     });
                     const rawCurrentCargo = safe(profile.cargo, '');
@@ -1956,31 +1989,56 @@
                         Object.prototype.hasOwnProperty.call(profile, 'divisao_principal') ||
                         Object.prototype.hasOwnProperty.call(profile, 'nucleo_principal');
 
-                    const rpcPayload = {
-                        p_target_user_id: profile.id,
-                        p_cargo: Object.prototype.hasOwnProperty.call(cleanedPayload, 'cargo') ? cleanedPayload.cargo : null,
-                        p_coordenacao_principal: cleanedPayload.coordenacao_principal || null,
-                        p_coordenacao_secundaria: cleanedPayload.coordenacao_secundaria || null,
-                        p_divisao_principal: cleanedPayload.divisao_principal || null,
-                        p_divisao_secundaria: cleanedPayload.divisao_secundaria || null,
-                        p_nucleo_principal: cleanedPayload.nucleo_principal || null,
-                        p_nucleo_secundario: cleanedPayload.nucleo_secundario || null,
-                        p_grupamento_principal: cleanedPayload.grupamento_principal || null,
-                        p_grupamento_secundario: cleanedPayload.grupamento_secundario || null
-                    };
+                    const cargoVariants = buildCargoPersistenceVariants(cargoForPayload);
+                    let result = null;
+                    let successfulPayload = payload;
 
-                    let result = await client.rpc('dgp_update_profile_assignments', rpcPayload);
-                    if (result.error && isMissingRpcError(result.error)) {
-                        result = hasNewOrgFields
-                            ? await client.from('profiles').update(cleanedPayload).eq('id', profile.id)
-                            : await client.from('profiles').update(legacyPayload).eq('id', profile.id);
+                    for (let i = 0; i < cargoVariants.length; i += 1) {
+                        const variantPayload = syncLegacyGroupingFields(Object.assign({}, payload, {
+                            cargo: cargoVariants[i]
+                        }));
+                        const cleanedVariantPayload = cleanPayload(variantPayload);
+                        const legacyVariantPayload = cleanPayload({
+                            cargo: variantPayload.cargo,
+                            grupamento_principal: variantPayload.grupamento_principal || null,
+                            grupamento_secundario: variantPayload.grupamento_secundario || null
+                        });
+                        const rpcPayload = {
+                            p_target_user_id: profile.id,
+                            p_cargo: Object.prototype.hasOwnProperty.call(cleanedVariantPayload, 'cargo') ? cleanedVariantPayload.cargo : null,
+                            p_coordenacao_principal: cleanedVariantPayload.coordenacao_principal || null,
+                            p_coordenacao_secundaria: cleanedVariantPayload.coordenacao_secundaria || null,
+                            p_divisao_principal: cleanedVariantPayload.divisao_principal || null,
+                            p_divisao_secundaria: cleanedVariantPayload.divisao_secundaria || null,
+                            p_nucleo_principal: cleanedVariantPayload.nucleo_principal || null,
+                            p_nucleo_secundario: cleanedVariantPayload.nucleo_secundario || null,
+                            p_grupamento_principal: cleanedVariantPayload.grupamento_principal || null,
+                            p_grupamento_secundario: cleanedVariantPayload.grupamento_secundario || null
+                        };
+
+                        result = await client.rpc('dgp_update_profile_assignments', rpcPayload);
+                        if (result.error && isMissingRpcError(result.error)) {
+                            result = hasNewOrgFields
+                                ? await client.from('profiles').update(cleanedVariantPayload).eq('id', profile.id)
+                                : await client.from('profiles').update(legacyVariantPayload).eq('id', profile.id);
+                        }
+
+                        if (result.error && /(column .* does not exist|could not find .* column|schema cache|invalid column|unknown column)/i.test(String(result.error.message || ''))) {
+                            result = await client.from('profiles').update(legacyVariantPayload).eq('id', profile.id);
+                        }
+
+                        if (!result.error) {
+                            successfulPayload = variantPayload;
+                            break;
+                        }
+
+                        if (!/profiles_cargo_allowed_chk|cargo_allowed_chk/i.test(String(result.error && result.error.message || ''))) {
+                            break;
+                        }
                     }
 
-                    if (result.error && /(column .* does not exist|could not find .* column|schema cache|invalid column|unknown column)/i.test(String(result.error.message || ''))) {
-                        result = await client.from('profiles').update(legacyPayload).eq('id', profile.id);
-                    }
                     if (!result.error) {
-                        Object.assign(profile, payload);
+                        Object.assign(profile, successfulPayload);
                         profileMap.set(String(profile.id), profile);
                         renderProfiles();
                         renderProfileSummary(profile);

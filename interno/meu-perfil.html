@@ -1068,6 +1068,15 @@
                     statusNode.style.color = isError ? '#b91c1c' : '#374151';
                 };
 
+                const ensureActiveSession = async function () {
+                    let sessionResult = await client.auth.getSession();
+                    let session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+                    if (session && session.access_token) return session;
+                    const refreshResult = await client.auth.refreshSession();
+                    session = refreshResult && refreshResult.data ? refreshResult.data.session : null;
+                    return session && session.access_token ? session : null;
+                };
+
                 if (editForm) {
                     editForm.addEventListener('submit', async function (event) {
                         event.preventDefault();
@@ -1091,6 +1100,20 @@
 
                             if (inputPhoto && inputPhoto.files && inputPhoto.files[0]) {
                                 const file = inputPhoto.files[0];
+                                const maxPhotoSizeBytes = 5 * 1024 * 1024;
+                                if (!String(file.type || '').toLowerCase().startsWith('image/')) {
+                                    setStatus('Selecione um arquivo de imagem valido.', true);
+                                    return;
+                                }
+                                if (Number(file.size || 0) > maxPhotoSizeBytes) {
+                                    setStatus('A foto deve ter no maximo 5 MB.', true);
+                                    return;
+                                }
+                                const activeSession = await ensureActiveSession();
+                                if (!activeSession) {
+                                    setStatus('Sua sessao expirou. Entre novamente para enviar a foto.', true);
+                                    return;
+                                }
                                 const originalName = (file.name || 'foto').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
                                 const sanitizedName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
                                 const ext = sanitizedName.includes('.') ? sanitizedName.split('.').pop().toLowerCase() : 'jpg';
@@ -1118,7 +1141,7 @@
                                     p_foto_path: path
                                 });
                                 if (photoResult.error) {
-                                    setStatus('Falha ao salvar a foto.', true);
+                                    setStatus('Falha ao salvar a foto: ' + photoResult.error.message, true);
                                     return;
                                 }
                             }
@@ -1126,7 +1149,7 @@
                             setStatus('Perfil atualizado com sucesso.', false);
                             window.location.reload();
                         } catch (e) {
-                            setStatus('Erro ao salvar.', true);
+                            setStatus('Erro ao salvar: ' + (e && e.message ? e.message : 'erro desconhecido'), true);
                         }
                     });
                 }
